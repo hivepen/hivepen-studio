@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BubbleMenu } from '@tiptap/react/menus'
-import type { Editor } from '@tiptap/react'
+import { useEditorState, type Editor } from '@tiptap/react'
 import { Box, HStack, Icon, IconButton, Input } from '@chakra-ui/react'
 import {
   Bold,
@@ -40,6 +40,28 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor | null }) 
 
   if (!editor) return null
 
+  const bubbleState = useEditorState({
+    editor,
+    selector: ({ editor: activeEditor }) => {
+      const { state } = activeEditor
+      const hasSelection = !state.selection.empty
+      const marks = state.storedMarks ?? state.selection.$from.marks()
+      const isMarkActive = (markName: string) =>
+        hasSelection
+          ? activeEditor.isActive(markName)
+          : marks.some((mark) => mark.type.name === markName)
+
+      return {
+        isBold: isMarkActive('bold'),
+        isItalic: isMarkActive('italic'),
+        isUnderline: isMarkActive('underline'),
+        isStrike: isMarkActive('strike'),
+        isCode: isMarkActive('code'),
+        isLink: isMarkActive('link'),
+      }
+    },
+  })
+
   const applyLink = () => {
     const url = linkValue.trim()
     if (!url) {
@@ -57,6 +79,7 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor | null }) 
       shouldShow={({ editor: menuEditor, state }) => {
         if (!menuEditor?.isEditable) return false
         if (isEditingLink) return true
+        if (menuEditor.isActive('link')) return true
         return !state.selection.empty
       }}
       options={{
@@ -81,7 +104,17 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor | null }) 
               placeholder="Paste a link…"
               bg="bg"
               borderColor="border"
-              onKeyDown={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                event.stopPropagation()
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                  applyLink()
+                }
+                if (event.key === 'Escape') {
+                  event.preventDefault()
+                  setIsEditingLink(false)
+                }
+              }}
               onPaste={(event) => event.stopPropagation()}
             />
             <IconButton
@@ -107,37 +140,37 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor | null }) 
           <HStack gap={1}>
             <InlineButton
               label="Bold"
-              active={editor.isActive('bold')}
+              active={bubbleState.isBold}
               onClick={() => editor.chain().focus().toggleBold().run()}
               icon={<Icon as={Bold} boxSize={4} />}
             />
             <InlineButton
               label="Italic"
-              active={editor.isActive('italic')}
+              active={bubbleState.isItalic}
               onClick={() => editor.chain().focus().toggleItalic().run()}
               icon={<Icon as={Italic} boxSize={4} />}
             />
             <InlineButton
               label="Underline"
-              active={editor.isActive('underline')}
+              active={bubbleState.isUnderline}
               onClick={() => editor.chain().focus().toggleUnderline().run()}
               icon={<Icon as={Underline} boxSize={4} />}
             />
             <InlineButton
               label="Strike"
-              active={editor.isActive('strike')}
+              active={bubbleState.isStrike}
               onClick={() => editor.chain().focus().toggleStrike().run()}
               icon={<Icon as={Strikethrough} boxSize={4} />}
             />
             <InlineButton
               label="Code"
-              active={editor.isActive('code')}
+              active={bubbleState.isCode}
               onClick={() => editor.chain().focus().toggleCode().run()}
               icon={<Icon as={Code} boxSize={4} />}
             />
             <InlineButton
               label="Link"
-              active={editor.isActive('link')}
+              active={bubbleState.isLink}
               onClick={() => {
                 const existing = editor.getAttributes('link').href as string | undefined
                 setLinkValue(existing ?? '')

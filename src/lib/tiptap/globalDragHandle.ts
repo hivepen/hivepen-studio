@@ -233,6 +233,11 @@ const DragHandlePlugin = (options: {
       handleDOMEvents: {
         mousemove: (view, event) => {
           if (!view.editable) return
+          const handlesContainer = view.dom.closest('[data-show-handles]') as HTMLElement | null
+          if (handlesContainer?.dataset.showHandles === 'false') {
+            hideDragHandle()
+            return
+          }
           const node = nodeDOMAtCoords(
             {
               x: event.clientX + 50 + options.dragHandleWidth,
