@@ -15,40 +15,40 @@ Markdown version link: https://markdown.new/vikramthyagarajan.medium.com/how-to-
 
 Goal: a stable editor with a clean extension registry and consistent styling.
 
-- [ ] Create `src/lib/tiptap/extensions.ts` as the canonical extensions registry.
-- [ ] Configure StarterKit with controlled headings (H1–H3) and essential marks.
-- [ ] Add Placeholder with per-block messaging (heading vs paragraph).
-- [ ] Verify link, image, mention, underline, code, blockquote, list, and HR behaviors.
-- [ ] Align editor typography and block spacing with design tokens.
+- [x] Create `src/lib/tiptap/extensions.ts` as the canonical extensions registry.
+- [x] Configure StarterKit with controlled headings (H1–H3) and essential marks.
+- [x] Add Placeholder with per-block messaging (heading vs paragraph).
+- [x] Verify link, image, mention, underline, code, blockquote, list, and HR behaviors.
+- [x] Align editor typography and block spacing with design tokens.
 
 ## Phase 2 — Slash Command Menu (Novel-style)
 
 Goal: slash menu that inserts blocks without leaving the writing flow.
 
-- [ ] Add Slash Command extension via `@tiptap/suggestion` + ReactRenderer + tippy.
-- [ ] Build Chakra-based command list components:
+- [x] Add Slash Command extension via `@tiptap/suggestion` + ReactRenderer + tippy.
+- [x] Build Chakra-based command list components:
   - `EditorCommandList`
   - `EditorCommandItem`
 - [ ] Support keyboard navigation and escape behavior.
-- [ ] Scope commands by context (hide inside code blocks).
+- [x] Scope commands by context (hide inside code blocks).
 
 ## Phase 3 — Bubble Toolbar
 
 Goal: selection-based inline formatting menu.
 
-- [ ] Add Bubble Menu wrapper (TipTap BubbleMenu + tippy).
-- [ ] Expose inline actions (bold, italic, underline, strike, link, code).
-- [ ] Handle link editing UX with inline input.
+- [x] Add Bubble Menu wrapper (TipTap BubbleMenu + tippy).
+- [x] Expose inline actions (bold, italic, underline, strike, link, code).
+- [x] Handle link editing UX with inline input.
 
 ## Phase 4 — Drag Handle + Block Actions
 
 Goal: reliable block drag/reorder and block menu actions.
 
-- [ ] Replace custom drag logic with a stable drag handle implementation.
+- [x] Replace custom drag logic with a stable drag handle implementation.
   - Evaluate `tiptap-extension-global-drag-handle` for TipTap v3 compatibility.
   - If not compatible, port its ProseMirror plugin to v3.
 - [ ] Add “block actions” menu (duplicate, delete, turn into).
-- [ ] Keep visibility toggle in Editor Settings.
+- [x] Keep visibility toggle in Editor Settings.
 
 ## Phase 5 — Mentions & Suggestions
 
@@ -76,5 +76,5 @@ Goal: ensure content renders correctly when published.
 
 ## Current Status
 
-- Branch: `codex/editor-notion-like`
-- Drag handle iteration paused; will resume in Phase 4 using Novel-based approach.
+- Branch: `codex/studio-ux-fixes`
+- Focus: editor UX polish, toolbar declutter, and drag handle reliability.
