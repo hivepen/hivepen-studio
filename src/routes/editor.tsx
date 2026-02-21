@@ -58,7 +58,10 @@ function Editor() {
   const [hiveSignerAuth, setHiveSignerAuth] = useState(() => getHiveSignerAuth())
   const [hiveSignerLoginUrl] = useState(() => getHiveSignerLoginUrl())
   const hiveSignerAuthRef = useRef(hiveSignerAuth)
-  const [showBlockHandles, setShowBlockHandles] = useState(true)
+  const [showBlockHandles, setShowBlockHandles] = useLocalStorageState(
+    'hivepen.editor.showBlockHandles',
+    true
+  )
 
   const [postPayload, setPostPayload] = useState({
     title: '',
@@ -490,8 +493,6 @@ function Editor() {
                           { account: '', weight: '' },
                         ])
                       }
-                      showBlockHandles={showBlockHandles}
-                      onToggleBlockHandles={setShowBlockHandles}
                       onPublish={handlePublish}
                     />
                   </Tabs.Content>

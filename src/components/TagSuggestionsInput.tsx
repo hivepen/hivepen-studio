@@ -106,13 +106,12 @@ export default function TagSuggestionsInput({
     ids: { input: `tags_input_${uid}`, control: `tags_control_${uid}` },
     collection,
     value: [],
+    inputValue: tags.inputValue,
     allowCustomValue: true,
     selectionBehavior: 'clear',
     onInputValueChange: (details) => {
       const normalized = normalizeTag(details.inputValue)
-      if (normalized !== tags.inputValue) {
-        tags.setInputValue(normalized)
-      }
+      tags.setInputValue(normalized)
       filter(normalized)
     },
     onValueChange: (details) => {

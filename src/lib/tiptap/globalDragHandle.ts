@@ -180,7 +180,8 @@ const DragHandlePlugin = (options: {
       const relatedTarget = event.relatedTarget as Element | null
       const isInsideEditor =
         relatedTarget?.classList.contains('tiptap') ||
-        relatedTarget?.classList.contains('drag-handle')
+        relatedTarget?.classList.contains('drag-handle') ||
+        Boolean(relatedTarget && dragHandleElement?.contains(relatedTarget))
       if (isInsideEditor) return
     }
     hideDragHandle()
@@ -211,6 +212,8 @@ const DragHandlePlugin = (options: {
 
       dragHandleElement.addEventListener('dragstart', onDragHandleDragStart)
       dragHandleElement.addEventListener('drag', onDragHandleDrag)
+      dragHandleElement.addEventListener('mouseenter', showDragHandle)
+      dragHandleElement.addEventListener('mouseleave', hideDragHandle)
       hideDragHandle()
       if (!handleBySelector) {
         view?.dom?.parentElement?.appendChild(dragHandleElement)
@@ -224,6 +227,8 @@ const DragHandlePlugin = (options: {
           }
           dragHandleElement?.removeEventListener('drag', onDragHandleDrag)
           dragHandleElement?.removeEventListener('dragstart', onDragHandleDragStart)
+          dragHandleElement?.removeEventListener('mouseenter', showDragHandle)
+          dragHandleElement?.removeEventListener('mouseleave', hideDragHandle)
           dragHandleElement = null
           view?.dom?.parentElement?.removeEventListener('mouseout', hideHandleOnEditorOut)
         },
@@ -233,6 +238,15 @@ const DragHandlePlugin = (options: {
       handleDOMEvents: {
         mousemove: (view, event) => {
           if (!view.editable) return
+          if (event.target instanceof Element && event.target.closest('.drag-handle')) {
+            showDragHandle()
+            return
+          }
+          const handlesContainer = view.dom.closest('[data-show-handles]') as HTMLElement | null
+          if (handlesContainer?.dataset.showHandles === 'false') {
+            hideDragHandle()
+            return
+          }
           const node = nodeDOMAtCoords(
             {
               x: event.clientX + 50 + options.dragHandleWidth,

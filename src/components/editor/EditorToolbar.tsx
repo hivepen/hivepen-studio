@@ -1,4 +1,4 @@
-import { Box, HStack, Icon, IconButton } from '@chakra-ui/react'
+import { Box, HStack, Icon, IconButton, Menu } from '@chakra-ui/react'
 import { useEditorState } from '@tiptap/react'
 import type { Editor } from '@tiptap/react'
 import {
@@ -18,6 +18,7 @@ import {
   Underline,
   Undo2,
   Heading2,
+  MoreHorizontal,
 } from 'lucide-react'
 
 export default function EditorToolbar({
@@ -29,12 +30,33 @@ export default function EditorToolbar({
 }) {
   if (!editor) return null
 
-  useEditorState({
+  const toolbarState = useEditorState({
     editor,
-    selector: ({ editor: activeEditor }) => ({
-      selection: activeEditor.state.selection,
-      storedMarks: activeEditor.state.storedMarks,
-    }),
+    selector: ({ editor: activeEditor }) => {
+      const { state } = activeEditor
+      const hasSelection = !state.selection.empty
+      const marks = state.storedMarks ?? state.selection.$from.marks()
+      const isMarkActive = (markName: string) =>
+        hasSelection
+          ? activeEditor.isActive(markName)
+          : marks.some((mark) => mark.type.name === markName)
+
+      return {
+        isBold: isMarkActive('bold'),
+        isItalic: isMarkActive('italic'),
+        isUnderline: isMarkActive('underline'),
+        isStrike: isMarkActive('strike'),
+        isCode: isMarkActive('code'),
+        isLink: isMarkActive('link'),
+        isHeading2: activeEditor.isActive('heading', { level: 2 }),
+        isBlockquote: activeEditor.isActive('blockquote'),
+        isBulletList: activeEditor.isActive('bulletList'),
+        isOrderedList: activeEditor.isActive('orderedList'),
+        isCodeBlock: activeEditor.isActive('codeBlock'),
+        canUndo: activeEditor.can().undo(),
+        canRedo: activeEditor.can().redo(),
+      }
+    },
   })
 
   const handleAddLink = () => {
@@ -81,63 +103,51 @@ export default function EditorToolbar({
       <HStack gap={1} flexWrap="wrap">
         <ToolbarButton
           label="Bold"
-          active={editor.isActive('bold')}
+          active={toolbarState.isBold}
           onClick={() => editor.chain().focus().toggleBold().run()}
           icon={<Icon as={Bold} boxSize={4} />}
         />
         <ToolbarButton
           label="Italic"
-          active={editor.isActive('italic')}
+          active={toolbarState.isItalic}
           onClick={() => editor.chain().focus().toggleItalic().run()}
           icon={<Icon as={Italic} boxSize={4} />}
         />
         <ToolbarButton
           label="Underline"
-          active={editor.isActive('underline')}
+          active={toolbarState.isUnderline}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           icon={<Icon as={Underline} boxSize={4} />}
         />
         <ToolbarButton
           label="Strikethrough"
-          active={editor.isActive('strike')}
+          active={toolbarState.isStrike}
           onClick={() => editor.chain().focus().toggleStrike().run()}
           icon={<Icon as={Strikethrough} boxSize={4} />}
         />
         <ToolbarButton
           label="Heading 2"
-          active={editor.isActive('heading', { level: 2 })}
+          active={toolbarState.isHeading2}
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           icon={<Icon as={Heading2} boxSize={4} />}
         />
         <ToolbarButton
           label="Quote"
-          active={editor.isActive('blockquote')}
+          active={toolbarState.isBlockquote}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           icon={<Icon as={Quote} boxSize={4} />}
         />
         <ToolbarButton
           label="Bullet list"
-          active={editor.isActive('bulletList')}
+          active={toolbarState.isBulletList}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           icon={<Icon as={List} boxSize={4} />}
         />
         <ToolbarButton
           label="Numbered list"
-          active={editor.isActive('orderedList')}
+          active={toolbarState.isOrderedList}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           icon={<Icon as={ListOrdered} boxSize={4} />}
-        />
-        <ToolbarButton
-          label="Code"
-          active={editor.isActive('code')}
-          onClick={() => editor.chain().focus().toggleCode().run()}
-          icon={<Icon as={Code} boxSize={4} />}
-        />
-        <ToolbarButton
-          label="Code block"
-          active={editor.isActive('codeBlock')}
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          icon={<Icon as={Code2} boxSize={4} />}
         />
         <ToolbarButton
           label="Horizontal rule"
@@ -147,13 +157,14 @@ export default function EditorToolbar({
         />
         <ToolbarButton
           label="Link"
-          active={editor.isActive('link')}
+          active={toolbarState.isLink}
           onClick={handleAddLink}
           icon={<Icon as={Link2} boxSize={4} />}
         />
         <ToolbarButton
           label="Image"
           active={false}
+          disabled={!onInsertImage}
           onClick={() => onInsertImage?.()}
           icon={<Icon as={ImageIcon} boxSize={4} />}
         />
@@ -166,15 +177,45 @@ export default function EditorToolbar({
         <ToolbarButton
           label="Undo"
           active={false}
+          disabled={!toolbarState.canUndo}
           onClick={() => editor.chain().focus().undo().run()}
           icon={<Icon as={Undo2} boxSize={4} />}
         />
         <ToolbarButton
           label="Redo"
           active={false}
+          disabled={!toolbarState.canRedo}
           onClick={() => editor.chain().focus().redo().run()}
           icon={<Icon as={Redo2} boxSize={4} />}
         />
+        <Menu.Root positioning={{ placement: 'bottom-end' }}>
+          <Menu.Trigger asChild>
+            <IconButton
+              size="sm"
+              variant="ghost"
+              colorPalette="gray"
+              aria-label="More editor tools"
+            >
+              <Icon as={MoreHorizontal} boxSize={4} />
+            </IconButton>
+          </Menu.Trigger>
+          <Menu.Positioner>
+            <Menu.Content minW="200px" bg="bg.panel" borderColor="border">
+              <Menu.Item
+                value="inline-code"
+                onSelect={() => editor.chain().focus().toggleCode().run()}
+              >
+                Inline code
+              </Menu.Item>
+              <Menu.Item
+                value="code-block"
+                onSelect={() => editor.chain().focus().toggleCodeBlock().run()}
+              >
+                Code block
+              </Menu.Item>
+            </Menu.Content>
+          </Menu.Positioner>
+        </Menu.Root>
       </HStack>
     </Box>
   )
@@ -185,11 +226,13 @@ function ToolbarButton({
   active,
   onClick,
   icon,
+  disabled = false,
 }: {
   label: string
   active: boolean
   onClick: () => void
   icon: React.ReactElement
+  disabled?: boolean
 }) {
   return (
     <IconButton
@@ -198,6 +241,7 @@ function ToolbarButton({
       colorPalette="gray"
       aria-label={label}
       onClick={onClick}
+      disabled={disabled}
     >
       {icon}
     </IconButton>

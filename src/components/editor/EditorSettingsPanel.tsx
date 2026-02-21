@@ -1,4 +1,4 @@
-import { Box, Button, Heading, Input, SimpleGrid, Stack, Switch, Text } from '@chakra-ui/react'
+import { Box, Button, Heading, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import CommunityCombobox from '@/components/CommunityCombobox'
 import CustomCollapsible from '@/components/CustomCollapsible'
 import TagSuggestionsInput from '@/components/TagSuggestionsInput'
@@ -31,8 +31,6 @@ export default function EditorSettingsPanel({
   onBeneficiaryChange,
   onAddBeneficiary,
   onPublish,
-  showBlockHandles,
-  onToggleBlockHandles,
 }: {
   publishForm: PublishForm
   publishTags: string[]
@@ -45,8 +43,6 @@ export default function EditorSettingsPanel({
   onBeneficiaryChange: (index: number, field: keyof BeneficiaryEntry, value: string) => void
   onAddBeneficiary: () => void
   onPublish: () => void
-  showBlockHandles: boolean
-  onToggleBlockHandles: (nextValue: boolean) => void
 }) {
   const handleTagsChange = (nextTags: string[]) => {
     onChange('tags', nextTags.join(', '))
@@ -147,21 +143,6 @@ export default function EditorSettingsPanel({
         </Box>
       </CustomCollapsible>
 
-      <CustomCollapsible title="Editor preferences">
-        <Stack gap={3}>
-          <Switch.Root
-            checked={showBlockHandles}
-            onCheckedChange={(details) => onToggleBlockHandles(details.checked)}
-          >
-            <Switch.HiddenInput />
-            <Switch.Control />
-            <Switch.Label>Show block handles</Switch.Label>
-          </Switch.Root>
-          <Text fontSize="xs" color="fg.muted">
-            Toggles the always-visible drag handles used for block reordering.
-          </Text>
-        </Stack>
-      </CustomCollapsible>
     </Stack>
   )
 }
