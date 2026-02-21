@@ -1,0 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  background: var(--chakra-colors-bg);
+  color: var(--chakra-colors-fg);
+}
+
+code {
+  font-family: "IBM Plex Mono", Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.ProseMirror {
+  outline: none;
+  min-height: 320px;
+  color: var(--chakra-colors-fg);
+}
+
+.ProseMirror p {
+  margin: 0 0 0.75rem;
+}
+
+.ProseMirror h2 {
+  margin: 1.5rem 0 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid var(--chakra-colors-border);
+  margin: 1rem 0;
+  padding-left: 1rem;
+  color: var(--chakra-colors-fg-muted);
+}
+
+.ProseMirror ul,
+.ProseMirror ol {
+  margin: 0 0 0.75rem 1.25rem;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--chakra-colors-fg-muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.mention {
+  background: var(--chakra-colors-bg-muted);
+  border-radius: 6px;
+  padding: 0 4px;
+  color: var(--chakra-colors-fg);
+}
+
+.mention-menu {
+  background: var(--chakra-colors-bg-panel);
+  border: 1px solid var(--chakra-colors-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+  z-index: 20;
+}
+
+.mention-menu__item {
+  background: transparent;
+  border: none;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--chakra-colors-fg);
+  cursor: pointer;
+}
+
+.mention-menu__item:hover {
+  background: var(--chakra-colors-bg-muted);
+}
