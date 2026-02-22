@@ -10,7 +10,10 @@ export const TAG_PALETTES = [
   'purple',
   'pink',
 ] as const
-
+export const colorTokens = {
+  HIVE: ['#E41237'],
+  INLEO: ['#F4401F'],
+}
 export type TagPalette = (typeof TAG_PALETTES)[number]
 
 export type TagStyle = {
@@ -23,15 +26,15 @@ export type TagStyle = {
 
 export const TAG_STYLE_MAP: Record<string, TagStyle> = {
   // Hive ecosystem / projects
-  hive: { colorPalette: 'red' },
-  hiveio: { colorPalette: 'red' },
+  hive: { bg: colorTokens.HIVE[0], fg: 'white' },
+  hiveio: { bg: colorTokens.HIVE[0], fg: 'white' },
   hbd: { colorPalette: 'yellow' },
-  inleo: { bg: '#F4401F', fg: '#000' },
-  leofinance: { colorPalette: 'orange' },
-  leodex: { colorPalette: 'orange' },
-  leodao: { colorPalette: 'orange' },
+  inleo: { bg: colorTokens.INLEO[0], fg: 'black' },
+  leofinance: { bg: colorTokens.INLEO[0], fg:'white' },
+  leodex: { bg: colorTokens.INLEO[0], fg:'white' },
+  leodao: { bg: colorTokens.INLEO[0], fg:'white' },
   ecency: { bg: '#1C8BD9', fg: '#fff' },
-  peakd: { colorPalette: 'teal' },
+  peakd: { bg: '#00c7b7', fg: '#001b2b' },
   '3speak': { colorPalette: 'purple' },
   dbuzz: { colorPalette: 'blue' },
   dcity: { colorPalette: 'green' },
@@ -325,5 +328,5 @@ export const TAG_STYLE_MAP: Record<string, TagStyle> = {
 }
 
 export const TAG_REGEX_OVERRIDES: Array<{ pattern: RegExp; style: TagStyle }> = [
-  { pattern: /^hive(io)?$/i, style: { colorPalette: 'red' } },
+  { pattern: /^hive(io)?$/i, style: { bg: HIVE_RED, fg: 'white' } },
 ]
