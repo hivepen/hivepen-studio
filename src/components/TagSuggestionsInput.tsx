@@ -93,8 +93,8 @@ export default function TagSuggestionsInput({
     addOnPaste: true,
     delimiter: /[,\s]/,
     blurBehavior: 'add',
-    validate: (tag) => {
-      const normalized = normalizeTag(tag)
+    validate: (details) => {
+      const normalized = normalizeTag(details.inputValue)
       if (!normalized) return false
       return !value.includes(normalized)
     },
@@ -106,18 +106,15 @@ export default function TagSuggestionsInput({
     ids: { input: `tags_input_${uid}`, control: `tags_control_${uid}` },
     collection,
     value: [],
-    inputValue: tags.inputValue,
     allowCustomValue: true,
     selectionBehavior: 'clear',
     onInputValueChange: (details) => {
-      const normalized = normalizeTag(details.inputValue)
-      tags.setInputValue(normalized)
-      filter(normalized)
+      filter(details.inputValue)
     },
     onValueChange: (details) => {
       const selected = details.value[0]
       if (!selected) return
-      tags.addValue(selected)
+      tags.addValue(normalizeTag(selected))
       tags.setInputValue('')
     },
   })

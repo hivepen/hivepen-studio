@@ -1,6 +1,7 @@
 import { Box, Button, Heading, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react'
 import CommunityCombobox from '@/components/CommunityCombobox'
 import CustomCollapsible from '@/components/CustomCollapsible'
+import DevOnly from '@/components/DevOnly'
 import TagSuggestionsInput from '@/components/TagSuggestionsInput'
 import WeightSlider from '@/components/WeightSlider'
 import { ClientOnly } from '@tanstack/react-router'
@@ -142,6 +143,13 @@ export default function EditorSettingsPanel({
           </Button>
         </Box>
       </CustomCollapsible>
+
+      <DevOnly json={{
+        publishForm,
+        publishTags,
+        beneficiaries,
+        publishReady,
+      }} />
 
     </Stack>
   )
