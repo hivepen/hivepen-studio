@@ -6,6 +6,7 @@ import usePostsQuery from '@/features/posts/usePostsQuery'
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
 import { useMemo, useState } from 'react'
+import DevOnly from '@/components/DevOnly'
 
 export const Route = createFileRoute('/communities/$communityId')({
   component: CommunityPage,
@@ -119,6 +120,19 @@ function CommunityPage() {
       {postsQuery.isError && (
         <Text color="fg.error">Failed to load community posts.</Text>
       )}
+
+      <DevOnly
+        summary="Community debug"
+        json={{
+          communityId,
+          community: communityQuery.data,
+          postsCount: posts.length,
+          postsPreview: posts.slice(0, 5),
+          isFetching: postsQuery.isFetching,
+          isError: postsQuery.isError,
+          localStats,
+        }}
+      />
     </Stack>
   )
 }

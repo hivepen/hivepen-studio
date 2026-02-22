@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Box, Heading, Stack, Switch, Text } from '@chakra-ui/react'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
+import DevOnly from '@/components/DevOnly'
 
 export const Route = createFileRoute('/settings')({
   component: Settings,
@@ -41,6 +42,13 @@ function Settings() {
           </Text>
         </Stack>
       </Box>
+
+      <DevOnly
+        summary="Settings debug"
+        json={{
+          showBlockHandles,
+        }}
+      />
     </Box>
   )
 }

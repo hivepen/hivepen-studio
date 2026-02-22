@@ -6,6 +6,7 @@ import PostActions from '@/features/posts/PostActions'
 import usePostsQuery from '@/features/posts/usePostsQuery'
 import useProfileQuery from '@/features/profile/useProfileQuery'
 import { useMemo, useState } from 'react'
+import DevOnly from '@/components/DevOnly'
 
 export const Route = createFileRoute('/profile/$accountname')({
   component: ProfilePage,
@@ -125,6 +126,20 @@ function ProfilePage() {
           }
         />
       </Box>
+
+      <DevOnly
+        summary="Profile debug"
+        json={{
+          accountname,
+          username,
+          profile: profileQuery.data,
+          postsCount: posts.length,
+          postsPreview: posts.slice(0, 5),
+          isFetching: postsQuery.isFetching,
+          isError: postsQuery.isError,
+          localStats,
+        }}
+      />
     </Stack>
   )
 }

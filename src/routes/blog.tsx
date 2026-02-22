@@ -6,6 +6,7 @@ import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
 import usePostsQuery from '@/features/posts/usePostsQuery'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
+import DevOnly from '@/components/DevOnly'
 
 export const Route = createFileRoute('/blog')({
   component: MyBlogPage,
@@ -112,6 +113,18 @@ function MyBlogPage() {
       {postsQuery.isError && (
         <Text color="fg.error">Failed to load your posts.</Text>
       )}
+
+      <DevOnly
+        summary="Blog debug"
+        json={{
+          account,
+          postsCount: posts.length,
+          postsPreview: posts.slice(0, 5),
+          isFetching: postsQuery.isFetching,
+          isError: postsQuery.isError,
+          localStats,
+        }}
+      />
     </Stack>
   )
 }
