@@ -1,10 +1,12 @@
 import { Badge, Text } from '@chakra-ui/react'
 import {
+  simpleicon,
   TAG_PALETTES,
   TAG_REGEX_OVERRIDES,
   TAG_STYLE_MAP,
   TagStyle,
 } from '@/lib/posts/tagColorConfig'
+import { Avatar } from './ui/avatar'
 
 function hashStringToIndex(value: string, modulo: number) {
   let hash = 5381
@@ -22,13 +24,14 @@ export default function PostTag({ tag }: { tag: string }) {
     pattern.test(normalizedTag),
   )?.style
   const resolvedStyle: TagStyle | undefined = mappedStyle ?? regexStyle
+  if(resolvedStyle) resolvedStyle.avatar ||= simpleicon(normalizedKey)
   const colorPalette =
     resolvedStyle?.colorPalette ??
     TAG_PALETTES[hashStringToIndex(normalizedTag, TAG_PALETTES.length)]
-  const usesCustomColors =
-    Boolean(resolvedStyle?.bg) ||
-    Boolean(resolvedStyle?.fg) ||
-    Boolean(resolvedStyle?.border)
+  const usesCustomColors = !Boolean(resolvedStyle?.avatar) && 
+      Boolean(resolvedStyle?.bg) ||
+      Boolean(resolvedStyle?.fg) ||
+      Boolean(resolvedStyle?.border)
 
   return (
     <Badge
@@ -38,8 +41,19 @@ export default function PostTag({ tag }: { tag: string }) {
       color={resolvedStyle?.fg}
       borderColor={resolvedStyle?.border}
       borderWidth={resolvedStyle?.border ? '1px' : undefined}
+      textTransform="uppercase"
+
     >
-      <Text opacity={0.2}>#</Text>
+      {/* <img width="16" height="16" src={simpleicon(normalizedTag)} /> */}
+      {resolvedStyle?.avatar ? (
+        <Avatar shape="square" bg="none" src={resolvedStyle?.avatar??simpleicon(normalizedTag)} size="xs" w={3} h={3} fallback={<Text color={resolvedStyle?.fg} opacity={0.4}>
+          #
+        </Text>} />
+      ) : (
+        <Text color={resolvedStyle?.fg} opacity={0.4}>
+          #
+        </Text>
+      )}
       {normalizedTag}
     </Badge>
   )

@@ -1,7 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Box, Heading, Stack, Switch, Text } from '@chakra-ui/react'
+import { Box, Heading, HStack, Stack, Switch, Text } from '@chakra-ui/react'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import DevOnly from '@/components/DevOnly'
+import PostTag from '@/components/PostTag'
+import { TAG_STYLE_MAP } from '@/lib/posts/tagColorConfig'
 
 export const Route = createFileRoute('/settings')({
   component: Settings,
@@ -49,6 +51,20 @@ function Settings() {
           showBlockHandles,
         }}
       />
+      <DevOnly>
+        <Box mt={8}>
+          <Heading size="sm" mb={3}>
+            Tag style preview
+          </Heading>
+          <HStack gap={2} wrap="wrap">
+            {Object.keys(TAG_STYLE_MAP)
+              .sort()
+              .map((tag) => (
+                <PostTag key={tag} tag={tag} />
+              ))}
+          </HStack>
+        </Box>
+      </DevOnly>
     </Box>
   )
 }
