@@ -13,6 +13,8 @@ const config = defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      https: 'node:https',
+      http: 'node:http',
     },
   },
   plugins: [

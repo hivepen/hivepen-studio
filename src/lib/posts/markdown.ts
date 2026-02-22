@@ -1,5 +1,6 @@
 import { marked } from 'marked'
-import DOMPurify from 'isomorphic-dompurify'
+import createDOMPurify from 'dompurify'
+import sanitizeHtml from 'sanitize-html'
 
 const linkifyMentions = (text: string) =>
   text.replace(/(^|[^\\w/])@([a-z0-9.-]+)/gi, '$1[@$2](/profile/$2)')
@@ -115,6 +116,64 @@ marked.setOptions({
   mangle: false,
 })
 
+let domPurifyInstance: ReturnType<typeof createDOMPurify> | null = null
+
+const getDomPurify = () => {
+  if (typeof window === 'undefined') return null
+  if (!domPurifyInstance) domPurifyInstance = createDOMPurify(window)
+  return domPurifyInstance
+}
+
+const sanitizeClient = (html: string) =>
+  getDomPurify()?.sanitize(html, {
+    ADD_TAGS: ['iframe', 'details', 'summary'],
+    ADD_ATTR: [
+      'allow',
+      'allowfullscreen',
+      'frameborder',
+      'loading',
+      'scrolling',
+      'src',
+      'title',
+      'class',
+    ],
+    ALLOWED_URI_REGEXP:
+      /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.-]|$))/i,
+  }) ?? html
+
+const sanitizeServer = (html: string) =>
+  sanitizeHtml(html, {
+    allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+      'iframe',
+      'details',
+      'summary',
+    ]),
+    allowedAttributes: {
+      ...sanitizeHtml.defaults.allowedAttributes,
+      iframe: [
+        'allow',
+        'allowfullscreen',
+        'frameborder',
+        'loading',
+        'scrolling',
+        'src',
+        'title',
+      ],
+      div: ['class'],
+      span: ['class'],
+      p: ['class'],
+      details: ['class'],
+      summary: ['class'],
+      img: ['src', 'alt', 'title', 'loading', 'width', 'height', 'class'],
+      a: ['href', 'name', 'target', 'rel', 'class'],
+    },
+    allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+    allowedSchemesByTag: {
+      img: ['http', 'https', 'data'],
+    },
+    allowProtocolRelative: true,
+  })
+
 export const renderHiveMarkdown = (content: string) => {
   const preprocessed = preprocessBlocks(content ?? '')
   const protectedHtml = protectHtmlTags(preprocessed)
@@ -127,18 +186,7 @@ export const renderHiveMarkdown = (content: string) => {
   const html = marked.parse(safeSource)
   const withProxy = injectImageProxy(html)
   const withEmbeds = injectEmbeds(withProxy)
-  return DOMPurify.sanitize(withEmbeds, {
-    ADD_TAGS: ['iframe', 'details', 'summary'],
-    ADD_ATTR: [
-      'allow',
-      'allowfullscreen',
-      'frameborder',
-      'loading',
-      'scrolling',
-      'src',
-      'title',
-      'class',
-    ],
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.-]|$))/i,
-  })
+  return import.meta.env.SSR
+    ? sanitizeServer(withEmbeds)
+    : sanitizeClient(withEmbeds)
 }
