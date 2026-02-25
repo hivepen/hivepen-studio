@@ -45,6 +45,7 @@ function PostDetailPage() {
     return (
       <Stack gap={4} p={6}>
         <Button asChild variant="ghost" size="sm" alignSelf="flex-start">
+          {/* TODO: make search query params optional so this error goes away*/}
           <Link to="/search">
             <HStack gap={2}>
               <ArrowLeft />
