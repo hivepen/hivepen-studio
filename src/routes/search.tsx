@@ -1,4 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { zodValidator } from '@tanstack/zod-adapter'
+import { z } from 'zod'
 import {
   Badge,
   Box,
@@ -21,17 +23,21 @@ import usePostsQuery from '@/features/posts/usePostsQuery'
 import { Field } from '@/components/ui/field'
 import DevOnly from '@/components/DevOnly'
 
+const searchSchema = z
+  .object({
+    sort: z.enum(['trending', 'hot', 'created', 'payout']).optional(),
+    tag: z.string().optional(),
+    community: z.string().optional(),
+    author: z.string().optional(),
+    dateFrom: z.string().optional(),
+    dateTo: z.string().optional(),
+    scope: z.enum(['all', 'user']).optional(),
+  })
+  .default({})
+
 export const Route = createFileRoute('/search')({
   component: Search,
-  validateSearch: (search: Record<string, unknown>) => ({
-    sort: typeof search.sort === 'string' ? search.sort : undefined,
-    tag: typeof search.tag === 'string' ? search.tag : undefined,
-    community: typeof search.community === 'string' ? search.community : undefined,
-    author: typeof search.author === 'string' ? search.author : undefined,
-    dateFrom: typeof search.dateFrom === 'string' ? search.dateFrom : undefined,
-    dateTo: typeof search.dateTo === 'string' ? search.dateTo : undefined,
-    scope: typeof search.scope === 'string' ? search.scope : undefined,
-  }),
+  validateSearch: zodValidator(searchSchema),
 })
 
 type SearchFilters = {
