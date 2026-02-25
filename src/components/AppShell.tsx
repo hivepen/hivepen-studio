@@ -26,13 +26,14 @@ import {
   Settings,
   Users,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { getHiveKeychain, signLogin } from '@/lib/hive/keychain'
 import { fetchAccount } from '@/lib/hive/client'
 import AccountConnectDialog from './AccountConnectDialog'
 import { Avatar } from '@/components/ui/avatar'
+import { CONNECT_ACCOUNT_DIALOG_EVENT } from '@/lib/ui/connectAccountDialog'
 
 type NavItem = {
   label: string
@@ -114,6 +115,20 @@ export default function AppShell({
     if (segments.length === 0) return ['Dashboard']
     return segments.map((segment) => map[segment] ?? segment)
   }, [pathname])
+
+  useEffect(() => {
+    const handleOpenConnectDialog = () => setShowConnectDialog(true)
+    window.addEventListener(
+      CONNECT_ACCOUNT_DIALOG_EVENT,
+      handleOpenConnectDialog
+    )
+    return () => {
+      window.removeEventListener(
+        CONNECT_ACCOUNT_DIALOG_EVENT,
+        handleOpenConnectDialog
+      )
+    }
+  }, [])
 
   const loadProfileImage = async (username: string) => {
     try {
