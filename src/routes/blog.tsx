@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { Box, Button, Heading, Stack, Text } from '@chakra-ui/react'
 import { useMemo, useState } from 'react'
 
@@ -7,6 +7,7 @@ import PostActions from '@/features/posts/PostActions'
 import usePostsQuery from '@/features/posts/usePostsQuery'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import DevOnly from '@/components/DevOnly'
+import { openConnectAccountDialog } from '@/lib/ui/connectAccountDialog'
 
 export const Route = createFileRoute('/blog')({
   component: MyBlogPage,
@@ -61,8 +62,12 @@ function MyBlogPage() {
           <Text color="fg.muted" mb={3}>
             Connect a Hive account to see your posts here.
           </Text>
-          <Button asChild variant="outline" colorPalette="gray">
-            <Link to="/settings">Connect account</Link>
+          <Button
+            variant="outline"
+            colorPalette="gray"
+            onClick={openConnectAccountDialog}
+          >
+            Connect account
           </Button>
         </Box>
       </Stack>

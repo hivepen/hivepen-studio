@@ -1,14 +1,10 @@
 import {
-  AlertDescription,
-  AlertRoot,
-  AlertTitle,
   Box,
   Button,
+  CloseButton,
   Dialog,
   Field,
   HStack,
-  Icon,
-  Image,
   Input,
   InputGroup,
   Link,
@@ -16,28 +12,15 @@ import {
   Spacer,
   Stack,
   Text,
-  type IconProps,
 } from '@chakra-ui/react'
 import { useState } from 'react'
 import { Alert } from './ui/alert'
-import { KeyRoundIcon } from 'lucide-react'
 import { Avatar } from './ui/avatar'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { Tooltip } from './ui/tooltip'
+import HiveKeychainIcon from './hive/HiveKeychainIcon'
 
-export const HIVE_KEYCHAIN_ICON_URL = 'https://hive-keychain.com/favicon.png'
 
-type HiveKeychainIconProps = Omit<IconProps, 'children'> & {
-  size?: IconProps['size']
-}
-
-function HiveKeychainIcon({ size = 'md', ...props }: HiveKeychainIconProps) {
-  return (
-    <Icon size={size} {...props}>
-      <Image src={HIVE_KEYCHAIN_ICON_URL} alt="Hive Keychain" />
-    </Icon>
-  )
-}
 
 export default function AccountConnectDialog({
   open,
@@ -61,6 +44,8 @@ export default function AccountConnectDialog({
         <Dialog.Content bg="bg.panel" borderColor="border">
           <Dialog.Header>
             <Dialog.Title>Connect Hive account</Dialog.Title>
+            <Spacer/>
+            <CloseButton onClick={onClose} disabled={isConnecting} />
           </Dialog.Header>
           <Dialog.Body>
             <Stack gap={4}>
@@ -91,9 +76,9 @@ export default function AccountConnectDialog({
           <Dialog.Footer gap={2} asChild>
             <Stack>
               <HStack w="full">
-                <Button variant="outline" onClick={onClose} disabled={isConnecting}>
+                {/* <Button variant="outline" onClick={onClose} disabled={isConnecting}>
                   Cancel
-                </Button>
+                </Button> */}
                 <Spacer />
                 <Tooltip
                   content={
@@ -102,19 +87,23 @@ export default function AccountConnectDialog({
                     </Text>
                   }
                 >
-                  <Button
-                    colorPalette="orange"
-                    onClick={() => onConnect(username)}
-                    loading={isConnecting}
-                    disabled={!keychainAvailable || !username.trim()}
-                  >
-                    <HiveKeychainIcon />
-                    Connect
-                  </Button>
+                  <Show when={keychainAvailable}>
+                    <Button
+                      colorPalette="gray"
+                      size="md"
+                      variant="surface"
+                      onClick={() => onConnect(username)}
+                      loading={isConnecting}
+                      disabled={!keychainAvailable || !username.trim()}
+                    >
+                      <HiveKeychainIcon />
+                      Connect
+                    </Button>
+                  </Show>
               </Tooltip>
               </HStack>
 
-            <Show when={!window.hive_keychain}>
+            <Show when={!keychainAvailable}>
               <Alert title={<Text>
                 HiveKeychain not detected
               </Text>} status="warning" colorPalette={"yellow"}>
