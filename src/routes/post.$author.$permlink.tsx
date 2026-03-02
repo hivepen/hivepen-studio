@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Badge, Box, Button, HStack, Stack, Text } from '@chakra-ui/react'
+import { Badge, Box, Button, HStack, Stack, Tabs, Text } from '@chakra-ui/react'
 import { ArrowLeft } from 'lucide-react'
 import usePostQuery from '@/features/posts/usePostQuery'
 import PostActions from '@/features/posts/PostActions'
 import usePostCommentsQuery from '@/features/posts/usePostCommentsQuery'
 import PostContent from '@/components/posts/PostContent'
 import PostPayoutSummary from '@/components/posts/PostPayoutSummary'
+import PostTag from '@/components/PostTag'
 import DevOnly from '@/components/DevOnly'
 import { renderHiveMarkdown } from '@/lib/posts/markdown'
 
@@ -122,17 +123,88 @@ function PostDetailPage() {
         ) : null}
       </Stack>
 
-      <Box
-        border="1px solid"
-        borderColor="border"
-        borderRadius="12px"
-        bg="bg.panel"
-        p={{ base: 4, md: 6 }}
+      <Tabs.Root
+        defaultValue="post"
+        variant="outline"
+        display="flex"
+        flexDirection="column"
+        gap={4}
       >
-        <Box maxW="72ch" mx="auto">
-          <PostContent body={post.body} />
-        </Box>
-      </Box>
+        <Tabs.List>
+          <Tabs.Trigger value="post">Post</Tabs.Trigger>
+          <Tabs.Trigger value="publishing">Publishing</Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Content value="post">
+          <Box
+            border="1px solid"
+            borderColor="border"
+            borderRadius="12px"
+            bg="bg.panel"
+            p={{ base: 4, md: 6 }}
+          >
+            <Box maxW="72ch" mx="auto">
+              <PostContent body={post.body} />
+            </Box>
+          </Box>
+        </Tabs.Content>
+        <Tabs.Content value="publishing">
+          <Box
+            border="1px solid"
+            borderColor="border"
+            borderRadius="12px"
+            bg="bg.panel"
+            p={{ base: 4, md: 6 }}
+          >
+            <Stack gap={4} maxW="72ch" mx="auto">
+              <Stack gap={2}>
+                <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
+                  App
+                </Text>
+                {post.app ? <PostTag tag={`app:${post.app}`} /> : (
+                  <Text fontSize="sm" color="fg.muted">Unknown</Text>
+                )}
+              </Stack>
+
+              <Stack gap={2}>
+                <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
+                  Timing
+                </Text>
+                <Text fontSize="sm" color="fg.muted">
+                  Created: {new Date(post.created).toLocaleString()}
+                </Text>
+                {post.updated ? (
+                  <Text fontSize="sm" color="fg.muted">
+                    Updated: {new Date(post.updated).toLocaleString()}
+                  </Text>
+                ) : null}
+                {post.payoutAt ? (
+                  <Text fontSize="sm" color="fg.muted">
+                    Payout: {new Date(post.payoutAt).toLocaleString()}
+                  </Text>
+                ) : null}
+              </Stack>
+
+              {post.beneficiaries && post.beneficiaries.length > 0 ? (
+                <Stack gap={2}>
+                  <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
+                    Beneficiaries
+                  </Text>
+                  <Stack gap={1}>
+                    {post.beneficiaries.map((beneficiary) => (
+                      <HStack key={beneficiary.account} justify="space-between">
+                        <Text fontSize="sm">@{beneficiary.account}</Text>
+                        <Text fontSize="sm" color="fg.muted">
+                          {(beneficiary.weight / 100).toFixed(2)}%
+                        </Text>
+                      </HStack>
+                    ))}
+                  </Stack>
+                </Stack>
+              ) : null}
+            </Stack>
+          </Box>
+        </Tabs.Content>
+      </Tabs.Root>
 
       <PostActions
         author={post.author}

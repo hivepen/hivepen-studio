@@ -14,7 +14,9 @@ import {
   Select,
   createListCollection,
 } from '@chakra-ui/react'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react'
+import { searchAccounts } from '@/lib/hive/account'
 
 import CommunityCombobox from '@/components/CommunityCombobox'
 import PostsListSection from '@/features/posts/PostsListSection'
@@ -223,6 +225,33 @@ function Search() {
     scope === 'user' && username.trim().length > 0
       ? username.trim()
       : filters.author.trim() || undefined
+  const [authorInput, setAuthorInput] = useState(
+    scope === 'user' ? username : filters.author
+  )
+  const [debouncedAuthor, setDebouncedAuthor] = useState(authorInput)
+  useEffect(() => {
+    setAuthorInput(scope === 'user' ? username : filters.author)
+  }, [scope, username, filters.author])
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setDebouncedAuthor(authorInput.trim())
+    }, 300)
+    return () => clearTimeout(handle)
+  }, [authorInput])
+  useEffect(() => {
+    if (scope === 'user') {
+      if (debouncedAuthor === username) return
+      setUsername(debouncedAuthor)
+      syncQueryParams(filters, 'user', debouncedAuthor)
+      return
+    }
+    if (debouncedAuthor === filters.author) return
+    setFilters((prev) => {
+      const next = { ...prev, author: debouncedAuthor }
+      syncQueryParams(next, scope)
+      return next
+    })
+  }, [debouncedAuthor, scope, username, filters, setUsername, syncQueryParams])
   const hasAuthor = Boolean(scopedAuthor)
   const canSearch = Boolean(activeTag) || hasAuthor
 
@@ -234,6 +263,13 @@ function Search() {
     dateFrom: filters.dateFrom,
     dateTo: filters.dateTo,
     limit: 20,
+  })
+
+  const authorSuggestionsQuery = useQuery({
+    queryKey: ['users', 'suggest', debouncedAuthor],
+    queryFn: () => searchAccounts(debouncedAuthor, 6),
+    enabled: debouncedAuthor.length > 1,
+    staleTime: 5 * 60 * 1000,
   })
 
 
@@ -400,22 +436,60 @@ function Search() {
               <Field label="Author">
                 <Input
                   placeholder="accountname"
-                  value={scope === 'user' ? username : filters.author}
-                  onChange={(event) =>
-                    scope === 'user'
-                      ? (() => {
-                          setUsername(event.target.value)
-                          syncQueryParams(filters, 'user', event.target.value)
-                        })()
-                      : setFilters((prev) => {
-                          const next = { ...prev, author: event.target.value }
-                          syncQueryParams(next, scope)
-                          return next
-                        })
-                  }
+                  value={authorInput}
+                  onChange={(event) => setAuthorInput(event.target.value)}
                   bg="bg.panel"
                   borderColor="border"
                 />
+                {debouncedAuthor.length > 1 ? (
+                  <Box
+                    border="1px solid"
+                    borderColor="border"
+                    borderRadius="12px"
+                    bg="bg.panel"
+                    mt={2}
+                    p={2}
+                  >
+                    {authorSuggestionsQuery.isFetching ? (
+                      <Text fontSize="xs" color="fg.muted">
+                        Searching…
+                      </Text>
+                    ) : authorSuggestionsQuery.data &&
+                      authorSuggestionsQuery.data.length > 0 ? (
+                      <Stack gap={2}>
+                        {authorSuggestionsQuery.data.map((user) => (
+                          <HStack
+                            key={user.name}
+                            justify="space-between"
+                            wrap="wrap"
+                          >
+                            <Link
+                              to="/profile/$accountname"
+                              params={{ accountname: user.name }}
+                              style={{ textDecoration: 'none' }}
+                            >
+                              <Text fontSize="sm" fontWeight="600">
+                                @{user.name}
+                              </Text>
+                            </Link>
+                            <Button
+                              size="xs"
+                              variant="outline"
+                              colorPalette="gray"
+                              onClick={() => setAuthorInput(user.name)}
+                            >
+                              Use
+                            </Button>
+                          </HStack>
+                        ))}
+                      </Stack>
+                    ) : (
+                      <Text fontSize="xs" color="fg.muted">
+                        No users found.
+                      </Text>
+                    )}
+                  </Box>
+                ) : null}
               </Field>
               <Field label="From">
                 <Input
@@ -494,9 +568,9 @@ function Search() {
         posts={cardResults}
         loading={postsQuery.isFetching}
         emptyMessage={
-          activeTag
+          activeTag || hasAuthor
             ? 'No posts found for the current filters.'
-            : 'Select a community or tag to start searching.'
+            : 'Select a community, tag, or author to start searching.'
         }
         renderActions={(post) =>
           post.permlink ? (

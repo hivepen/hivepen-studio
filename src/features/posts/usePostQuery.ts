@@ -16,17 +16,27 @@ type PostViewModel = {
   title: string
   body: string
   created: string
+  updated?: string
   community?: string
   tags: string[]
   votes?: number
   comments?: number
   category?: string
+  app?: string
+  payoutAt?: string
+  beneficiaries?: Entry['beneficiaries']
   payout: PostPayoutSummary
 }
 
 const resolveTags = (metadata: Entry['json_metadata']) => {
   if (!metadata || !Array.isArray(metadata.tags)) return []
   return metadata.tags
+}
+
+const resolveApp = (metadata: Entry['json_metadata']) => {
+  if (!metadata || typeof metadata.app !== 'string') return undefined
+  const [app] = metadata.app.split('/')
+  return app?.trim() || undefined
 }
 
 const buildPayoutSummary = (entry: Entry): PostPayoutSummary => {
@@ -56,11 +66,15 @@ const mapEntryToPost = (entry: Entry): PostViewModel => {
     title: entry.title,
     body: entry.body,
     created: entry.created,
+    updated: entry.updated,
     community: entry.community,
     tags: resolveTags(entry.json_metadata),
     votes,
     comments: entry.children,
     category: entry.category,
+    app: resolveApp(entry.json_metadata),
+    payoutAt: entry.payout_at,
+    beneficiaries: entry.beneficiaries,
     payout: buildPayoutSummary(entry),
   }
 }

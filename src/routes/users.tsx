@@ -11,11 +11,11 @@ import {
   Card,
   Skeleton,
 } from '@chakra-ui/react'
-import { getSearchAccountQueryOptions } from '@ecency/sdk'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
+import { searchAccounts } from '@/lib/hive/account'
 import { Field } from '@/components/ui/field'
 import DevOnly from '@/components/DevOnly'
 
@@ -33,8 +33,10 @@ function Users() {
   }, [query])
 
   const usersQuery = useQuery({
-    ...getSearchAccountQueryOptions(debouncedQuery, 20, false),
+    queryKey: ['users', 'search', debouncedQuery],
+    queryFn: () => searchAccounts(debouncedQuery, 20),
     enabled: debouncedQuery.length > 1,
+    staleTime: 5 * 60 * 1000,
   })
 
   const results = useMemo(() => usersQuery.data ?? [], [usersQuery.data])
