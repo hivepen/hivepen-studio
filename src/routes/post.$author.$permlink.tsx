@@ -5,6 +5,7 @@ import usePostQuery from '@/features/posts/usePostQuery'
 import PostActions from '@/features/posts/PostActions'
 import usePostCommentsQuery from '@/features/posts/usePostCommentsQuery'
 import PostContent from '@/components/posts/PostContent'
+import PostPayoutSummary from '@/components/posts/PostPayoutSummary'
 import DevOnly from '@/components/DevOnly'
 import { renderHiveMarkdown } from '@/lib/posts/markdown'
 
@@ -141,9 +142,15 @@ function PostDetailPage() {
         onCommentSuccess={() => commentsQuery.refetch()}
       />
 
+      <PostPayoutSummary
+        pending={post.payout.pending}
+        total={post.payout.total}
+        isPaidOut={post.payout.isPaidOut}
+      />
+
       <DevOnly
         summary="Post debug"
-        json={{ raw: post.body, rendered: renderedBody }}
+        json={{ raw: post.body, rendered: renderedBody, payout: post.payout }}
       />
 
       <Box
