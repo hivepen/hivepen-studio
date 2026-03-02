@@ -7,13 +7,27 @@ const FALLBACK_BASE_URL = 'https://hive.blog/'
 const ensureTrailingSlash = (url: string) =>
   url.endsWith('/') ? url : `${url}/`
 
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1'])
+
+const normalizeBaseUrl = (value: string) => {
+  try {
+    const parsed = new URL(value)
+    if (LOCAL_HOSTS.has(parsed.hostname)) {
+      return FALLBACK_BASE_URL
+    }
+    return ensureTrailingSlash(parsed.origin)
+  } catch {
+    return FALLBACK_BASE_URL
+  }
+}
+
 const resolveBaseUrl = () => {
   if (typeof window !== 'undefined' && window.location?.origin) {
-    return ensureTrailingSlash(window.location.origin)
+    return normalizeBaseUrl(window.location.origin)
   }
 
   if (env.SERVER_URL) {
-    return ensureTrailingSlash(env.SERVER_URL)
+    return normalizeBaseUrl(env.SERVER_URL)
   }
 
   return FALLBACK_BASE_URL

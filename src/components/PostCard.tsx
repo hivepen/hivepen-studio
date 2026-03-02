@@ -17,6 +17,10 @@ export type PostCardProps = {
   createdAt?: string
   comments?: number
   votes?: number
+  payout?: {
+    pending: string
+    total: string
+  }
   voteDetails?: VoteDetail[]
   coverUrl?: string
   permlink?: string
@@ -33,10 +37,12 @@ export default function PostCard({
   createdAt,
   coverUrl,
   actions,
+  payout,
   permlink,
 }: PostCardProps) {
   const titleMeta = useTitleMeta(title)
   const filteredTags = tags.filter((tag) => !isCommunityId(tag))
+  const hasPayout = Boolean(payout?.pending || payout?.total)
   return (
     <Card.Root
       variant="outline"
@@ -103,7 +109,17 @@ export default function PostCard({
             </ScrollArea.Root>
           ) : null}
         </Card.Body>
-        <Card.Footer pt={3}>{actions}</Card.Footer>
+        <Card.Footer pt={3}>
+          <Stack gap={2} w="full">
+            {hasPayout ? (
+              <HStack justify="space-between" fontSize="xs" color="fg.muted">
+                <Text>Pending: {payout?.pending}</Text>
+                <Text>Total: {payout?.total}</Text>
+              </HStack>
+            ) : null}
+            {actions}
+          </Stack>
+        </Card.Footer>
       </Stack>
     </Card.Root>
   )

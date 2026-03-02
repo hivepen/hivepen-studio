@@ -264,6 +264,7 @@ function Search() {
         permlink: post.permlink,
         votes: overrides.votes ?? post.votes,
         comments: overrides.comments ?? post.comments,
+        payout: post.payout,
       }
     })
   }, [postsQuery.data, localStats])

@@ -1,4 +1,5 @@
 import { hiveClient } from './client'
+import { sumAssetStrings } from './payouts'
 
 type RankedPost = {
   author: string
@@ -12,6 +13,9 @@ type RankedPost = {
   stats?: { total_votes?: number }
   active_votes?: Array<{ voter: string }>
   json_metadata?: string | { tags?: string[] }
+  pending_payout_value?: string
+  author_payout_value?: string
+  curator_payout_value?: string
 }
 
 export type SearchResult = {
@@ -26,6 +30,10 @@ export type SearchResult = {
   coverUrl?: string
   votes?: number
   comments?: number
+  payout?: {
+    pending: string
+    total: string
+  }
 }
 
 export type RankedSort =
@@ -74,6 +82,29 @@ export async function searchRankedPosts({
       typeof imageList[0] === 'string' ? imageList[0] : undefined
     const summary =
       typeof metadata?.description === 'string' ? metadata.description : undefined
+    const pendingPayout =
+      typeof post.pending_payout_value === 'string'
+        ? post.pending_payout_value
+        : undefined
+    const authorPayout =
+      typeof post.author_payout_value === 'string'
+        ? post.author_payout_value
+        : undefined
+    const curatorPayout =
+      typeof post.curator_payout_value === 'string'
+        ? post.curator_payout_value
+        : undefined
+    const totalPayout =
+      authorPayout && curatorPayout
+        ? sumAssetStrings(authorPayout, curatorPayout)
+        : pendingPayout
+    const payout =
+      pendingPayout || totalPayout
+        ? {
+            pending: pendingPayout ?? totalPayout ?? '',
+            total: totalPayout ?? pendingPayout ?? '',
+          }
+        : undefined
 
     return {
       author: post.author,
@@ -85,6 +116,7 @@ export async function searchRankedPosts({
       communityTitle: post.community_title,
       summary,
       coverUrl,
+      payout,
       votes:
         typeof post.net_votes === 'number'
           ? post.net_votes
@@ -133,6 +165,29 @@ export async function searchAccountPosts({
       typeof imageList[0] === 'string' ? imageList[0] : undefined
     const summary =
       typeof metadata?.description === 'string' ? metadata.description : undefined
+    const pendingPayout =
+      typeof post.pending_payout_value === 'string'
+        ? post.pending_payout_value
+        : undefined
+    const authorPayout =
+      typeof post.author_payout_value === 'string'
+        ? post.author_payout_value
+        : undefined
+    const curatorPayout =
+      typeof post.curator_payout_value === 'string'
+        ? post.curator_payout_value
+        : undefined
+    const totalPayout =
+      authorPayout && curatorPayout
+        ? sumAssetStrings(authorPayout, curatorPayout)
+        : pendingPayout
+    const payout =
+      pendingPayout || totalPayout
+        ? {
+            pending: pendingPayout ?? totalPayout ?? '',
+            total: totalPayout ?? pendingPayout ?? '',
+          }
+        : undefined
 
     return {
       author: post.author,
@@ -144,6 +199,7 @@ export async function searchAccountPosts({
       communityTitle: post.community_title,
       summary,
       coverUrl,
+      payout,
       votes:
         typeof post.net_votes === 'number'
           ? post.net_votes
