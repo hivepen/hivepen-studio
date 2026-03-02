@@ -328,5 +328,7 @@
   "editor_placeholder_heading": "标题 {level}",
   "editor_placeholder_code": "写点代码...",
   "editor_placeholder_command": "按 '/' 查看命令",
-  "community_nsfw": "NSFW"
+  "community_nsfw": "NSFW",
+  "keychain_not_detected": "未检测到 Hive Keychain。",
+  "post_actions_votes_load_failed": "无法加载投票。"
 }

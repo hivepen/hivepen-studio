@@ -1,3 +1,5 @@
+import { m } from '@/paraglide/messages'
+
 const IMAGE_HOST = 'https://images.hive.blog'
 
 type UploadResult = {
@@ -12,7 +14,7 @@ export async function uploadImageToHive({
   accessToken?: string | null
 }) {
   if (!accessToken) {
-    throw new Error('HiveSigner access token required for image uploads.')
+    throw new Error(m.editor_status_connect_hivesigner())
   }
 
   const formData = new FormData()
@@ -24,7 +26,7 @@ export async function uploadImageToHive({
   })
 
   if (!response.ok) {
-    throw new Error('Image upload failed.')
+    throw new Error(m.editor_status_image_upload_failed())
   }
 
   const result = (await response.json()) as UploadResult

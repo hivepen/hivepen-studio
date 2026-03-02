@@ -328,5 +328,7 @@
   "editor_placeholder_heading": "Heading {level}",
   "editor_placeholder_code": "Write some code...",
   "editor_placeholder_command": "Press '/' for commands",
-  "community_nsfw": "NSFW"
+  "community_nsfw": "NSFW",
+  "keychain_not_detected": "Hive Keychain not detected.",
+  "post_actions_votes_load_failed": "Failed to load votes."
 }

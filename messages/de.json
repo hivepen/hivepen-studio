@@ -328,5 +328,7 @@
   "editor_placeholder_heading": "Überschrift {level}",
   "editor_placeholder_code": "Schreibe etwas Code...",
   "editor_placeholder_command": "Drücke '/' für Befehle",
-  "community_nsfw": "NSFW"
+  "community_nsfw": "NSFW",
+  "keychain_not_detected": "Hive Keychain wurde nicht erkannt.",
+  "post_actions_votes_load_failed": "Stimmen konnten nicht geladen werden."
 }

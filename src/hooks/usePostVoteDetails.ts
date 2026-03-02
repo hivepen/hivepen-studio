@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchPostVoteDetails } from '@/lib/hive/votes'
 import { VoteDetail } from '@/lib/posts/votes'
+import { m } from '@/paraglide/messages'
 
 type UsePostVoteDetailsArgs = {
   author?: string
@@ -54,7 +55,11 @@ export default function usePostVoteDetails({
       })
       .catch((err) => {
         if (cancelled) return
-        setError(err instanceof Error ? err : new Error('Failed to load votes'))
+        setError(
+          err instanceof Error
+            ? err
+            : new Error(m.post_actions_votes_load_failed())
+        )
       })
       .finally(() => {
         if (cancelled) return

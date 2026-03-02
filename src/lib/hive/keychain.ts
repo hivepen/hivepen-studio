@@ -1,3 +1,5 @@
+import { m } from '@/paraglide/messages'
+
 export type HiveKeychainResponse = {
   success: boolean
   message?: string
@@ -31,7 +33,7 @@ export const signLogin = (username: string, message: string) => {
   return new Promise<HiveKeychainResponse>((resolve) => {
     const keychain = getHiveKeychain()
     if (!keychain) {
-      resolve({ success: false, message: 'Hive Keychain not detected.' })
+      resolve({ success: false, message: m.keychain_not_detected() })
       return
     }
     keychain.requestSignBuffer(username, message, 'Posting', (response) => {
@@ -48,7 +50,7 @@ export const broadcastOperations = (
   return new Promise<HiveKeychainResponse>((resolve) => {
     const keychain = getHiveKeychain()
     if (!keychain) {
-      resolve({ success: false, message: 'Hive Keychain not detected.' })
+      resolve({ success: false, message: m.keychain_not_detected() })
       return
     }
     keychain.requestBroadcast(username, operations, keyType, (response) => {

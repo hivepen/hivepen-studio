@@ -328,5 +328,7 @@
   "editor_placeholder_heading": "Título {level}",
   "editor_placeholder_code": "Escribe algo de código...",
   "editor_placeholder_command": "Pulsa '/' para comandos",
-  "community_nsfw": "NSFW"
+  "community_nsfw": "NSFW",
+  "keychain_not_detected": "No se detectó Hive Keychain.",
+  "post_actions_votes_load_failed": "No se pudieron cargar los votos."
 }
