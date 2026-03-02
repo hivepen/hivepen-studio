@@ -5,6 +5,7 @@ import DevOnly from '@/components/DevOnly'
 import PostTag from '@/components/PostTag'
 import { TAG_STYLE_MAP } from '@/lib/posts/tagColorConfig'
 import { m } from '@/paraglide/messages'
+import ParaglideLocaleSwitcher from '@/components/LocaleSwitcher'
 
 export const Route = createFileRoute('/settings')({
   component: Settings,
@@ -24,6 +25,27 @@ function Settings() {
       <Text color="fg.muted">
         {m.settings_description()}
       </Text>
+      <Box mt={8}>
+        <Heading size="sm" mb={2}>
+          {m.settings_language_heading()}
+        </Heading>
+        <Text color="fg.muted" fontSize="sm" mb={4}>
+          {m.settings_language_description()}
+        </Text>
+        <Box
+          border="1px solid"
+          borderColor="border"
+          borderRadius="12px"
+          bg="bg.panel"
+          p={4}
+        >
+          <Text fontSize="sm" color="fg.muted" mb={3}>
+            {m.settings_language_label()}
+          </Text>
+          <ParaglideLocaleSwitcher />
+        </Box>
+      </Box>
+
       <Box mt={8}>
         <Heading size="sm" mb={2}>
           {m.settings_editor_preferences()}

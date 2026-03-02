@@ -20,6 +20,7 @@ import {
   Heading2,
   MoreHorizontal,
 } from 'lucide-react'
+import { m } from '@/paraglide/messages'
 
 export default function EditorToolbar({
   editor,
@@ -61,7 +62,7 @@ export default function EditorToolbar({
 
   const handleAddLink = () => {
     const previousUrl = editor.getAttributes('link').href as string | undefined
-    const url = window.prompt('Paste a link URL', previousUrl ?? '')
+    const url = window.prompt(m.editor_tool_link_prompt(), previousUrl ?? '')
     if (url === null) return
     if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run()
@@ -102,87 +103,87 @@ export default function EditorToolbar({
     >
       <HStack gap={1} flexWrap="wrap">
         <ToolbarButton
-          label="Bold"
+          label={m.editor_tool_bold()}
           active={toolbarState.isBold}
           onClick={() => editor.chain().focus().toggleBold().run()}
           icon={<Icon as={Bold} boxSize={4} />}
         />
         <ToolbarButton
-          label="Italic"
+          label={m.editor_tool_italic()}
           active={toolbarState.isItalic}
           onClick={() => editor.chain().focus().toggleItalic().run()}
           icon={<Icon as={Italic} boxSize={4} />}
         />
         <ToolbarButton
-          label="Underline"
+          label={m.editor_tool_underline()}
           active={toolbarState.isUnderline}
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           icon={<Icon as={Underline} boxSize={4} />}
         />
         <ToolbarButton
-          label="Strikethrough"
+          label={m.editor_tool_strike()}
           active={toolbarState.isStrike}
           onClick={() => editor.chain().focus().toggleStrike().run()}
           icon={<Icon as={Strikethrough} boxSize={4} />}
         />
         <ToolbarButton
-          label="Heading 2"
+          label={m.editor_tool_heading2()}
           active={toolbarState.isHeading2}
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           icon={<Icon as={Heading2} boxSize={4} />}
         />
         <ToolbarButton
-          label="Quote"
+          label={m.editor_tool_quote()}
           active={toolbarState.isBlockquote}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           icon={<Icon as={Quote} boxSize={4} />}
         />
         <ToolbarButton
-          label="Bullet list"
+          label={m.editor_tool_bullet_list()}
           active={toolbarState.isBulletList}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           icon={<Icon as={List} boxSize={4} />}
         />
         <ToolbarButton
-          label="Numbered list"
+          label={m.editor_tool_numbered_list()}
           active={toolbarState.isOrderedList}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           icon={<Icon as={ListOrdered} boxSize={4} />}
         />
         <ToolbarButton
-          label="Horizontal rule"
+          label={m.editor_tool_horizontal_rule()}
           active={false}
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
           icon={<Icon as={Minus} boxSize={4} />}
         />
         <ToolbarButton
-          label="Link"
+          label={m.editor_tool_link()}
           active={toolbarState.isLink}
           onClick={handleAddLink}
           icon={<Icon as={Link2} boxSize={4} />}
         />
         <ToolbarButton
-          label="Image"
+          label={m.editor_tool_image()}
           active={false}
           disabled={!onInsertImage}
           onClick={() => onInsertImage?.()}
           icon={<Icon as={ImageIcon} boxSize={4} />}
         />
         <ToolbarButton
-          label="Mention"
+          label={m.editor_tool_mention()}
           active={false}
           onClick={() => editor.chain().focus().insertContent('@').run()}
           icon={<Icon as={AtSign} boxSize={4} />}
         />
         <ToolbarButton
-          label="Undo"
+          label={m.editor_tool_undo()}
           active={false}
           disabled={!toolbarState.canUndo}
           onClick={() => editor.chain().focus().undo().run()}
           icon={<Icon as={Undo2} boxSize={4} />}
         />
         <ToolbarButton
-          label="Redo"
+          label={m.editor_tool_redo()}
           active={false}
           disabled={!toolbarState.canRedo}
           onClick={() => editor.chain().focus().redo().run()}
@@ -194,7 +195,7 @@ export default function EditorToolbar({
               size="sm"
               variant="ghost"
               colorPalette="gray"
-              aria-label="More editor tools"
+              aria-label={m.editor_tool_more_tools()}
             >
               <Icon as={MoreHorizontal} boxSize={4} />
             </IconButton>
@@ -205,13 +206,13 @@ export default function EditorToolbar({
                 value="inline-code"
                 onSelect={() => editor.chain().focus().toggleCode().run()}
               >
-                Inline code
+                {m.editor_tool_inline_code()}
               </Menu.Item>
               <Menu.Item
                 value="code-block"
                 onSelect={() => editor.chain().focus().toggleCodeBlock().run()}
               >
-                Code block
+                {m.editor_tool_code_block()}
               </Menu.Item>
             </Menu.Content>
           </Menu.Positioner>

@@ -10,6 +10,7 @@ import type { Editor } from '@tiptap/react'
 import { Box, HStack, Icon, Popover, Portal, Text } from '@chakra-ui/react'
 
 import type { SlashCommandItem } from '@/lib/tiptap/slashCommand'
+import { m } from '@/paraglide/messages'
 
 type SlashCommandMenuProps = {
   editor: Editor
@@ -124,7 +125,7 @@ const SlashCommandMenu = forwardRef((props: SlashCommandMenuProps, ref) => {
             {!menuItems.length ? (
               <Box px={3} py={2}>
                 <Text fontSize="sm" color="fg.muted">
-                  No commands found.
+                  {m.editor_slash_no_commands()}
                 </Text>
               </Box>
             ) : (
@@ -193,7 +194,7 @@ const SlashCommandMenu = forwardRef((props: SlashCommandMenuProps, ref) => {
               borderColor="border.subtle"
             >
               <Text fontSize="xs" color="fg.muted" px={2}>
-                ↑↓ to navigate · Enter to select · Esc to close
+                {m.editor_slash_footer()}
               </Text>
             </Box>
           </Popover.Content>

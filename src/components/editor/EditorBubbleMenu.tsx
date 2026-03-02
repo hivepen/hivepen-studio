@@ -12,6 +12,7 @@ import {
   Check,
   X,
 } from 'lucide-react'
+import { m } from '@/paraglide/messages'
 
 export default function EditorBubbleMenu({ editor }: { editor: Editor | null }) {
   const [isEditingLink, setIsEditingLink] = useState(false)
@@ -78,7 +79,7 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor | null }) 
               size="sm"
               value={linkValue}
               onChange={(event) => setLinkValue(event.target.value)}
-              placeholder="Paste a link…"
+              placeholder={m.editor_tool_paste_link()}
               bg="bg"
               borderColor="border"
               onKeyDown={(event) => event.stopPropagation()}
@@ -88,7 +89,7 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor | null }) 
               size="sm"
               variant="solid"
               colorPalette="gray"
-              aria-label="Apply link"
+              aria-label={m.editor_tool_apply_link()}
               onClick={applyLink}
             >
               <Icon as={Check} boxSize={4} />
@@ -97,7 +98,7 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor | null }) 
               size="sm"
               variant="ghost"
               colorPalette="gray"
-              aria-label="Cancel link"
+              aria-label={m.editor_tool_cancel_link()}
               onClick={() => setIsEditingLink(false)}
             >
               <Icon as={X} boxSize={4} />
@@ -106,37 +107,37 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor | null }) 
         ) : (
           <HStack gap={1}>
             <InlineButton
-              label="Bold"
+              label={m.editor_tool_bold()}
               active={editor.isActive('bold')}
               onClick={() => editor.chain().focus().toggleBold().run()}
               icon={<Icon as={Bold} boxSize={4} />}
             />
             <InlineButton
-              label="Italic"
+              label={m.editor_tool_italic()}
               active={editor.isActive('italic')}
               onClick={() => editor.chain().focus().toggleItalic().run()}
               icon={<Icon as={Italic} boxSize={4} />}
             />
             <InlineButton
-              label="Underline"
+              label={m.editor_tool_underline()}
               active={editor.isActive('underline')}
               onClick={() => editor.chain().focus().toggleUnderline().run()}
               icon={<Icon as={Underline} boxSize={4} />}
             />
             <InlineButton
-              label="Strike"
+              label={m.editor_tool_strike()}
               active={editor.isActive('strike')}
               onClick={() => editor.chain().focus().toggleStrike().run()}
               icon={<Icon as={Strikethrough} boxSize={4} />}
             />
             <InlineButton
-              label="Code"
+              label={m.editor_tool_code()}
               active={editor.isActive('code')}
               onClick={() => editor.chain().focus().toggleCode().run()}
               icon={<Icon as={Code} boxSize={4} />}
             />
             <InlineButton
-              label="Link"
+              label={m.editor_tool_link()}
               active={editor.isActive('link')}
               onClick={() => {
                 const existing = editor.getAttributes('link').href as string | undefined

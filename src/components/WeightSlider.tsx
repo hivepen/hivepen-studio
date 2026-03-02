@@ -4,6 +4,7 @@ import {
   Slider,
   Text,
 } from '@chakra-ui/react'
+import { m } from '@/paraglide/messages'
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(Math.max(value, min), max)
@@ -18,8 +19,8 @@ type WeightSliderProps = {
 export default function WeightSlider({
   value,
   onChange,
-  label = 'Weight',
-  helperText = 'Applies a percentage of rewards.',
+  label = m.weight_label(),
+  helperText = m.weight_helper(),
 }: WeightSliderProps) {
   const parsed = typeof value === 'string' ? Number(value) : value
   const safeValue = Number.isFinite(parsed) ? parsed : 0

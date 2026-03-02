@@ -1,46 +1,70 @@
 // Locale switcher refs:
 // - Paraglide docs: https://inlang.com/m/gerre34r/library-inlang-paraglideJs
 // - Router example: https://github.com/TanStack/router/tree/main/examples/react/i18n-paraglide#switching-locale
+import { Select, createListCollection } from '@chakra-ui/react'
 import { getLocale, locales, setLocale } from '@/paraglide/runtime'
 import { m } from '@/paraglide/messages'
 
+const resolveLocaleLabel = (locale: string) => {
+  switch (locale) {
+    case 'en':
+      return m.language_option_en()
+    case 'es':
+      return m.language_option_es()
+    case 'de':
+      return m.language_option_de()
+    case 'it':
+      return m.language_option_it()
+    case 'fr':
+      return m.language_option_fr()
+    case 'pt':
+      return m.language_option_pt()
+    case 'zh':
+      return m.language_option_zh()
+    default:
+      return locale.toUpperCase()
+  }
+}
+
 export default function ParaglideLocaleSwitcher() {
   const currentLocale = getLocale()
+  const collection = createListCollection({
+    items: locales.map((locale) => ({
+      value: locale,
+      label: resolveLocaleLabel(locale),
+    })),
+  })
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: '0.5rem',
-        alignItems: 'center',
-        color: 'inherit',
+    <Select.Root
+      collection={collection}
+      value={[currentLocale]}
+      onValueChange={(details) => {
+        const value = details.value[0]
+        if (value && value !== currentLocale) {
+          setLocale(value)
+        }
       }}
-      aria-label={m.language_label()}
+      size="sm"
     >
-      <span style={{ opacity: 0.85 }}>
-        {m.current_locale({ locale: currentLocale })}
-      </span>
-      <div style={{ display: 'flex', gap: '0.25rem' }}>
-        {locales.map((locale) => (
-          <button
-            key={locale}
-            onClick={() => setLocale(locale)}
-            aria-pressed={locale === currentLocale}
-            style={{
-              cursor: 'pointer',
-              padding: '0.35rem 0.75rem',
-              borderRadius: '999px',
-              border: '1px solid #d1d5db',
-              background: locale === currentLocale ? '#0f172a' : 'transparent',
-              color: locale === currentLocale ? '#f8fafc' : 'inherit',
-              fontWeight: locale === currentLocale ? 700 : 500,
-              letterSpacing: '0.01em',
-            }}
-          >
-            {locale.toUpperCase()}
-          </button>
-        ))}
-      </div>
-    </div>
+      <Select.Control>
+        <Select.Trigger bg="bg.panel" borderColor="border" minW="220px">
+          <Select.ValueText placeholder={m.settings_language_label()} />
+          <Select.IndicatorGroup>
+            <Select.Indicator />
+          </Select.IndicatorGroup>
+        </Select.Trigger>
+      </Select.Control>
+      <Select.Positioner>
+        <Select.Content>
+          {collection.items.map((item) => (
+            <Select.Item key={item.value} item={item}>
+              <Select.ItemText>{item.label}</Select.ItemText>
+              <Select.ItemIndicator />
+            </Select.Item>
+          ))}
+        </Select.Content>
+      </Select.Positioner>
+    </Select.Root>
   )
 }

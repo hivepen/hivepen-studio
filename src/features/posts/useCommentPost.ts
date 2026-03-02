@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { broadcastOperations } from '@/lib/hive/keychain'
 import { buildCommentOperations } from '@/lib/hive/operations'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
+import { m } from '@/paraglide/messages'
 
 export default function useCommentPost({
   parentAuthor,
@@ -17,12 +18,12 @@ export default function useCommentPost({
 
   const comment = async (body: string) => {
     if (!account) {
-      setError('Connect Hive Keychain first.')
+      setError(m.editor_status_keychain_required())
       return { success: false }
     }
 
     if (!body.trim()) {
-      setError('Comment cannot be empty.')
+      setError(m.post_actions_comment_empty())
       return { success: false }
     }
 
@@ -39,7 +40,7 @@ export default function useCommentPost({
 
     const response = await broadcastOperations(account, operations, 'Posting')
     if (!response.success) {
-      setError(response.message ?? 'Comment failed.')
+      setError(response.message ?? m.post_actions_comment_failed())
     } else {
       setSuccess(true)
     }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { broadcastOperations } from '@/lib/hive/keychain'
 import { buildVoteOperation } from '@/lib/hive/operations'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
+import { m } from '@/paraglide/messages'
 
 export default function useVotePost({
   author,
@@ -17,7 +18,7 @@ export default function useVotePost({
 
   const vote = async (weightPercent: number) => {
     if (!account) {
-      setError('Connect Hive Keychain first.')
+      setError(m.editor_status_keychain_required())
       return { success: false }
     }
 
@@ -37,7 +38,7 @@ export default function useVotePost({
 
     const response = await broadcastOperations(account, operations, 'Posting')
     if (!response.success) {
-      setError(response.message ?? 'Vote failed.')
+      setError(response.message ?? m.post_actions_vote_failed())
     } else {
       setSuccess(true)
     }

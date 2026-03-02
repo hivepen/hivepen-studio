@@ -11,6 +11,7 @@ import {
   useTagsInput,
 } from '@chakra-ui/react'
 import { useId } from 'react'
+import { m } from '@/paraglide/messages'
 
 const DEFAULT_SUGGESTIONS = [
   'english',
@@ -61,8 +62,8 @@ export default function TagSuggestionsInput({
   value,
   onChange,
   max = 8,
-  label = 'Tags',
-  helperText = 'Use letters and numbers only.',
+  label = m.tags_label(),
+  helperText = m.tags_helper(),
   suggestions = DEFAULT_SUGGESTIONS,
 }: TagSuggestionsInputProps) {
   const uid = useId()
@@ -139,7 +140,7 @@ export default function TagSuggestionsInput({
           ))}
 
           <Combobox.Input unstyled asChild>
-            <TagsInput.Input placeholder="Add tags" />
+            <TagsInput.Input placeholder={m.tags_placeholder()} />
           </Combobox.Input>
         </TagsInput.Control>
 
@@ -160,7 +161,7 @@ export default function TagSuggestionsInput({
 
         <Stack gap={1} mt={2}>
           <Text fontSize="xs" color="fg.muted">
-            Up to {max} tags. {helperText}
+            {m.tags_limit({ max })} {helperText}
           </Text>
         </Stack>
       </TagsInput.RootProvider>

@@ -34,6 +34,7 @@ import {
 import { broadcastOperations, getHiveKeychain } from '@/lib/hive/keychain'
 import { buildPostOperations, parseTags } from '@/lib/hive/operations'
 import { uploadImageToHive } from '@/lib/hive/imageHoster'
+import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/editor')({
   component: Editor,
@@ -154,25 +155,25 @@ function Editor() {
       if (!auth?.accessToken) {
         setStatus({
           type: 'error',
-          message: 'Connect HiveSigner to upload images.',
+          message: m.editor_status_connect_hivesigner(),
         })
         return
       }
 
       try {
-        setStatus({ type: 'info', message: 'Uploading image...' })
+        setStatus({ type: 'info', message: m.editor_status_uploading_image() })
         const url = await uploadImageToHive({
           file,
           accessToken: auth.accessToken,
         })
         targetEditor.chain().focus().setImage({ src: url }).run()
-        setStatus({ type: 'success', message: 'Image uploaded.' })
+        setStatus({ type: 'success', message: m.editor_status_image_uploaded() })
       } catch (error) {
         console.error('[editor] Image upload failed', error)
         setStatus({
           type: 'error',
           message:
-            error instanceof Error ? error.message : 'Image upload failed.',
+            error instanceof Error ? error.message : m.editor_status_image_upload_failed(),
         })
       }
     }
@@ -182,82 +183,82 @@ function Editor() {
   const slashCommandItems = useMemo(
     () => [
       {
-        title: 'Text',
-        category: 'Basic',
-        description: 'Start writing with plain text.',
+        title: m.editor_slash_text_title(),
+        category: m.editor_slash_category_basic(),
+        description: m.editor_slash_text_description(),
         icon: <TextIcon size={18} />,
         shortcut: '↵',
         command: ({ editor, range }) =>
           editor.chain().focus().deleteRange(range).setParagraph().run(),
       },
       {
-        title: 'Heading 1',
-        category: 'Basic',
-        description: 'Large section heading.',
+        title: m.editor_slash_heading1_title(),
+        category: m.editor_slash_category_basic(),
+        description: m.editor_slash_heading1_description(),
         icon: <Heading1 size={18} />,
         command: ({ editor, range }) =>
           editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(),
       },
       {
-        title: 'Heading 2',
-        category: 'Basic',
-        description: 'Medium section heading.',
+        title: m.editor_slash_heading2_title(),
+        category: m.editor_slash_category_basic(),
+        description: m.editor_slash_heading2_description(),
         icon: <Heading2 size={18} />,
         command: ({ editor, range }) =>
           editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run(),
       },
       {
-        title: 'Heading 3',
-        category: 'Basic',
-        description: 'Small section heading.',
+        title: m.editor_slash_heading3_title(),
+        category: m.editor_slash_category_basic(),
+        description: m.editor_slash_heading3_description(),
         icon: <Heading3 size={18} />,
         command: ({ editor, range }) =>
           editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run(),
       },
       {
-        title: 'Bullet List',
-        category: 'Lists',
-        description: 'Create a bulleted list.',
+        title: m.editor_slash_bullet_list_title(),
+        category: m.editor_slash_category_lists(),
+        description: m.editor_slash_bullet_list_description(),
         icon: <List size={18} />,
         command: ({ editor, range }) =>
           editor.chain().focus().deleteRange(range).toggleBulletList().run(),
       },
       {
-        title: 'Numbered List',
-        category: 'Lists',
-        description: 'Create a numbered list.',
+        title: m.editor_slash_numbered_list_title(),
+        category: m.editor_slash_category_lists(),
+        description: m.editor_slash_numbered_list_description(),
         icon: <ListOrdered size={18} />,
         command: ({ editor, range }) =>
           editor.chain().focus().deleteRange(range).toggleOrderedList().run(),
       },
       {
-        title: 'Quote',
-        category: 'Blocks',
-        description: 'Capture a quote.',
+        title: m.editor_slash_quote_title(),
+        category: m.editor_slash_category_blocks(),
+        description: m.editor_slash_quote_description(),
         icon: <Quote size={18} />,
         command: ({ editor, range }) =>
           editor.chain().focus().deleteRange(range).toggleBlockquote().run(),
       },
       {
-        title: 'Code Block',
-        category: 'Blocks',
-        description: 'Insert a block of code.',
+        title: m.editor_slash_code_block_title(),
+        category: m.editor_slash_category_blocks(),
+        description: m.editor_slash_code_block_description(),
         icon: <Code size={18} />,
         command: ({ editor, range }) =>
           editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
       },
       {
-        title: 'Divider',
-        category: 'Blocks',
-        description: 'Insert a horizontal divider.',
+        title: m.editor_slash_divider_title(),
+        category: m.editor_slash_category_blocks(),
+        description: m.editor_slash_divider_description(),
         icon: <Minus size={18} />,
         command: ({ editor, range }) =>
           editor.chain().focus().deleteRange(range).setHorizontalRule().run(),
       },
       {
-        title: 'Image',
-        category: 'Media',
-        description: 'Upload or embed an image.',
+        title: m.editor_slash_image_title(),
+        category: m.editor_slash_category_media(),
+        description: m.editor_slash_image_description(),
         icon: <ImageIcon size={18} />,
         command: ({ editor, range }) => {
           editor.chain().focus().deleteRange(range).run()
@@ -294,12 +295,12 @@ function Editor() {
 
   const handlePublish = async () => {
     if (!account) {
-      setStatus({ type: 'error', message: 'Connect Hive Keychain first.' })
+      setStatus({ type: 'error', message: m.editor_status_keychain_required() })
       return
     }
 
     if (!postPayload.title.trim() || !postPayload.body.trim()) {
-      setStatus({ type: 'error', message: 'Title and body are required.' })
+      setStatus({ type: 'error', message: m.editor_status_title_body_required() })
       return
     }
 
@@ -334,7 +335,7 @@ function Editor() {
     if (response.success) {
       setStatus({
         type: 'success',
-        message: 'Post broadcasted. It should appear on Hive shortly.',
+        message: m.editor_status_post_broadcasted(),
       })
       setPostPayload((prev) => ({
         ...prev,
@@ -347,7 +348,7 @@ function Editor() {
     } else {
       setStatus({
         type: 'error',
-        message: response.message ?? 'Post broadcast failed.',
+        message: response.message ?? m.editor_status_post_broadcast_failed(),
       })
     }
 
@@ -376,7 +377,7 @@ function Editor() {
                   }))
                 }
                 variant="flushed"
-                placeholder="Untitled Draft"
+                placeholder={m.editor_untitled_placeholder()}
 
                 // border="none"
                 fontSize="lg"
@@ -391,7 +392,7 @@ function Editor() {
               loading={isPublishing}
               disabled={!keychainDetected || !publishReady}
             >
-              Publish
+              {m.editor_publish_button()}
               <SendIcon size={16} />
             </Button>
           </CustomHeader>
@@ -413,7 +414,7 @@ function Editor() {
                   mt={3}
                   asChild
                 >
-                  <a href={hiveSignerLoginUrl}>Connect HiveSigner</a>
+                  <a href={hiveSignerLoginUrl}>{m.editor_connect_hivesigner_button()}</a>
                 </Button>
               )}
             </Box>
@@ -424,7 +425,7 @@ function Editor() {
               fallback={
                 <Box px="4" py={6}>
                   <Text fontSize="sm" color="fg.muted">
-                    Loading editor…
+                    {m.editor_loading()}
                   </Text>
                 </Box>
               }
@@ -441,11 +442,11 @@ function Editor() {
                 <Tabs.List flex="0 0 auto">
                   <Tabs.Trigger value="editor">
                     <Icon as={SquarePen} boxSize={4} />
-                    Content
+                    {m.editor_tab_content()}
                   </Tabs.Trigger>
                   <Tabs.Trigger value="config">
                     <Icon as={Settings2} boxSize={4} />
-                    Configuration
+                    {m.editor_tab_configuration()}
                   </Tabs.Trigger>
                 </Tabs.List>
                 <Box px="4" flex="1" minH={0} display="flex" flexDirection="column">
@@ -501,7 +502,7 @@ function Editor() {
             </ClientOnly>
             {!keychainDetected && (
               <Text color="fg.muted" fontSize="sm" p={6}>
-                HiveKeychain was not detected. Install and unlock it to publish directly from the editor.
+                {m.editor_keychain_missing()}
               </Text>
             )}
           </Box>

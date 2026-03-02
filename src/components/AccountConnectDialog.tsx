@@ -19,6 +19,7 @@ import { Avatar } from './ui/avatar'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { Tooltip } from './ui/tooltip'
 import HiveKeychainIcon from './hive/HiveKeychainIcon'
+import { m } from '@/paraglide/messages'
 
 
 
@@ -43,21 +44,21 @@ export default function AccountConnectDialog({
       <Dialog.Positioner>
         <Dialog.Content bg="bg.panel" borderColor="border">
           <Dialog.Header>
-            <Dialog.Title>Connect Hive account</Dialog.Title>
+            <Dialog.Title>{m.account_connect_title()}</Dialog.Title>
             <Spacer/>
             <CloseButton onClick={onClose} disabled={isConnecting} />
           </Dialog.Header>
           <Dialog.Body>
             <Stack gap={4}>
               <Text color="fg.muted" fontSize="sm">
-                Sign in with Hive Keychain to enable publishing and commenting.
+                {m.account_connect_description()}
               </Text>
               <Field.Root>
-                <Field.Label>Hive username</Field.Label>
+                <Field.Label>{m.account_connect_username_label()}</Field.Label>
 
                 <InputGroup startAddon={username && <Box> <Avatar size="xs" fallback="?" src={getHiveAvatarUrl(username)} /></Box>}>
                   <Input
-                    placeholder="e.g. alice"
+                    placeholder={m.account_connect_username_placeholder()}
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
 
@@ -67,8 +68,7 @@ export default function AccountConnectDialog({
               </Field.Root>
               {!keychainAvailable && (
                 <Alert status="warning" colorPalette={"yellow"}>
-                  Hive Keychain was not detected. Install the extension to
-                  continue.
+                  {m.account_connect_keychain_missing()}
                 </Alert>
               )}
             </Stack>
@@ -83,7 +83,7 @@ export default function AccountConnectDialog({
                 <Tooltip
                   content={
                     <Text>
-                      Connect using HiveKeychain <HiveKeychainIcon size="xs" />
+                      {m.account_connect_tooltip()} <HiveKeychainIcon size="xs" />
                     </Text>
                   }
                 >
@@ -97,7 +97,7 @@ export default function AccountConnectDialog({
                       disabled={!keychainAvailable || !username.trim()}
                     >
                       <HiveKeychainIcon />
-                      Connect
+                      {m.account_connect_button()}
                     </Button>
                   </Show>
               </Tooltip>
@@ -105,9 +105,17 @@ export default function AccountConnectDialog({
 
             <Show when={!keychainAvailable}>
               <Alert title={<Text>
-                HiveKeychain not detected
+                {m.account_connect_missing_title()}
               </Text>} status="warning" colorPalette={"yellow"}>
-                <Link textDecoration="underline" target='_blank' href="https://hive-keychain.com/#download">Install the Hive Keychain extension</Link> to connect your Hive account. Or open this app in the <Link textDecoration="underline" target='_blank' href='https://hive-keychain.com/#download'>HiveKeychain mobile app</Link> internal browser.
+                {m.account_connect_missing_prefix()}{' '}
+                <Link textDecoration="underline" target='_blank' href="https://hive-keychain.com/#download">
+                  {m.account_connect_missing_install_link()}
+                </Link>{' '}
+                {m.account_connect_missing_middle()}{' '}
+                <Link textDecoration="underline" target='_blank' href='https://hive-keychain.com/#download'>
+                  {m.account_connect_missing_mobile_link()}
+                </Link>{' '}
+                {m.account_connect_missing_suffix()}
               </Alert>
             </Show>
             </Stack>

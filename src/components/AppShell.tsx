@@ -36,7 +36,6 @@ import { Avatar } from '@/components/ui/avatar'
 import { CONNECT_ACCOUNT_DIALOG_EVENT } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
-import ParaglideLocaleSwitcher from '@/components/LocaleSwitcher'
 
 type NavItem = {
   label: string
@@ -339,9 +338,6 @@ export default function AppShell({
                 </HStack>
               ))}
             </HStack>
-            <Box display={{ base: 'none', md: 'block' }}>
-              <ParaglideLocaleSwitcher />
-            </Box>
           </HStack>
         </Box>
         <Box flex="1" bg="bg.subtle" overflowY="auto">

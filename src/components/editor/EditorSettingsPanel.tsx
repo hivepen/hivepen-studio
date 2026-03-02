@@ -5,6 +5,7 @@ import DevOnly from '@/components/DevOnly'
 import TagSuggestionsInput from '@/components/TagSuggestionsInput'
 import WeightSlider from '@/components/WeightSlider'
 import { ClientOnly } from '@tanstack/react-router'
+import { m } from '@/paraglide/messages'
 
 type BeneficiaryEntry = {
   account: string
@@ -53,11 +54,10 @@ export default function EditorSettingsPanel({
     <Stack gap={6}>
       <Box>
         <Heading size="sm" mb={2}>
-          Publish settings
+          {m.editor_publish_settings_title()}
         </Heading>
         <Text color="fg.muted" fontSize="sm">
-          Configure where the post is published, tags, and advanced settings like
-          thumbnails or beneficiaries.
+          {m.editor_publish_settings_description()}
         </Text>
       </Box>
 
@@ -83,11 +83,15 @@ export default function EditorSettingsPanel({
           fallback={
             <Box>
               <Text fontSize="sm" color="fg.muted" mb={2}>
-                Tags
+                {m.tags_label()}
               </Text>
-              <Input placeholder="Add tags" bg="bg.panel" borderColor="border" />
+              <Input
+                placeholder={m.tags_placeholder()}
+                bg="bg.panel"
+                borderColor="border"
+              />
               <Text fontSize="xs" color="fg.muted" mt={2}>
-                Up to 8 tags. Use letters and numbers only.
+                {m.tags_limit({ max: 8 })} {m.tags_helper()}
               </Text>
             </Box>
           }
@@ -98,14 +102,14 @@ export default function EditorSettingsPanel({
 
       <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
         <Input
-          placeholder="Thumbnail URL"
+          placeholder={m.editor_thumbnail_placeholder()}
           value={publishForm.thumbnail}
           onChange={(event) => onChange('thumbnail', event.target.value)}
           bg="bg.panel"
           borderColor="border"
         />
         <Input
-          placeholder="Short description"
+          placeholder={m.editor_summary_placeholder()}
           value={publishForm.summary}
           onChange={(event) => onChange('summary', event.target.value)}
           bg="bg.panel"
@@ -113,13 +117,13 @@ export default function EditorSettingsPanel({
         />
       </SimpleGrid>
 
-      <CustomCollapsible title="Beneficiaries">
+      <CustomCollapsible title={m.editor_beneficiaries_title()}>
         <Box>
           <Stack gap={3}>
             {beneficiaries.map((entry, index) => (
               <SimpleGrid key={`beneficiary-${index}`} columns={{ base: 1, md: 2 }} gap={3}>
                 <Input
-                  placeholder="Account"
+                  placeholder={m.editor_beneficiary_account_placeholder()}
                   value={entry.account}
                   onChange={(event) =>
                     onBeneficiaryChange(index, 'account', event.target.value)
@@ -132,14 +136,14 @@ export default function EditorSettingsPanel({
                   onChange={(nextValue) =>
                     onBeneficiaryChange(index, 'weight', String(nextValue))
                   }
-                  label="Weight"
-                  helperText="Percentage of post rewards."
+                  label={m.editor_beneficiary_weight_label()}
+                  helperText={m.editor_beneficiary_weight_helper()}
                 />
               </SimpleGrid>
             ))}
           </Stack>
           <Button mt={3} variant="outline" onClick={onAddBeneficiary}>
-            Add beneficiary
+            {m.editor_beneficiary_add()}
           </Button>
         </Box>
       </CustomCollapsible>

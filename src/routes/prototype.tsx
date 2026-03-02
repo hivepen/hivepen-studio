@@ -25,6 +25,7 @@ import {
   parseTags,
 } from '@/lib/hive/operations'
 import { Alert } from '@/components/ui/alert'
+import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/prototype')({ component: StudioHome })
 
@@ -107,7 +108,7 @@ function StudioHome() {
 
   const handleLogin = async () => {
     if (!loginName.trim()) {
-      setStatus({ type: 'error', message: 'Enter a Hive username to connect.' })
+      setStatus({ type: 'error', message: m.prototype_enter_username() })
       return
     }
 
@@ -122,12 +123,12 @@ function StudioHome() {
       setLoginName('')
       setStatus({
         type: 'success',
-        message: 'Keychain confirmed. You are connected.',
+        message: m.prototype_connected(),
       })
     } else {
       setStatus({
         type: 'error',
-        message: response.message ?? 'Login rejected by Hive Keychain.',
+        message: response.message ?? m.app_shell_login_rejected(),
       })
     }
 
@@ -136,17 +137,17 @@ function StudioHome() {
 
   const handleLogout = () => {
     setAccount(null)
-    setStatus({ type: 'info', message: 'Disconnected from Hive Keychain.' })
+    setStatus({ type: 'info', message: m.prototype_disconnected() })
   }
 
   const handlePublish = async () => {
     if (!account) {
-      setStatus({ type: 'error', message: 'Connect Hive Keychain first.' })
+      setStatus({ type: 'error', message: m.editor_status_keychain_required() })
       return
     }
 
     if (!postPayload.title.trim() || !postPayload.body.trim()) {
-      setStatus({ type: 'error', message: 'Title and body are required.' })
+      setStatus({ type: 'error', message: m.editor_status_title_body_required() })
       return
     }
 
@@ -166,13 +167,13 @@ function StudioHome() {
     if (response.success) {
       setStatus({
         type: 'success',
-        message: 'Post broadcasted. It should appear on Hive shortly.',
+        message: m.editor_status_post_broadcasted(),
       })
       setPostPayload((prev) => ({ ...prev, title: '', body: '' }))
     } else {
       setStatus({
         type: 'error',
-        message: response.message ?? 'Post broadcast failed.',
+        message: response.message ?? m.editor_status_post_broadcast_failed(),
       })
     }
 
@@ -181,20 +182,20 @@ function StudioHome() {
 
   const handleComment = async () => {
     if (!account) {
-      setStatus({ type: 'error', message: 'Connect Hive Keychain first.' })
+      setStatus({ type: 'error', message: m.editor_status_keychain_required() })
       return
     }
 
     if (!commentPayload.parentAuthor.trim() || !commentPayload.parentPermlink.trim()) {
       setStatus({
         type: 'error',
-        message: 'Parent author and permlink are required to comment.',
+        message: m.prototype_comment_parent_required(),
       })
       return
     }
 
     if (!commentPayload.body.trim()) {
-      setStatus({ type: 'error', message: 'Comment body is required.' })
+      setStatus({ type: 'error', message: m.prototype_comment_body_required() })
       return
     }
 
@@ -213,13 +214,13 @@ function StudioHome() {
     if (response.success) {
       setStatus({
         type: 'success',
-        message: 'Comment broadcasted. It should appear on Hive shortly.',
+        message: m.prototype_comment_broadcasted(),
       })
       setCommentPayload((prev) => ({ ...prev, body: '' }))
     } else {
       setStatus({
         type: 'error',
-        message: response.message ?? 'Comment broadcast failed.',
+        message: response.message ?? m.prototype_comment_failed(),
       })
     }
 
@@ -251,14 +252,13 @@ function StudioHome() {
         <Stack gap={10}>
           <Stack gap={4} maxW="720px">
             <Badge w="fit-content" colorPalette="orange" variant="subtle">
-              Prototype: Keychain + Publishing
+              {m.prototype_badge()}
             </Badge>
             <Heading size="2xl" letterSpacing="-0.02em">
-              Build, publish, and converse on Hive with a studio that feels like home.
+              {m.prototype_heading()}
             </Heading>
             <Text fontSize="lg" color="fg.muted">
-              Connect Hive Keychain, draft posts to your blog or favorite community, and
-              reply to existing discussions without leaving this workspace.
+              {m.prototype_subtitle()}
             </Text>
           </Stack>
 
@@ -268,8 +268,7 @@ function StudioHome() {
               variant="subtle"
               colorPalette="orange"
             >
-                Hive Keychain was not detected. Install the browser extension to sign
-                in and broadcast transactions.
+              {m.prototype_keychain_missing()}
             </Alert>
           )}
 
@@ -296,12 +295,12 @@ function StudioHome() {
               boxShadow="lg"
             >
               <Stack gap={4}>
-                <Heading size="md">Connect Hive Keychain</Heading>
+                <Heading size="md">{m.prototype_connect_heading()}</Heading>
                 <Text color="fg.muted" fontSize="sm">
-                  Authenticate with your Hive account using the Keychain extension.
+                  {m.prototype_connect_description()}
                 </Text>
                 <Input
-                  placeholder="Hive username"
+                  placeholder={m.prototype_connect_username_placeholder()}
                   value={loginName}
                   onChange={(event) => setLoginName(event.target.value)}
                   bg="bg.muted"
@@ -313,7 +312,7 @@ function StudioHome() {
                   loading={isConnecting}
                   disabled={!keychainDetected}
                 >
-                  Connect account
+                  {m.prototype_connect_button()}
                 </Button>
                 {accountReady && account && (
                   <Box
@@ -328,14 +327,14 @@ function StudioHome() {
                         <Text fontWeight="600">@{account}</Text>
                         <Text fontSize="xs" color="fg.muted">
                           {profileLoading
-                            ? 'Fetching profile...'
+                            ? m.prototype_profile_loading()
                             : profile
-                            ? `Posts: ${profile.post_count ?? 0}`
-                            : 'Profile unavailable'}
+                            ? m.prototype_profile_posts({ count: profile.post_count ?? 0 })
+                            : m.prototype_profile_unavailable()}
                         </Text>
                       </Stack>
                       <Button size="sm" variant="outline" onClick={handleLogout}>
-                        Sign out
+                        {m.prototype_sign_out()}
                       </Button>
                     </Flex>
                   </Box>
@@ -353,16 +352,15 @@ function StudioHome() {
             >
               <Stack gap={6}>
                 <Box>
-                  <Heading size="md">Publish a post</Heading>
+                  <Heading size="md">{m.prototype_publish_heading()}</Heading>
                   <Text fontSize="sm" color="fg.muted">
-                    Ship to your personal blog or a community by setting the
-                    community field to something like `hive-12345`.
+                    {m.prototype_publish_description()}
                   </Text>
                 </Box>
 
                 <Stack gap={4}>
                   <Input
-                    placeholder="Post title"
+                    placeholder={m.prototype_post_title_placeholder()}
                     value={postPayload.title}
                     onChange={(event) =>
                       setPostPayload((prev) => ({
@@ -374,7 +372,7 @@ function StudioHome() {
                     borderColor="border"
                   />
                   <Textarea
-                    placeholder="Write your post in Markdown"
+                    placeholder={m.prototype_post_body_placeholder()}
                     value={postPayload.body}
                     onChange={(event) =>
                       setPostPayload((prev) => ({
@@ -388,7 +386,7 @@ function StudioHome() {
                   />
                   <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
                     <Input
-                      placeholder="Tags (comma separated)"
+                      placeholder={m.prototype_post_tags_placeholder()}
                       value={postPayload.tags}
                       onChange={(event) =>
                         setPostPayload((prev) => ({
@@ -400,7 +398,7 @@ function StudioHome() {
                       borderColor="border"
                     />
                     <Input
-                      placeholder="Community (optional)"
+                      placeholder={m.prototype_post_community_placeholder()}
                       value={postPayload.community}
                       onChange={(event) =>
                         setPostPayload((prev) => ({
@@ -415,7 +413,7 @@ function StudioHome() {
                   <HStack gap={2} flexWrap="wrap">
                     {tagPreview.length === 0 ? (
                       <Text fontSize="xs" color="fg.muted">
-                        Tags help with discovery (max 5).
+                        {m.prototype_post_tags_helper()}
                       </Text>
                     ) : (
                       tagPreview.map((tag) => (
@@ -431,7 +429,7 @@ function StudioHome() {
                     loading={isPublishing}
                     disabled={!keychainDetected}
                   >
-                    Publish to Hive
+                    {m.prototype_publish_button()}
                 </Button>
                 </Stack>
               </Stack>
@@ -445,13 +443,12 @@ function StudioHome() {
               p={6}
             >
               <Stack gap={4}>
-                <Heading size="md">Comment on a post</Heading>
+                <Heading size="md">{m.prototype_comment_heading()}</Heading>
                 <Text fontSize="sm" color="fg.muted">
-                  Paste the parent author and permlink from the post you want to
-                  reply to.
+                  {m.prototype_comment_description()}
                 </Text>
                 <Input
-                  placeholder="Parent author (without @)"
+                  placeholder={m.prototype_comment_parent_author_placeholder()}
                   value={commentPayload.parentAuthor}
                   onChange={(event) =>
                     setCommentPayload((prev) => ({
@@ -463,7 +460,7 @@ function StudioHome() {
                   borderColor="border"
                 />
                 <Input
-                  placeholder="Parent permlink"
+                  placeholder={m.prototype_comment_parent_permlink_placeholder()}
                   value={commentPayload.parentPermlink}
                   onChange={(event) =>
                     setCommentPayload((prev) => ({
@@ -475,7 +472,7 @@ function StudioHome() {
                   borderColor="border"
                 />
                 <Textarea
-                  placeholder="Write your comment"
+                  placeholder={m.prototype_comment_body_placeholder()}
                   value={commentPayload.body}
                   onChange={(event) =>
                     setCommentPayload((prev) => ({
@@ -494,7 +491,7 @@ function StudioHome() {
                   loading={isCommenting}
                   disabled={!keychainDetected}
                 >
-                  Reply on Hive
+                  {m.prototype_comment_button()}
                 </Button>
               </Stack>
             </Box>
@@ -507,19 +504,18 @@ function StudioHome() {
               p={6}
             >
               <Stack gap={3}>
-                <Heading size="md">Keychain status</Heading>
+                <Heading size="md">{m.prototype_keychain_status_heading()}</Heading>
                 <Text fontSize="sm" color="fg.muted">
-                  Keep Keychain unlocked for quick posting. If the extension is
-                  locked, Hive will ask you to unlock it before signing.
+                  {m.prototype_keychain_status_description()}
                 </Text>
                 <Flex align="center" gap={3}>
                   {keychainDetected ? (
                     <Badge colorPalette="green" variant="subtle">
-                      Detected
+                      {m.prototype_keychain_detected()}
                     </Badge>
                   ) : (
                     <Badge colorPalette="red" variant="subtle">
-                      Missing
+                      {m.prototype_keychain_missing_badge()}
                     </Badge>
                   )}
                   {!accountReady && <Spinner size="sm" color="fg.muted" />}
