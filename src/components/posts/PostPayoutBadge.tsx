@@ -15,7 +15,7 @@ import {
   getPostQueryOptions,
   type Entry,
 } from '@ecency/sdk'
-import { parseAssetAmount } from '@/lib/hive/payouts'
+import { parseAssetAmount, sumAssetStrings } from '@/lib/hive/payouts'
 
 type PostPayoutBadgeProps = {
   author: string
@@ -64,22 +64,38 @@ export default function PostPayoutBadge({
   payout,
 }: PostPayoutBadgeProps) {
   const [open, setOpen] = useState(false)
-  const shouldFetch = open && Boolean(permlink)
+  const [hasOpened, setHasOpened] = useState(false)
+  const shouldFetch = hasOpened && Boolean(permlink)
   const postQuery = useQuery({
     ...getPostQueryOptions(author, permlink),
     enabled: shouldFetch,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
   const dynamicPropsQuery = useQuery({
     ...getDynamicPropsQueryOptions(),
     enabled: shouldFetch,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
   })
 
   const entry = postQuery.data ?? undefined
   const pendingValue = resolvePayoutString(entry, payout?.pending)
+  const paidOutTotal = entry
+    ? sumAssetStrings(entry.author_payout_value, entry.curator_payout_value)
+    : null
+  const totalValue = paidOutTotal ?? payout?.total ?? pendingValue
   const pendingParsed = pendingValue ? parseAssetAmount(pendingValue) : null
-  const pendingLabel = pendingParsed
+  const totalParsed = totalValue ? parseAssetAmount(totalValue) : null
+  const pendingAmount = pendingParsed?.amount ?? 0
+  const isPaidOut = entry?.is_paidout ?? false
+  const pendingLabel = pendingParsed && pendingAmount > 0
     ? `$ ${pendingParsed.amount.toFixed(3)}`
-    : payout?.pending ?? 'Rewards'
+    : totalParsed
+      ? `$ ${totalParsed.amount.toFixed(3)}`
+      : payout?.pending ?? 'Rewards'
 
   const priceBase = dynamicPropsQuery.data?.base
   const priceQuote = dynamicPropsQuery.data?.quote
@@ -87,7 +103,14 @@ export default function PostPayoutBadge({
     typeof priceBase === 'number' && typeof priceQuote === 'number' && priceBase > 0
       ? priceQuote / priceBase
       : null
-  const totalHive = pendingParsed && price ? pendingParsed.amount * price : null
+  const breakdownSource =
+    pendingParsed && pendingAmount > 0 ? pendingParsed : totalParsed
+  const totalHive =
+    breakdownSource?.symbol === 'HBD' && price
+      ? breakdownSource.amount * price
+      : breakdownSource?.symbol === 'HIVE' || breakdownSource?.symbol === 'HP'
+        ? breakdownSource.amount
+        : null
   const hiveAmount = totalHive !== null ? totalHive / 2 : null
   const hpAmount = totalHive !== null ? totalHive / 2 : null
 
@@ -95,11 +118,19 @@ export default function PostPayoutBadge({
   const payoutCountdown = formatCountdown(entry?.payout_at, entry?.is_paidout)
   const authorPayout = entry?.author_payout_value
   const curatorPayout = entry?.curator_payout_value
+  const showPending = !isPaidOut && Boolean(pendingValue)
+  const showPaidOut = isPaidOut && (authorPayout || curatorPayout)
+  const showCountdown = !isPaidOut
 
   return (
     <Popover.Root
       open={open}
-      onOpenChange={(details) => setOpen(details.open)}
+      onOpenChange={(details) => {
+        setOpen(details.open)
+        if (details.open) {
+          setHasOpened(true)
+        }
+      }}
       positioning={{ placement: 'top-start' }}
     >
       <Popover.Trigger asChild>
@@ -125,19 +156,21 @@ export default function PostPayoutBadge({
             boxShadow="lg"
           >
             <Stack gap={3}>
-              <Box>
-                <Text
-                  fontSize="xs"
-                  color="fg.muted"
-                  textTransform="uppercase"
-                  letterSpacing="0.08em"
-                >
-                  Pending payout
-                </Text>
-                <Text fontSize="sm" fontWeight="600">
-                  {formatUsd(pendingValue)}
-                </Text>
-              </Box>
+              {showPending ? (
+                <Box>
+                  <Text
+                    fontSize="xs"
+                    color="fg.muted"
+                    textTransform="uppercase"
+                    letterSpacing="0.08em"
+                  >
+                    Pending payout
+                  </Text>
+                  <Text fontSize="sm" fontWeight="600">
+                    {formatUsd(pendingValue)}
+                  </Text>
+                </Box>
+              ) : null}
 
               {postQuery.isLoading ? (
                 <Stack gap={2}>
@@ -202,7 +235,7 @@ export default function PostPayoutBadge({
                 </Stack>
               </Box>
 
-              {(authorPayout || curatorPayout) && (
+              {showPaidOut && (
                 <Box>
                   <Text
                     fontSize="xs"
@@ -234,19 +267,21 @@ export default function PostPayoutBadge({
                 </Box>
               )}
 
-              <Box>
-                <Text
-                  fontSize="xs"
-                  color="fg.muted"
-                  textTransform="uppercase"
-                  letterSpacing="0.08em"
-                >
-                  Payout
-                </Text>
-                <Text fontSize="xs" color="fg.muted">
-                  {payoutCountdown}
-                </Text>
-              </Box>
+              {showCountdown ? (
+                <Box>
+                  <Text
+                    fontSize="xs"
+                    color="fg.muted"
+                    textTransform="uppercase"
+                    letterSpacing="0.08em"
+                  >
+                    Payout
+                  </Text>
+                  <Text fontSize="xs" color="fg.muted">
+                    {payoutCountdown}
+                  </Text>
+                </Box>
+              ) : null}
             </Stack>
           </Popover.Content>
         </Popover.Positioner>
