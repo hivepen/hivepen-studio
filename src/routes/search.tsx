@@ -7,6 +7,7 @@ import {
   Button,
   Heading,
   Input,
+  HStack,
   SimpleGrid,
   Stack,
   Text,
@@ -222,8 +223,11 @@ function Search() {
     scope === 'user' && username.trim().length > 0
       ? username.trim()
       : filters.author.trim() || undefined
+  const hasAuthor = Boolean(scopedAuthor)
+  const canSearch = Boolean(activeTag) || hasAuthor
 
   const postsQuery = usePostsQuery({
+    source: hasAuthor ? 'account' : 'ranked',
     sort: filters.sort,
     tag: activeTag,
     author: scopedAuthor,
@@ -284,177 +288,206 @@ function Search() {
       </Box>
 
       <Stack gap={4}>
-        <Stack gap={2}>
-          <Text fontSize="sm" color="fg.muted">
-            Scope
-          </Text>
-          <Stack direction={{ base: 'column', md: 'row' }} gap={3}>
-            <Button
-              variant={scope === 'all' ? 'solid' : 'outline'}
-              colorPalette="gray"
-              onClick={() => {
-                setScope('all')
-                syncQueryParams({ ...filters, author: '' }, 'all', '')
-              }}
-            >
-              All posts
-            </Button>
-            <Button
-              variant={scope === 'user' ? 'solid' : 'outline'}
-              colorPalette="gray"
-              onClick={() => {
-                setScope('user')
-                syncQueryParams(filters, 'user', username)
-              }}
-            >
-              User posts
-            </Button>
-          </Stack>
-        </Stack>
+        <Box
+          border="1px solid"
+          borderColor="border"
+          borderRadius="16px"
+          bg="bg.panel"
+          p={{ base: 4, md: 6 }}
+        >
+          <Stack gap={4}>
+            <HStack justify="space-between" wrap="wrap" gap={3}>
+              <Stack gap={1}>
+                <Text fontSize="sm" fontWeight="600">
+                  Filters
+                </Text>
+                <Text fontSize="xs" color="fg.muted">
+                  Narrow results by tag, community, author, and date.
+                </Text>
+              </Stack>
+              <Select.Root
+                collection={sortCollection}
+                value={[filters.sort]}
+                onValueChange={(details) => {
+                  const value = details.value[0] as SearchFilters['sort'] | undefined
+                  if (!value) return
+                  setFilters((prev) => {
+                    const next = { ...prev, sort: value }
+                    syncQueryParams(next, scope)
+                    return next
+                  })
+                }}
+                size="sm"
+              >
+                <Select.Control>
+                  <Select.Trigger maxW="220px" bg="bg.panel" borderColor="border">
+                    <Select.ValueText placeholder="Sort posts" />
+                    <Select.IndicatorGroup>
+                      <Select.Indicator />
+                    </Select.IndicatorGroup>
+                  </Select.Trigger>
+                </Select.Control>
+                <Select.Positioner>
+                  <Select.Content>
+                    {sortCollection.items.map((item) => (
+                      <Select.Item key={item.value} item={item}>
+                        <Select.ItemText>{item.label}</Select.ItemText>
+                        <Select.ItemIndicator />
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Positioner>
+              </Select.Root>
+            </HStack>
 
-        <SimpleGrid columns={{ base: 1, xl: 2 }} gap={4}>
-          <CommunityCombobox
-            value={filters.community}
-            onChange={(value) =>
-              setFilters((prev) => {
-                const next = { ...prev, community: value }
-                syncQueryParams(next, scope)
-                return next
-              })
-            }
-          />
-          <Field label="Tag" helperText="Optional if community selected" required={!filters.community}>
-            <Input
-              placeholder="spanish, photography, etc."
-              value={filters.tag}
-              onChange={(event) =>
-                setFilters((prev) => {
-                  const next = { ...prev, tag: event.target.value }
-                  syncQueryParams(next, scope)
-                  return next
-                })
-              }
-              bg="bg.panel"
-              borderColor="border"
-            />
-          </Field>
-        </SimpleGrid>
+            <Stack gap={2}>
+              <Text fontSize="sm" color="fg.muted">
+                Scope
+              </Text>
+              <Stack direction={{ base: 'column', md: 'row' }} gap={3}>
+                <Button
+                  variant={scope === 'all' ? 'solid' : 'outline'}
+                  colorPalette="gray"
+                  onClick={() => {
+                    setScope('all')
+                    syncQueryParams({ ...filters, author: '' }, 'all', '')
+                  }}
+                >
+                  All posts
+                </Button>
+                <Button
+                  variant={scope === 'user' ? 'solid' : 'outline'}
+                  colorPalette="gray"
+                  onClick={() => {
+                    setScope('user')
+                    syncQueryParams(filters, 'user', username)
+                  }}
+                >
+                  User posts
+                </Button>
+              </Stack>
+            </Stack>
 
-        <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
-            <Input
-              placeholder="Author (optional)"
-              value={scope === 'user' ? username : filters.author}
-              onChange={(event) =>
-                scope === 'user'
-                  ? (() => {
-                      setUsername(event.target.value)
-                      syncQueryParams(filters, 'user', event.target.value)
-                    })()
-                  : setFilters((prev) => {
-                      const next = { ...prev, author: event.target.value }
+            <SimpleGrid columns={{ base: 1, xl: 2 }} gap={4}>
+              <CommunityCombobox
+                value={filters.community}
+                onChange={(value) =>
+                  setFilters((prev) => {
+                    const next = { ...prev, community: value }
+                    syncQueryParams(next, scope)
+                    return next
+                  })
+                }
+              />
+              <Field label="Tag" helperText="Optional if community selected" required={!filters.community}>
+                <Input
+                  placeholder="spanish, photography, etc."
+                  value={filters.tag}
+                  onChange={(event) =>
+                    setFilters((prev) => {
+                      const next = { ...prev, tag: event.target.value }
                       syncQueryParams(next, scope)
                       return next
                     })
-              }
-            bg="bg.panel"
-            borderColor="border"
-          />
-          <Input
-            type="date"
-            value={filters.dateFrom}
-            onChange={(event) =>
-              setFilters((prev) => {
-                const next = { ...prev, dateFrom: event.target.value }
-                syncQueryParams(next, scope)
-                return next
-              })
-            }
-            bg="bg.panel"
-            borderColor="border"
-          />
-          <Input
-            type="date"
-            value={filters.dateTo}
-            onChange={(event) =>
-              setFilters((prev) => {
-                const next = { ...prev, dateTo: event.target.value }
-                syncQueryParams(next, scope)
-                return next
-              })
-            }
-            bg="bg.panel"
-            borderColor="border"
-          />
-        </SimpleGrid>
+                  }
+                  bg="bg.panel"
+                  borderColor="border"
+                />
+              </Field>
+            </SimpleGrid>
 
-        <Stack direction={{ base: 'column', md: 'row' }} gap={3} align="center">
-          <Select.Root
-            collection={sortCollection}
-            value={[filters.sort]}
-            onValueChange={(details) => {
-              const value = details.value[0] as SearchFilters['sort'] | undefined
-              if (!value) return
-              setFilters((prev) => {
-                const next = { ...prev, sort: value }
-                syncQueryParams(next, scope)
-                return next
-              })
-            }}
-            size="sm"
-          >
-            <Select.Control>
-              <Select.Trigger maxW="220px" bg="bg.panel" borderColor="border">
-                <Select.ValueText placeholder="Sort posts" />
-                <Select.IndicatorGroup>
-                  <Select.Indicator />
-                </Select.IndicatorGroup>
-              </Select.Trigger>
-            </Select.Control>
-            <Select.Positioner>
-              <Select.Content>
-                {sortCollection.items.map((item) => (
-                  <Select.Item key={item.value} item={item}>
-                    <Select.ItemText>{item.label}</Select.ItemText>
-                    <Select.ItemIndicator />
-                  </Select.Item>
-                ))}
-              </Select.Content>
-            </Select.Positioner>
-          </Select.Root>
-          <Button
-            colorPalette="gray"
-            onClick={() => postsQuery.refetch()}
-            loading={postsQuery.isFetching}
-            disabled={!activeTag}
-          >
-            Run search
-          </Button>
-          <Button
-            variant="outline"
-            colorPalette="gray"
-            onClick={() => {
-              const cleared: SearchFilters = {
-                sort: 'trending',
-                tag: '',
-                community: '',
-                author: '',
-                dateFrom: '',
-                dateTo: '',
-              }
-              setFilters(cleared)
-              setUsername('')
-              setScope('all')
-              syncQueryParams(cleared, 'all', '')
-            }}
-          >
-            Clear filters
-          </Button>
-          <Text fontSize="sm" color="fg.muted">
-            {activeTag
-              ? `Searching by ${activeTag}`
-              : 'Select a community or tag to search.'}
-          </Text>
-        </Stack>
+            <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
+              <Field label="Author">
+                <Input
+                  placeholder="accountname"
+                  value={scope === 'user' ? username : filters.author}
+                  onChange={(event) =>
+                    scope === 'user'
+                      ? (() => {
+                          setUsername(event.target.value)
+                          syncQueryParams(filters, 'user', event.target.value)
+                        })()
+                      : setFilters((prev) => {
+                          const next = { ...prev, author: event.target.value }
+                          syncQueryParams(next, scope)
+                          return next
+                        })
+                  }
+                  bg="bg.panel"
+                  borderColor="border"
+                />
+              </Field>
+              <Field label="From">
+                <Input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(event) =>
+                    setFilters((prev) => {
+                      const next = { ...prev, dateFrom: event.target.value }
+                      syncQueryParams(next, scope)
+                      return next
+                    })
+                  }
+                  bg="bg.panel"
+                  borderColor="border"
+                />
+              </Field>
+              <Field label="To">
+                <Input
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(event) =>
+                    setFilters((prev) => {
+                      const next = { ...prev, dateTo: event.target.value }
+                      syncQueryParams(next, scope)
+                      return next
+                    })
+                  }
+                  bg="bg.panel"
+                  borderColor="border"
+                />
+              </Field>
+            </SimpleGrid>
+
+            <HStack justify="space-between" wrap="wrap" gap={3}>
+              <HStack gap={2}>
+                <Button
+                  colorPalette="gray"
+                  onClick={() => postsQuery.refetch()}
+                  loading={postsQuery.isFetching}
+                  disabled={!canSearch}
+                >
+                  Run search
+                </Button>
+                <Button
+                  variant="outline"
+                  colorPalette="gray"
+                  onClick={() => {
+                    const cleared: SearchFilters = {
+                      sort: 'trending',
+                      tag: '',
+                      community: '',
+                      author: '',
+                      dateFrom: '',
+                      dateTo: '',
+                    }
+                    setFilters(cleared)
+                    setUsername('')
+                    setScope('all')
+                    syncQueryParams(cleared, 'all', '')
+                  }}
+                >
+                  Clear filters
+                </Button>
+              </HStack>
+              <Text fontSize="sm" color="fg.muted">
+                {activeTag || hasAuthor
+                  ? `Searching${activeTag ? ` by ${activeTag}` : ''}${hasAuthor ? ` for @${scopedAuthor}` : ''}`
+                  : 'Select a community, tag, or author to search.'}
+              </Text>
+            </HStack>
+          </Stack>
+        </Box>
       </Stack>
 
       <PostsListSection

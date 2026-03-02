@@ -143,9 +143,12 @@ function PostDetailPage() {
       />
 
       <PostPayoutSummary
+        author={post.author}
+        permlink={post.permlink}
         pending={post.payout.pending}
         total={post.payout.total}
         isPaidOut={post.payout.isPaidOut}
+        payout={post.payout}
       />
 
       <DevOnly

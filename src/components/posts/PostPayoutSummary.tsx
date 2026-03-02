@@ -1,15 +1,25 @@
 import { Box, HStack, Stack, Text } from '@chakra-ui/react'
+import PostPayoutBadge from '@/components/posts/PostPayoutBadge'
 
 type PostPayoutSummaryProps = {
+  author?: string
+  permlink?: string
   pending: string
   total: string
   isPaidOut?: boolean
+  payout?: {
+    pending: string
+    total: string
+  }
 }
 
 export default function PostPayoutSummary({
+  author,
+  permlink,
   pending,
   total,
   isPaidOut,
+  payout,
 }: PostPayoutSummaryProps) {
   return (
     <Box
@@ -38,6 +48,18 @@ export default function PostPayoutSummary({
             {total}
           </Text>
         </HStack>
+        {author && permlink ? (
+          <HStack justify="space-between">
+            <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
+              Details
+            </Text>
+            <PostPayoutBadge
+              author={author}
+              permlink={permlink}
+              payout={payout}
+            />
+          </HStack>
+        ) : null}
         {isPaidOut ? (
           <Text fontSize="xs" color="fg.muted">
             Paid out
