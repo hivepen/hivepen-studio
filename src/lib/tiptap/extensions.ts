@@ -7,6 +7,7 @@ import Mention from '@tiptap/extension-mention'
 import GlobalDragHandle from '@/lib/tiptap/globalDragHandle'
 import SlashCommand from '@/lib/tiptap/slashCommand'
 import type { SlashCommandItem } from '@/lib/tiptap/slashCommand'
+import { m } from '@/paraglide/messages'
 
 type EditorExtensionsOptions = {
   mentionSuggestion: Parameters<typeof Mention.configure>[0]['suggestion']
@@ -28,12 +29,12 @@ export const getEditorExtensions = ({
     includeChildren: true,
     placeholder: ({ node }) => {
       if (node.type.name === 'heading') {
-        return `Heading ${node.attrs.level ?? 1}`
+        return m.editor_placeholder_heading({ level: node.attrs.level ?? 1 })
       }
       if (node.type.name === 'codeBlock') {
-        return 'Write some code...'
+        return m.editor_placeholder_code()
       }
-      return "Press '/' for commands"
+      return m.editor_placeholder_command()
     },
   }),
   Underline,

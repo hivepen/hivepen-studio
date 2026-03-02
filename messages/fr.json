@@ -324,5 +324,9 @@
   "engagement_heading": "Engagement",
   "engagement_description": "Gérez les réponses, commentaires et interactions communautaires depuis un seul endroit.",
   "drafts_heading": "Brouillons",
-  "drafts_description": "Suivez et organisez vos brouillons ici. Nous connecterons l’enregistrement auto et le support des dossiers ensuite."
+  "drafts_description": "Suivez et organisez vos brouillons ici. Nous connecterons l’enregistrement auto et le support des dossiers ensuite.",
+  "editor_placeholder_heading": "Titre {level}",
+  "editor_placeholder_code": "Écrivez du code...",
+  "editor_placeholder_command": "Appuyez sur '/' pour les commandes",
+  "community_nsfw": "NSFW"
 }

@@ -324,5 +324,9 @@
   "engagement_heading": "Engagement",
   "engagement_description": "Manage replies, comments, and community interactions from one place.",
   "drafts_heading": "Drafts",
-  "drafts_description": "Track and organize drafts here. We will wire autosave and folder support next."
+  "drafts_description": "Track and organize drafts here. We will wire autosave and folder support next.",
+  "editor_placeholder_heading": "Heading {level}",
+  "editor_placeholder_code": "Write some code...",
+  "editor_placeholder_command": "Press '/' for commands",
+  "community_nsfw": "NSFW"
 }

@@ -324,5 +324,9 @@
   "engagement_heading": "Engajamento",
   "engagement_description": "Gerencie respostas, comentários e interações comunitárias em um só lugar.",
   "drafts_heading": "Rascunhos",
-  "drafts_description": "Acompanhe e organize seus rascunhos aqui. Vamos conectar o salvamento automático e suporte a pastas em seguida."
+  "drafts_description": "Acompanhe e organize seus rascunhos aqui. Vamos conectar o salvamento automático e suporte a pastas em seguida.",
+  "editor_placeholder_heading": "Título {level}",
+  "editor_placeholder_code": "Escreva algum código...",
+  "editor_placeholder_command": "Pressione '/' para comandos",
+  "community_nsfw": "NSFW"
 }

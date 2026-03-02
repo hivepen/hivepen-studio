@@ -324,5 +324,9 @@
   "engagement_heading": "互动",
   "engagement_description": "从一个地方管理回复、评论和社区互动。",
   "drafts_heading": "草稿",
-  "drafts_description": "在这里跟踪并整理草稿。我们将接入自动保存和文件夹支持。"
+  "drafts_description": "在这里跟踪并整理草稿。我们将接入自动保存和文件夹支持。",
+  "editor_placeholder_heading": "标题 {level}",
+  "editor_placeholder_code": "写点代码...",
+  "editor_placeholder_command": "按 '/' 查看命令",
+  "community_nsfw": "NSFW"
 }

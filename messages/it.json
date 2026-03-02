@@ -324,5 +324,9 @@
   "engagement_heading": "Coinvolgimento",
   "engagement_description": "Gestisci risposte, commenti e interazioni della community in un unico posto.",
   "drafts_heading": "Bozze",
-  "drafts_description": "Monitora e organizza le bozze qui. Collegheremo presto il salvataggio automatico e il supporto alle cartelle."
+  "drafts_description": "Monitora e organizza le bozze qui. Collegheremo presto il salvataggio automatico e il supporto alle cartelle.",
+  "editor_placeholder_heading": "Titolo {level}",
+  "editor_placeholder_code": "Scrivi del codice...",
+  "editor_placeholder_command": "Premi '/' per i comandi",
+  "community_nsfw": "NSFW"
 }

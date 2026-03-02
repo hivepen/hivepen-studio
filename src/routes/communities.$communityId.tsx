@@ -85,7 +85,9 @@ function CommunityPage() {
               <Text>{m.community_members({ count: communityQuery.data.subscribers })}</Text>
             ) : null}
             {communityQuery.data?.lang ? <Text>{communityQuery.data.lang}</Text> : null}
-            {communityQuery.data?.is_nsfw ? <Text>NSFW</Text> : null}
+            {communityQuery.data?.is_nsfw ? (
+              <Text>{m.community_nsfw()}</Text>
+            ) : null}
           </HStack>
         </Stack>
       </Box>
