@@ -310,7 +310,7 @@ function Search() {
           </Stack>
         </Stack>
 
-        <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+        <SimpleGrid columns={{ base: 1, xl: 2 }} gap={4}>
           <CommunityCombobox
             value={filters.community}
             onChange={(value) =>

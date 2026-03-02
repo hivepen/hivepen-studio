@@ -19,3 +19,10 @@ export const fetchCommunity = async (name: string) => {
 
   return result ?? null
 }
+
+/**
+ * Checks if a string is a valid Hive community ID.
+ * @param id The string to check.
+ * @returns True if the string is a valid Hive community ID, false otherwise.
+ */
+export const isCommunityId = (id: string):boolean => id.trim().toLowerCase().startsWith('hive-') //TODO: check length, maybe use regex to match the pattern: hive-10053 hive-161155 hive-<any number>

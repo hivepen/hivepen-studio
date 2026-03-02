@@ -1,10 +1,11 @@
-import { Box, Card, HStack, Stack, Text } from '@chakra-ui/react'
+import { Box, BoxProps, Card, HStack, ScrollArea, Stack, Text } from '@chakra-ui/react'
 import { Link } from '@tanstack/react-router'
 import { ReactNode } from 'react'
 import useTitleMeta from '@/hooks/useTitleMeta'
 import PostTag from '@/components/PostTag'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { VoteDetail } from '@/lib/posts/votes'
+import { isCommunityId } from '@/lib/hive/community'
 
 export type PostCardProps = {
   title: string
@@ -35,19 +36,21 @@ export default function PostCard({
   permlink,
 }: PostCardProps) {
   const titleMeta = useTitleMeta(title)
-
+  const filteredTags = tags.filter((tag) => !isCommunityId(tag))
   return (
     <Card.Root
       variant="outline"
       overflow="hidden"
-      flexDirection={{ base: 'column', xl: 'row' }}
+      flexDirection={{ base: 'column', '2xl': 'row' }}
     >
       <PostCardMedia
+      flex="1"
+      overflow="hidden"
         author={author}
         coverUrl={coverUrl}
         shortTitle={titleMeta.shortTitle}
       />
-      <Stack flex="1" minW={0}>
+      <Stack flex="2" minW={0}>
         <Card.Header pb={0}>
           <HStack gap={2} color="fg.muted" fontSize="sm" wrap="wrap">
             {community ? (
@@ -90,12 +93,14 @@ export default function PostCard({
           {summary ? (
             <Card.Description lineClamp={2}>{summary}</Card.Description>
           ) : null}
-          {tags.length > 0 ? (
-            <HStack gap={2} wrap="wrap">
-              {tags.map((tag) => (
-                <PostTag key={tag} tag={tag} />
-              ))}
-            </HStack>
+          {filteredTags.length > 0 ? (
+            <ScrollArea.Root>
+              <HStack gap={2} maxH={12} wrap="wrap" overflowX="auto">
+                {filteredTags.map((tag) => (
+                  <PostTag key={tag} tag={tag} />
+                ))}
+              </HStack>
+            </ScrollArea.Root>
           ) : null}
         </Card.Body>
         <Card.Footer pt={3}>{actions}</Card.Footer>
@@ -108,27 +113,29 @@ function PostCardMedia({
   author,
   coverUrl,
   shortTitle,
+  ...props
 }: {
   author: string
   coverUrl?: string
   shortTitle?: string
-}) {
+} & BoxProps) {
   return (
     <Box
-      w={{ base: '100%', xl: '260px' }}
-      h={{ base: '180px', xl: '100%' }}
-      minH={{ xl: '220px' }}
+      w={{ base: '100%', '2xl': '200px' }}
+      h={{ base: '180px', '2xl': '100%' }}
+      minH="180px"
       bg="bg.subtle"
       backgroundImage={coverUrl ? `url(${coverUrl})` : undefined}
+      transition="backgrounds"
+      transitionDuration="0.2s"
       backgroundSize="cover"
       backgroundPosition="center"
-      borderBottom={{ base: '1px solid', xl: 'none' }}
-      borderColor="border"
       display="flex"
       alignItems="center"
       justifyContent="center"
       position="relative"
       overflow="hidden"
+      {...props}
     >
       {!coverUrl && (
         <>
