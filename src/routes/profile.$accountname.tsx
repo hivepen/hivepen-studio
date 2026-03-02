@@ -101,15 +101,16 @@ function ProfilePage() {
           emptyMessage="No posts found for this account."
           renderActions={(post) =>
             post.permlink ? (
-              <PostActions
-                author={post.author}
-                permlink={post.permlink}
-                voteCount={post.votes}
-                commentCount={post.comments}
-                onVoteSuccess={() =>
-                  setLocalStats((prev) => {
-                    const key = `${post.author}/${post.permlink}`
-                    const current = prev[key]?.votes ?? post.votes ?? 0
+            <PostActions
+              author={post.author}
+              permlink={post.permlink}
+              voteCount={post.votes}
+              commentCount={post.comments}
+              variant="card"
+              onVoteSuccess={() =>
+                setLocalStats((prev) => {
+                  const key = `${post.author}/${post.permlink}`
+                  const current = prev[key]?.votes ?? post.votes ?? 0
                     return { ...prev, [key]: { ...prev[key], votes: current + 1 } }
                   })
                 }

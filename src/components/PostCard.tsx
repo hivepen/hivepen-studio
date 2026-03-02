@@ -45,8 +45,7 @@ export default function PostCard({
 }: PostCardProps) {
   const titleMeta = useTitleMeta(title)
   const filteredTags = tags.filter((tag) => !isCommunityId(tag))
-  const appTag = app?.trim() ? `app:${app.trim()}` : undefined
-  const tagItems = appTag ? [appTag, ...filteredTags] : filteredTags
+  const tagItems = filteredTags
   const hasPayout = Boolean(payout?.pending || payout?.total)
   return (
     <Card.Root
@@ -115,16 +114,18 @@ export default function PostCard({
           ) : null}
         </Card.Body>
         <Card.Footer pt={3}>
-          <Stack gap={2} w="full">
+          <HStack gap={3} w="full" justify="space-between" align="center" wrap="wrap">
             {hasPayout ? (
               <PostPayoutBadge
                 author={author}
                 permlink={permlink}
                 payout={payout}
               />
-            ) : null}
+            ) : (
+              <Box />
+            )}
             {actions}
-          </Stack>
+          </HStack>
         </Card.Footer>
       </Stack>
     </Card.Root>

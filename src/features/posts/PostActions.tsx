@@ -1,4 +1,5 @@
 import {
+  Box,
   Collapsible,
   HStack,
   IconButton,
@@ -31,6 +32,7 @@ export default function PostActions({
   commentCount,
   onVoteSuccess,
   onCommentSuccess,
+  variant = 'detail',
 }: {
   author: string
   permlink: string
@@ -38,7 +40,9 @@ export default function PostActions({
   commentCount?: number
   onVoteSuccess?: () => void
   onCommentSuccess?: () => void
+  variant?: 'detail' | 'card'
 }) {
+  const isCard = variant === 'card'
   const [commentBody, setCommentBody] = useState('')
   const [commentOpen, setCommentOpen] = useState(false)
   const [votesOpen, setVotesOpen] = useState(false)
@@ -78,6 +82,43 @@ export default function PostActions({
       onVoteSuccess?.()
     }
   }
+
+  const commentForm = (
+    <Stack gap={3}>
+      <Textarea
+        variant="subtle"
+        value={commentBody}
+        onChange={(event) => setCommentBody(event.target.value)}
+        placeholder="Write a reply"
+        size="sm"
+      />
+      <HStack justify="flex-end">
+        <Tooltip content="Publish comment">
+          <IconButton
+            size="sm"
+            variant="ghost"
+            rounded="full"
+            onClick={handleComment}
+            loading={comment.isCommenting}
+            aria-label="Publish comment"
+            _hover={{ bg: 'bg.subtle', borderColor: 'border.muted' }}
+          >
+            <Send size={16} />
+          </IconButton>
+        </Tooltip>
+      </HStack>
+      {isCard && (vote.error || comment.error) && (
+        <Text fontSize="xs" color="fg.error">
+          {vote.error ?? comment.error}
+        </Text>
+      )}
+      {isCard && (vote.success || comment.success) && (
+        <Text fontSize="xs" color="fg.muted">
+          {vote.success ? 'Vote sent.' : 'Comment published.'}
+        </Text>
+      )}
+    </Stack>
+  )
 
   return (
     <Stack>
@@ -190,63 +231,84 @@ export default function PostActions({
           </Popover.Root>
         </Group>
 
-        <Tooltip content="Comment">
-          <Button
-            size="md"
-            variant="ghost"
-            rounded="full"
-            aria-label="Comment"
-            onClick={() => setCommentOpen((prev) => !prev)}
-            gap={2}
+        {isCard ? (
+          <Popover.Root
+            open={commentOpen}
+            onOpenChange={(details) => setCommentOpen(details.open)}
+            positioning={{ placement: 'top-start' }}
           >
-            <MessageCircle size={16} />
-            <Text fontSize="xs" fontWeight="600" color="fg.muted">
-              {resolvedCommentCount}
-            </Text>
-          </Button>
-        </Tooltip>
+            <Popover.Trigger asChild>
+              <Tooltip content="Comment">
+                <Button
+                  size="md"
+                  variant="ghost"
+                  rounded="full"
+                  aria-label="Comment"
+                  gap={2}
+                >
+                  <MessageCircle size={16} />
+                  <Text fontSize="xs" fontWeight="600" color="fg.muted">
+                    {resolvedCommentCount}
+                  </Text>
+                </Button>
+              </Tooltip>
+            </Popover.Trigger>
+            <Portal>
+              <Popover.Positioner>
+                <Popover.Content
+                  bg="bg.panel"
+                  border="1px solid"
+                  borderColor="border"
+                  borderRadius="12px"
+                  p={3}
+                  minW="260px"
+                  maxW="320px"
+                  boxShadow="lg"
+                >
+                  {commentForm}
+                </Popover.Content>
+              </Popover.Positioner>
+            </Portal>
+          </Popover.Root>
+        ) : (
+          <Tooltip content="Comment">
+            <Button
+              size="md"
+              variant="ghost"
+              rounded="full"
+              aria-label="Comment"
+              onClick={() => setCommentOpen((prev) => !prev)}
+              gap={2}
+            >
+              <MessageCircle size={16} />
+              <Text fontSize="xs" fontWeight="600" color="fg.muted">
+                {resolvedCommentCount}
+              </Text>
+            </Button>
+          </Tooltip>
+        )}
 
       </HStack>
 
-      {(vote.error || comment.error) && (
-        <Text fontSize="xs" color="fg.error" mt={2}>
-          {vote.error ?? comment.error}
-        </Text>
+      {!isCard && (
+        <>
+          {(vote.error || comment.error) && (
+            <Text fontSize="xs" color="fg.error" mt={2}>
+              {vote.error ?? comment.error}
+            </Text>
+          )}
+          {(vote.success || comment.success) && (
+            <Text fontSize="xs" color="fg.muted" mt={2}>
+              {vote.success ? 'Vote sent.' : 'Comment published.'}
+            </Text>
+          )}
+          <Collapsible.Root open={commentOpen}>
+            <Collapsible.Content>
+              <Box mt={3}>{commentForm}</Box>
+            </Collapsible.Content>
+          </Collapsible.Root>
+        </>
       )}
-      {(vote.success || comment.success) && (
-        <Text fontSize="xs" color="fg.muted" mt={2}>
-          {vote.success ? 'Vote sent.' : 'Comment published.'}
-        </Text>
-      )}
-
-      <Collapsible.Root open={commentOpen}>
-        <Collapsible.Content>
-          <HStack mt={3} align="start">
-            <Textarea
-              variant="subtle"
-              value={commentBody}
-              onChange={(event) => setCommentBody(event.target.value)}
-              placeholder="Write a reply"
-              size="sm"
-            />
-            <HStack mt={2} justify="flex-end">
-              <Tooltip content="Publish comment">
-                <IconButton
-                  size="sm"
-                  variant="ghost"
-                  rounded="full"
-                  onClick={handleComment}
-                  loading={comment.isCommenting}
-                  aria-label="Publish comment"
-                  _hover={{ bg: 'bg.subtle', borderColor: 'border.muted' }}
-                >
-                  <Send size={16} />
-                </IconButton>
-              </Tooltip>
-            </HStack>
-          </HStack>
-        </Collapsible.Content>
-      </Collapsible.Root>
     </Stack>
   )
 }

@@ -98,6 +98,7 @@ function CommunityPage() {
               permlink={post.permlink}
               voteCount={post.votes}
               commentCount={post.comments}
+              variant="card"
               onVoteSuccess={() =>
                 setLocalStats((prev) => {
                   const key = `${post.author}/${post.permlink}`
