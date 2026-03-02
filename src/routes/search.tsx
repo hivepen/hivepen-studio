@@ -260,6 +260,7 @@ function Search() {
         tags: post.tags,
         summary: post.summary,
         coverUrl: post.coverUrl,
+        app: post.app,
         createdAt: new Date(post.created).toLocaleDateString(),
         permlink: post.permlink,
         votes: overrides.votes ?? post.votes,

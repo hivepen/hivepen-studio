@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { ReactNode } from 'react'
 import useTitleMeta from '@/hooks/useTitleMeta'
 import PostTag from '@/components/PostTag'
+import PostPayoutBadge from '@/components/posts/PostPayoutBadge'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { VoteDetail } from '@/lib/posts/votes'
 import { isCommunityId } from '@/lib/hive/community'
@@ -17,6 +18,7 @@ export type PostCardProps = {
   createdAt?: string
   comments?: number
   votes?: number
+  app?: string
   payout?: {
     pending: string
     total: string
@@ -37,11 +39,14 @@ export default function PostCard({
   createdAt,
   coverUrl,
   actions,
+  app,
   payout,
   permlink,
 }: PostCardProps) {
   const titleMeta = useTitleMeta(title)
   const filteredTags = tags.filter((tag) => !isCommunityId(tag))
+  const appTag = app?.trim() ? `app:${app.trim()}` : undefined
+  const tagItems = appTag ? [appTag, ...filteredTags] : filteredTags
   const hasPayout = Boolean(payout?.pending || payout?.total)
   return (
     <Card.Root
@@ -99,10 +104,10 @@ export default function PostCard({
           {summary ? (
             <Card.Description lineClamp={2}>{summary}</Card.Description>
           ) : null}
-          {filteredTags.length > 0 ? (
+          {tagItems.length > 0 ? (
             <ScrollArea.Root>
               <HStack gap={2} maxH={12} wrap="wrap" overflowX="auto">
-                {filteredTags.map((tag) => (
+                {tagItems.map((tag) => (
                   <PostTag key={tag} tag={tag} />
                 ))}
               </HStack>
@@ -112,10 +117,11 @@ export default function PostCard({
         <Card.Footer pt={3}>
           <Stack gap={2} w="full">
             {hasPayout ? (
-              <HStack justify="space-between" fontSize="xs" color="fg.muted">
-                <Text>Pending: {payout?.pending}</Text>
-                <Text>Total: {payout?.total}</Text>
-              </HStack>
+              <PostPayoutBadge
+                author={author}
+                permlink={permlink}
+                payout={payout}
+              />
             ) : null}
             {actions}
           </Stack>

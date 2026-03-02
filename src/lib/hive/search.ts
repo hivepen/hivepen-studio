@@ -28,6 +28,7 @@ export type SearchResult = {
   communityTitle?: string
   summary?: string
   coverUrl?: string
+  app?: string
   votes?: number
   comments?: number
   payout?: {
@@ -82,6 +83,10 @@ export async function searchRankedPosts({
       typeof imageList[0] === 'string' ? imageList[0] : undefined
     const summary =
       typeof metadata?.description === 'string' ? metadata.description : undefined
+    const app =
+      typeof metadata?.app === 'string'
+        ? metadata.app.split('/')[0]?.trim() || undefined
+        : undefined
     const pendingPayout =
       typeof post.pending_payout_value === 'string'
         ? post.pending_payout_value
@@ -116,6 +121,7 @@ export async function searchRankedPosts({
       communityTitle: post.community_title,
       summary,
       coverUrl,
+      app,
       payout,
       votes:
         typeof post.net_votes === 'number'
@@ -165,6 +171,10 @@ export async function searchAccountPosts({
       typeof imageList[0] === 'string' ? imageList[0] : undefined
     const summary =
       typeof metadata?.description === 'string' ? metadata.description : undefined
+    const app =
+      typeof metadata?.app === 'string'
+        ? metadata.app.split('/')[0]?.trim() || undefined
+        : undefined
     const pendingPayout =
       typeof post.pending_payout_value === 'string'
         ? post.pending_payout_value
@@ -199,6 +209,7 @@ export async function searchAccountPosts({
       communityTitle: post.community_title,
       summary,
       coverUrl,
+      app,
       payout,
       votes:
         typeof post.net_votes === 'number'
