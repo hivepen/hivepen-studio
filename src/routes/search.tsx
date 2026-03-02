@@ -17,6 +17,8 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import { searchAccounts } from '@/lib/hive/account'
+import { m } from '@/paraglide/messages'
+import { getLocale } from '@/paraglide/runtime'
 
 import CommunityCombobox from '@/components/CommunityCombobox'
 import PostsListSection from '@/features/posts/PostsListSection'
@@ -85,6 +87,7 @@ function Search() {
   const { scope, setScope, username, setUsername } = usePostsListState()
   const readyRef = useRef(false)
   const storedRef = useRef<StoredSearchState | null>(null)
+  const locale = getLocale()
   if (storedRef.current === null && typeof window !== 'undefined') {
     storedRef.current = readStoredState()
   }
@@ -279,13 +282,13 @@ function Search() {
     () =>
       createListCollection({
         items: [
-          { label: 'Trending', value: 'trending' },
-          { label: 'Hot', value: 'hot' },
-          { label: 'Newest', value: 'created' },
-          { label: 'Top payout', value: 'payout' },
+          { label: m.search_sort_trending(), value: 'trending' },
+          { label: m.search_sort_hot(), value: 'hot' },
+          { label: m.search_sort_newest(), value: 'created' },
+          { label: m.search_sort_payout(), value: 'payout' },
         ],
       }),
-    []
+    [locale]
   )
 
   const cardResults = useMemo(() => {
@@ -314,12 +317,11 @@ function Search() {
     <Stack gap={6} p={6}>
       <Box>
         <Badge colorPalette="purple" variant="subtle" mb={2}>
-          Global Search
+          {m.search_badge()}
         </Badge>
-        <Heading size="lg">Search posts across Hive</Heading>
+        <Heading size="lg">{m.search_heading()}</Heading>
         <Text color="fg.muted" mt={2} maxW="720px">
-          Filter by tags, community, author, and date range. The search uses the
-          Hive bridge ranked posts endpoint and refines results locally.
+          {m.search_description()}
         </Text>
       </Box>
 
@@ -335,10 +337,10 @@ function Search() {
             <HStack justify="space-between" wrap="wrap" gap={3}>
               <Stack gap={1}>
                 <Text fontSize="sm" fontWeight="600">
-                  Filters
+                  {m.search_filters_title()}
                 </Text>
                 <Text fontSize="xs" color="fg.muted">
-                  Narrow results by tag, community, author, and date.
+                  {m.search_filters_subtitle()}
                 </Text>
               </Stack>
               <Select.Root
@@ -357,7 +359,7 @@ function Search() {
               >
                 <Select.Control>
                   <Select.Trigger maxW="220px" bg="bg.panel" borderColor="border">
-                    <Select.ValueText placeholder="Sort posts" />
+                    <Select.ValueText placeholder={m.search_sort_placeholder()} />
                     <Select.IndicatorGroup>
                       <Select.Indicator />
                     </Select.IndicatorGroup>
@@ -378,7 +380,7 @@ function Search() {
 
             <Stack gap={2}>
               <Text fontSize="sm" color="fg.muted">
-                Scope
+                {m.search_scope_label()}
               </Text>
               <Stack direction={{ base: 'column', md: 'row' }} gap={3}>
                 <Button
@@ -389,7 +391,7 @@ function Search() {
                     syncQueryParams({ ...filters, author: '' }, 'all', '')
                   }}
                 >
-                  All posts
+                  {m.search_scope_all()}
                 </Button>
                 <Button
                   variant={scope === 'user' ? 'solid' : 'outline'}
@@ -399,7 +401,7 @@ function Search() {
                     syncQueryParams(filters, 'user', username)
                   }}
                 >
-                  User posts
+                  {m.search_scope_user()}
                 </Button>
               </Stack>
             </Stack>
@@ -415,9 +417,13 @@ function Search() {
                   })
                 }
               />
-              <Field label="Tag" helperText="Optional if community selected" required={!filters.community}>
+              <Field
+                label={m.search_tag_label()}
+                helperText={m.search_tag_helper()}
+                required={!filters.community}
+              >
                 <Input
-                  placeholder="spanish, photography, etc."
+                  placeholder={m.search_tag_placeholder()}
                   value={filters.tag}
                   onChange={(event) =>
                     setFilters((prev) => {
@@ -433,9 +439,9 @@ function Search() {
             </SimpleGrid>
 
             <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
-              <Field label="Author">
+              <Field label={m.search_author_label()}>
                 <Input
-                  placeholder="accountname"
+                  placeholder={m.search_author_placeholder()}
                   value={authorInput}
                   onChange={(event) => setAuthorInput(event.target.value)}
                   bg="bg.panel"
@@ -452,7 +458,7 @@ function Search() {
                   >
                     {authorSuggestionsQuery.isFetching ? (
                       <Text fontSize="xs" color="fg.muted">
-                        Searching…
+                        {m.search_author_searching()}
                       </Text>
                     ) : authorSuggestionsQuery.data &&
                       authorSuggestionsQuery.data.length > 0 ? (
@@ -478,20 +484,20 @@ function Search() {
                               colorPalette="gray"
                               onClick={() => setAuthorInput(user.name)}
                             >
-                              Use
+                              {m.search_author_use()}
                             </Button>
                           </HStack>
                         ))}
                       </Stack>
                     ) : (
                       <Text fontSize="xs" color="fg.muted">
-                        No users found.
+                        {m.search_author_no_users()}
                       </Text>
                     )}
                   </Box>
                 ) : null}
               </Field>
-              <Field label="From">
+              <Field label={m.search_from_label()}>
                 <Input
                   type="date"
                   value={filters.dateFrom}
@@ -506,7 +512,7 @@ function Search() {
                   borderColor="border"
                 />
               </Field>
-              <Field label="To">
+              <Field label={m.search_to_label()}>
                 <Input
                   type="date"
                   value={filters.dateTo}
@@ -531,7 +537,7 @@ function Search() {
                   loading={postsQuery.isFetching}
                   disabled={!canSearch}
                 >
-                  Run search
+                  {m.search_run()}
                 </Button>
                 <Button
                   variant="outline"
@@ -551,13 +557,13 @@ function Search() {
                     syncQueryParams(cleared, 'all', '')
                   }}
                 >
-                  Clear filters
+                  {m.search_clear()}
                 </Button>
               </HStack>
               <Text fontSize="sm" color="fg.muted">
                 {activeTag || hasAuthor
-                  ? `Searching${activeTag ? ` by ${activeTag}` : ''}${hasAuthor ? ` for @${scopedAuthor}` : ''}`
-                  : 'Select a community, tag, or author to search.'}
+                  ? `${m.search_status_searching()}${activeTag ? ` ${m.search_status_by_tag({ tag: activeTag })}` : ''}${hasAuthor ? ` ${m.search_status_for_author({ author: scopedAuthor ?? '' })}` : ''}`
+                  : m.search_status_select_prompt()}
               </Text>
             </HStack>
           </Stack>
@@ -569,8 +575,8 @@ function Search() {
         loading={postsQuery.isFetching}
         emptyMessage={
           activeTag || hasAuthor
-            ? 'No posts found for the current filters.'
-            : 'Select a community, tag, or author to start searching.'
+            ? m.search_empty_no_results()
+            : m.search_status_select_prompt()
         }
         renderActions={(post) =>
           post.permlink ? (
@@ -602,7 +608,7 @@ function Search() {
         }
       />
       {postsQuery.isError && (
-        <Text color="fg.error">Failed to load posts. Try again.</Text>
+        <Text color="fg.error">{m.search_error()}</Text>
       )}
 
       <DevOnly

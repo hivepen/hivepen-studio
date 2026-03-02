@@ -1,5 +1,6 @@
 import { Box, HStack, Stack, Text } from '@chakra-ui/react'
 import PostPayoutBadge from '@/components/posts/PostPayoutBadge'
+import { m } from '@/paraglide/messages'
 
 type PostPayoutSummaryProps = {
   author?: string
@@ -36,7 +37,7 @@ export default function PostPayoutSummary({
       <Stack gap={2}>
         <HStack justify="space-between">
           <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
-            Pending payout
+            {m.payout_summary_pending()}
           </Text>
           <Text fontSize="sm" fontWeight="600">
             {pending}
@@ -44,7 +45,7 @@ export default function PostPayoutSummary({
         </HStack>
         <HStack justify="space-between">
           <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
-            Total payout
+            {m.payout_summary_total()}
           </Text>
           <Text fontSize="sm" fontWeight="600">
             {total}
@@ -53,7 +54,7 @@ export default function PostPayoutSummary({
         {showDetails && author && permlink ? (
           <HStack justify="space-between">
             <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
-              Details
+              {m.payout_summary_details()}
             </Text>
             <PostPayoutBadge
               author={author}
@@ -64,7 +65,7 @@ export default function PostPayoutSummary({
         ) : null}
         {isPaidOut ? (
           <Text fontSize="xs" color="fg.muted">
-            Paid out
+            {m.payout_summary_paid_out()}
           </Text>
         ) : null}
       </Stack>

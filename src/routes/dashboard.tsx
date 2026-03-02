@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Badge, Box, Heading, SimpleGrid, Stack, Text } from '@chakra-ui/react'
+import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -8,16 +9,16 @@ export const Route = createFileRoute('/dashboard')({
 function Dashboard() {
   const highlights = [
     {
-      label: 'Publishing cadence',
-      value: 'Plan your next 7 days of posts',
+      label: m.dashboard_highlight_cadence_label(),
+      value: m.dashboard_highlight_cadence_value(),
     },
     {
-      label: 'Community focus',
-      value: 'Track top 3 communities by engagement',
+      label: m.dashboard_highlight_focus_label(),
+      value: m.dashboard_highlight_focus_value(),
     },
     {
-      label: 'Draft workflow',
-      value: 'Keep 2-3 drafts in progress',
+      label: m.dashboard_highlight_drafts_label(),
+      value: m.dashboard_highlight_drafts_value(),
     },
   ]
 
@@ -25,13 +26,11 @@ function Dashboard() {
     <Stack gap={8} p={6}>
       <Box>
         <Badge colorPalette="purple" variant="subtle" mb={3}>
-          Dashboard
+          {m.dashboard_badge()}
         </Badge>
-        <Heading size="lg">Welcome back to Hivepen Studio</Heading>
+        <Heading size="lg">{m.dashboard_heading()}</Heading>
         <Text color="fg.muted" mt={2} maxW="640px">
-          This dashboard will evolve into a command center for creators, curators,
-          journalists, and writers. For now, use it to keep your publishing plan
-          visible and your draft work organized.
+          {m.dashboard_description()}
         </Text>
       </Box>
 
@@ -65,10 +64,9 @@ function Dashboard() {
         borderRadius="2xl"
         p={6}
       >
-        <Heading size="md">Next up</Heading>
+        <Heading size="md">{m.dashboard_next_up()}</Heading>
         <Text color="fg.muted" mt={2}>
-          Connect analytics, community insights, and scheduling so you can track
-          publishing momentum at a glance.
+          {m.dashboard_next_up_description()}
         </Text>
       </Box>
     </Stack>

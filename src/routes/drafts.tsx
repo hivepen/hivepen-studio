@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Box, Heading, Text } from '@chakra-ui/react'
+import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/drafts')({
   component: Drafts,
@@ -9,11 +10,10 @@ function Drafts() {
   return (
     <Box p={6}>
       <Heading size="lg" mb={2}>
-        Drafts
+        {m.drafts_heading()}
       </Heading>
       <Text color="fg.muted">
-        Track and organize drafts here. We will wire autosave and folder support
-        next.
+        {m.drafts_description()}
       </Text>
     </Box>
   )

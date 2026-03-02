@@ -34,6 +34,9 @@ import { fetchAccount } from '@/lib/hive/client'
 import AccountConnectDialog from './AccountConnectDialog'
 import { Avatar } from '@/components/ui/avatar'
 import { CONNECT_ACCOUNT_DIALOG_EVENT } from '@/lib/ui/connectAccountDialog'
+import { m } from '@/paraglide/messages'
+import { getLocale } from '@/paraglide/runtime'
+import ParaglideLocaleSwitcher from '@/components/LocaleSwitcher'
 
 type NavItem = {
   label: string
@@ -45,35 +48,6 @@ type NavGroup = {
   label: string
   items: NavItem[]
 }
-
-const navGroups: NavGroup[] = [
-  {
-    label: 'Content creation',
-    items: [
-      { label: 'Write', to: '/editor', icon: NotebookPen },
-      { label: 'My blog', to: '/blog', icon: BookOpen },
-      { label: 'Drafts', to: '/drafts', icon: NotebookText },
-      { label: 'Analytics', to: '/analytics', icon: BarChart3 },
-      { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
-    ],
-  },
-  {
-    label: 'Discover',
-    items: [
-      { label: 'Search', to: '/search', icon: Search },
-      { label: 'Communities', to: '/communities', icon: Users },
-      { label: 'Users', to: '/users', icon: Users },
-      { label: 'Engagement', to: '/engagement', icon: MessageSquare },
-    ],
-  },
-  {
-    label: 'App',
-    items: [
-      { label: 'Settings', to: '/settings', icon: Settings },
-      { label: 'Prototype', to: '/prototype', icon: FilePenLine },
-    ],
-  },
-]
 
 export default function AppShell({
   children,
@@ -91,30 +65,63 @@ export default function AppShell({
   const [keychainAvailable] = useState(() => Boolean(getHiveKeychain()))
   const [showConnectDialog, setShowConnectDialog] = useState(false)
   const [profileImage, setProfileImage] = useState<string | null>(null)
+  const locale = getLocale()
 
   const accountLabel = useMemo(() => {
-    if (!account) return 'Connect account'
+    if (!account) return m.app_shell_connect_account()
     return `@${account}`
-  }, [account])
+  }, [account, locale])
+
+  const navGroups: NavGroup[] = useMemo(
+    () => [
+      {
+        label: m.app_shell_nav_group_content_creation(),
+        items: [
+          { label: m.app_shell_nav_write(), to: '/editor', icon: NotebookPen },
+          { label: m.app_shell_nav_my_blog(), to: '/blog', icon: BookOpen },
+          { label: m.app_shell_nav_drafts(), to: '/drafts', icon: NotebookText },
+          { label: m.app_shell_nav_analytics(), to: '/analytics', icon: BarChart3 },
+          { label: m.app_shell_nav_dashboard(), to: '/dashboard', icon: LayoutDashboard },
+        ],
+      },
+      {
+        label: m.app_shell_nav_group_discover(),
+        items: [
+          { label: m.app_shell_nav_search(), to: '/search', icon: Search },
+          { label: m.app_shell_nav_communities(), to: '/communities', icon: Users },
+          { label: m.app_shell_nav_users(), to: '/users', icon: Users },
+          { label: m.app_shell_nav_engagement(), to: '/engagement', icon: MessageSquare },
+        ],
+      },
+      {
+        label: m.app_shell_nav_group_app(),
+        items: [
+          { label: m.app_shell_nav_settings(), to: '/settings', icon: Settings },
+          { label: m.app_shell_nav_prototype(), to: '/prototype', icon: FilePenLine },
+        ],
+      },
+    ],
+    [locale]
+  )
 
   const breadcrumb = useMemo(() => {
     const segments = pathname.split('/').filter(Boolean)
     const map: Record<string, string> = {
-      dashboard: 'Dashboard',
-      drafts: 'Drafts',
-      editor: 'Editor',
-      blog: 'My blog',
-      search: 'Search',
-      communities: 'Communities',
-      users: 'Users',
-      engagement: 'Engagement',
-      analytics: 'Analytics',
-      settings: 'Settings',
-      prototype: 'Prototype',
+      dashboard: m.breadcrumb_dashboard(),
+      drafts: m.breadcrumb_drafts(),
+      editor: m.breadcrumb_editor(),
+      blog: m.breadcrumb_my_blog(),
+      search: m.breadcrumb_search(),
+      communities: m.breadcrumb_communities(),
+      users: m.breadcrumb_users(),
+      engagement: m.breadcrumb_engagement(),
+      analytics: m.breadcrumb_analytics(),
+      settings: m.breadcrumb_settings(),
+      prototype: m.breadcrumb_prototype(),
     }
-    if (segments.length === 0) return ['Dashboard']
+    if (segments.length === 0) return [m.breadcrumb_dashboard()]
     return segments.map((segment) => map[segment] ?? segment)
-  }, [pathname])
+  }, [pathname, locale])
 
   useEffect(() => {
     const handleOpenConnectDialog = () => setShowConnectDialog(true)
@@ -155,7 +162,7 @@ export default function AppShell({
       await loadProfileImage(username.trim())
       setShowConnectDialog(false)
     } else {
-      window.alert(response.message ?? 'Login rejected by Hive Keychain.')
+      window.alert(response.message ?? m.app_shell_login_rejected())
     }
     setIsConnecting(false)
   }
@@ -202,7 +209,7 @@ export default function AppShell({
                     Hivepen Studio
                   </Text>
                   <Text fontSize="xs" color="fg.muted">
-                    Pro publishing suite
+                    {m.app_shell_subtitle()}
                   </Text>
                 </Box>
               )}
@@ -211,7 +218,7 @@ export default function AppShell({
               variant="ghost"
               size="sm"
               onClick={() => setCollapsed((prev) => !prev)}
-              aria-label="Toggle sidebar"
+              aria-label={m.app_shell_toggle_sidebar()}
             >
               {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             </Button>
@@ -268,7 +275,7 @@ export default function AppShell({
                       {accountLabel}
                     </Text>
                     <Text fontSize="xs" color="fg.muted">
-                      {account ? 'Account menu' : 'Connect Hive account'}
+                      {account ? m.app_shell_account_menu() : m.app_shell_connect_hive_account()}
                     </Text>
                   </Box>
                 )}
@@ -282,7 +289,7 @@ export default function AppShell({
                     onSelect={() => setShowConnectDialog(true)}
                     disabled={isConnecting}
                   >
-                    {isConnecting ? 'Connecting...' : 'Connect account'}
+                    {isConnecting ? m.app_shell_menu_connecting() : m.app_shell_menu_connect_account()}
                   </Menu.Item>
                 )}
                 <Menu.Item
@@ -290,17 +297,17 @@ export default function AppShell({
                   onSelect={handleSwitchAccount}
                   disabled={!account}
                 >
-                  Switch account
+                  {m.app_shell_menu_switch_account()}
                 </Menu.Item>
                 <Menu.Item
                   value="settings"
                   onSelect={() => router.navigate({ to: '/settings' })}
                   disabled={!account}
                 >
-                  Account settings
+                  {m.app_shell_menu_account_settings()}
                 </Menu.Item>
                 <Menu.Item value="logout" onSelect={handleLogout} disabled={!account}>
-                  Logout
+                  {m.app_shell_menu_logout()}
                 </Menu.Item>
               </Menu.Content>
             </Menu.Positioner>
@@ -320,16 +327,21 @@ export default function AppShell({
           px={{ base: 6, md: 10 }}
           py={4}
         >
-          <HStack gap={2} fontSize="sm" color="fg.muted">
-            <Text>Hivepen</Text>
-            {breadcrumb.map((item, index) => (
-              <HStack key={`${item}-${index}`} gap={2}>
-                <Icon color="fg.subtle"><ChevronRightIcon size="14" /></Icon>
-                <Text color={index === breadcrumb.length - 1 ? 'fg' : 'fg.muted'}>
-                  {item}
-                </Text>
-              </HStack>
-            ))}
+          <HStack justify="space-between" gap={4} align="center">
+            <HStack gap={2} fontSize="sm" color="fg.muted">
+              <Text>Hivepen</Text>
+              {breadcrumb.map((item, index) => (
+                <HStack key={`${item}-${index}`} gap={2}>
+                  <Icon color="fg.subtle"><ChevronRightIcon size="14" /></Icon>
+                  <Text color={index === breadcrumb.length - 1 ? 'fg' : 'fg.muted'}>
+                    {item}
+                  </Text>
+                </HStack>
+              ))}
+            </HStack>
+            <Box display={{ base: 'none', md: 'block' }}>
+              <ParaglideLocaleSwitcher />
+            </Box>
           </HStack>
         </Box>
         <Box flex="1" bg="bg.subtle" overflowY="auto">

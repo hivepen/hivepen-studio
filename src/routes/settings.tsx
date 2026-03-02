@@ -4,6 +4,7 @@ import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import DevOnly from '@/components/DevOnly'
 import PostTag from '@/components/PostTag'
 import { TAG_STYLE_MAP } from '@/lib/posts/tagColorConfig'
+import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/settings')({
   component: Settings,
@@ -18,17 +19,17 @@ function Settings() {
   return (
     <Box p={6}>
       <Heading size="lg" mb={2}>
-        Settings
+        {m.settings_heading()}
       </Heading>
       <Text color="fg.muted">
-        Configure studio preferences, notifications, and connected accounts.
+        {m.settings_description()}
       </Text>
       <Box mt={8}>
         <Heading size="sm" mb={2}>
-          Editor preferences
+          {m.settings_editor_preferences()}
         </Heading>
         <Text color="fg.muted" fontSize="sm" mb={4}>
-          Control how the editor behaves across the app.
+          {m.settings_editor_description()}
         </Text>
         <Stack gap={3}>
           <Switch.Root
@@ -37,10 +38,10 @@ function Settings() {
           >
             <Switch.HiddenInput />
             <Switch.Control />
-            <Switch.Label>Always show block handles</Switch.Label>
+            <Switch.Label>{m.settings_show_block_handles()}</Switch.Label>
           </Switch.Root>
           <Text fontSize="xs" color="fg.muted">
-            Keeps drag handles visible so you can reorder blocks without hovering.
+            {m.settings_show_block_handles_helper()}
           </Text>
         </Stack>
       </Box>
@@ -54,7 +55,7 @@ function Settings() {
       <DevOnly>
         <Box mt={8}>
           <Heading size="sm" mb={3}>
-            Tag style preview
+            {m.settings_tag_style_preview()}
           </Heading>
           <HStack gap={2} wrap="wrap">
             {Object.keys(TAG_STYLE_MAP)

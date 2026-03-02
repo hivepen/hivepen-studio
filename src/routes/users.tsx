@@ -18,6 +18,7 @@ import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { searchAccounts } from '@/lib/hive/account'
 import { Field } from '@/components/ui/field'
 import DevOnly from '@/components/DevOnly'
+import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/users')({
   component: Users,
@@ -45,10 +46,10 @@ function Users() {
     <Stack gap={6} p={6}>
       <Box>
         <Heading size="lg" mb={2}>
-          Users
+          {m.users_heading()}
         </Heading>
         <Text color="fg.muted">
-          Find Hive accounts and jump to their profiles.
+          {m.users_subtitle()}
         </Text>
       </Box>
 
@@ -60,9 +61,9 @@ function Users() {
         p={{ base: 4, md: 6 }}
       >
         <Stack gap={4}>
-          <Field label="Search Hive accounts">
+          <Field label={m.users_field_label()}>
             <Input
-              placeholder="Search by username"
+              placeholder={m.users_placeholder()}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               bg="bg.panel"
@@ -76,12 +77,12 @@ function Users() {
               loading={usersQuery.isFetching}
               disabled={query.trim().length < 2}
             >
-              Search
+              {m.users_search_button()}
             </Button>
             <Text fontSize="sm" color="fg.muted">
               {debouncedQuery.length > 1
-                ? `Searching for "${debouncedQuery}"`
-                : 'Type at least 2 characters.'}
+                ? m.users_searching({ query: debouncedQuery })
+                : m.users_min_chars()}
             </Text>
           </HStack>
         </Stack>
@@ -125,7 +126,7 @@ function Users() {
                           </Text>
                         </Link>
                         <Text fontSize="sm" color="fg.muted" lineClamp={1}>
-                          {user.full_name || 'Hive account'}
+                          {user.full_name || m.users_default_name()}
                         </Text>
                       </Stack>
                       <Button asChild size="sm" variant="outline" colorPalette="gray">
@@ -133,7 +134,7 @@ function Users() {
                           to="/profile/$accountname"
                           params={{ accountname: user.name }}
                         >
-                          View
+                          {m.users_view_button()}
                         </Link>
                       </Button>
                     </HStack>
@@ -143,7 +144,7 @@ function Users() {
                       </Text>
                     ) : null}
                     <Text fontSize="xs" color="fg.muted">
-                      Reputation: {user.reputation}
+                      {m.users_reputation({ reputation: user.reputation })}
                     </Text>
                   </Stack>
                 </Card.Body>
@@ -152,11 +153,11 @@ function Users() {
       </SimpleGrid>
 
       {!usersQuery.isFetching && debouncedQuery.length > 1 && results.length === 0 && (
-        <Text color="fg.muted">No users found.</Text>
+        <Text color="fg.muted">{m.users_empty()}</Text>
       )}
 
       {usersQuery.isError && (
-        <Text color="fg.error">Failed to load users.</Text>
+        <Text color="fg.error">{m.users_error()}</Text>
       )}
 
       <DevOnly

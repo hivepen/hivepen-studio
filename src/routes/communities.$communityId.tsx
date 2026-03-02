@@ -7,6 +7,7 @@ import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
 import { useMemo, useState } from 'react'
 import DevOnly from '@/components/DevOnly'
+import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/communities/$communityId')({
   component: CommunityPage,
@@ -31,7 +32,7 @@ function CommunityPage() {
         const key = `${post.author}/${post.permlink}`
         const overrides = localStats[key] ?? {}
         return {
-          title: post.title || '(Untitled)',
+          title: post.title || m.post_untitled(),
           author: post.author,
           community: post.communityTitle ?? post.community,
           communityId: post.community,
@@ -55,7 +56,7 @@ function CommunityPage() {
         <Link to="/communities">
           <HStack gap={2}>
             <ArrowLeft />
-            <Text>Back to communities</Text>
+            <Text>{m.community_back()}</Text>
           </HStack>
         </Link>
       </Button>
@@ -72,14 +73,16 @@ function CommunityPage() {
             {communityQuery.data?.title ?? communityId}
           </Heading>
           <Text color="fg.muted">
-            {communityQuery.data?.about ?? communityQuery.data?.description ?? 'Community overview'}
+            {communityQuery.data?.about ??
+              communityQuery.data?.description ??
+              m.community_overview_fallback()}
           </Text>
           <HStack gap={4} fontSize="sm" color="fg.muted" wrap="wrap">
             {communityQuery.data?.name ? (
               <Text>#{communityQuery.data.name}</Text>
             ) : null}
             {communityQuery.data?.subscribers !== undefined ? (
-              <Text>{communityQuery.data.subscribers} members</Text>
+              <Text>{m.community_members({ count: communityQuery.data.subscribers })}</Text>
             ) : null}
             {communityQuery.data?.lang ? <Text>{communityQuery.data.lang}</Text> : null}
             {communityQuery.data?.is_nsfw ? <Text>NSFW</Text> : null}
@@ -90,7 +93,7 @@ function CommunityPage() {
       <PostsListSection
         posts={posts}
         loading={postsQuery.isFetching}
-        emptyMessage="No posts found for this community."
+        emptyMessage={m.community_empty_posts()}
         renderActions={(post) =>
           post.permlink ? (
             <PostActions
@@ -121,7 +124,7 @@ function CommunityPage() {
         }
       />
       {postsQuery.isError && (
-        <Text color="fg.error">Failed to load community posts.</Text>
+        <Text color="fg.error">{m.community_posts_error()}</Text>
       )}
 
       <DevOnly

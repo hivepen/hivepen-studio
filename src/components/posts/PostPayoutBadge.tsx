@@ -16,6 +16,7 @@ import {
   type Entry,
 } from '@ecency/sdk'
 import { parseAssetAmount, sumAssetStrings } from '@/lib/hive/payouts'
+import { m } from '@/paraglide/messages'
 
 type PostPayoutBadgeProps = {
   author: string
@@ -34,18 +35,26 @@ const formatUsd = (value: string | undefined) => {
 }
 
 const formatCountdown = (payoutAt?: string, isPaidOut?: boolean) => {
-  if (isPaidOut) return 'paid out'
-  if (!payoutAt) return 'unknown'
+  if (isPaidOut) return m.payout_badge_status_paid_out()
+  if (!payoutAt) return m.payout_badge_status_unknown()
   const target = new Date(payoutAt).getTime()
-  if (!Number.isFinite(target)) return 'unknown'
+  if (!Number.isFinite(target)) return m.payout_badge_status_unknown()
   const diffMs = target - Date.now()
-  if (diffMs <= 0) return 'paid out'
+  if (diffMs <= 0) return m.payout_badge_status_paid_out()
   const days = Math.ceil(diffMs / (24 * 60 * 60 * 1000))
-  if (days >= 1) return `in ${days} day${days === 1 ? '' : 's'}`
+  if (days >= 1) {
+    return days === 1
+      ? m.payout_badge_status_in_day({ days })
+      : m.payout_badge_status_in_days({ days })
+  }
   const hours = Math.ceil(diffMs / (60 * 60 * 1000))
-  if (hours >= 1) return `in ${hours} hour${hours === 1 ? '' : 's'}`
+  if (hours >= 1) {
+    return hours === 1
+      ? m.payout_badge_status_in_hour({ hours })
+      : m.payout_badge_status_in_hours({ hours })
+  }
   const minutes = Math.ceil(diffMs / (60 * 1000))
-  return `in ${minutes} min`
+  return m.payout_badge_status_in_minutes({ minutes })
 }
 
 const resolvePayoutString = (entry: Entry | undefined, fallback?: string) => {
@@ -95,7 +104,7 @@ export default function PostPayoutBadge({
     ? `$ ${pendingParsed.amount.toFixed(3)}`
     : totalParsed
       ? `$ ${totalParsed.amount.toFixed(3)}`
-      : payout?.pending ?? 'Rewards'
+      : payout?.pending ?? m.payout_badge_rewards()
 
   const priceBase = dynamicPropsQuery.data?.base
   const priceQuote = dynamicPropsQuery.data?.quote
@@ -164,7 +173,7 @@ export default function PostPayoutBadge({
                     textTransform="uppercase"
                     letterSpacing="0.08em"
                   >
-                    Pending payout
+                    {m.payout_badge_pending()}
                   </Text>
                   <Text fontSize="sm" fontWeight="600">
                     {formatUsd(pendingValue)}
@@ -186,7 +195,7 @@ export default function PostPayoutBadge({
                     letterSpacing="0.08em"
                     mb={1}
                   >
-                    Beneficiary
+                    {m.payout_badge_beneficiary()}
                   </Text>
                   <Stack gap={1}>
                     {beneficiaries.map((beneficiary) => (
@@ -209,7 +218,7 @@ export default function PostPayoutBadge({
                   letterSpacing="0.08em"
                   mb={1}
                 >
-                  Breakdown
+                  {m.payout_badge_breakdown()}
                 </Text>
                 <Stack gap={1}>
                   {hiveAmount !== null && hpAmount !== null ? (
@@ -217,19 +226,19 @@ export default function PostPayoutBadge({
                       <HStack justify="space-between">
                         <Text fontSize="xs">{hiveAmount.toFixed(3)} HIVE</Text>
                         <Text fontSize="xs" color="fg.muted">
-                          Liquid
+                          {m.payout_badge_liquid()}
                         </Text>
                       </HStack>
                       <HStack justify="space-between">
                         <Text fontSize="xs">{hpAmount.toFixed(3)} HP</Text>
                         <Text fontSize="xs" color="fg.muted">
-                          Vesting
+                          {m.payout_badge_vesting()}
                         </Text>
                       </HStack>
                     </>
                   ) : (
                     <Text fontSize="xs" color="fg.muted">
-                      Breakdown unavailable
+                      {m.payout_badge_breakdown_unavailable()}
                     </Text>
                   )}
                 </Stack>
@@ -244,12 +253,12 @@ export default function PostPayoutBadge({
                     letterSpacing="0.08em"
                     mb={1}
                   >
-                    Paid out
+                    {m.payout_badge_paid_out()}
                   </Text>
                   <Stack gap={1}>
                     {authorPayout ? (
                       <HStack justify="space-between">
-                        <Text fontSize="xs">Author</Text>
+                        <Text fontSize="xs">{m.payout_badge_author()}</Text>
                         <Text fontSize="xs" color="fg.muted">
                           {authorPayout}
                         </Text>
@@ -257,7 +266,7 @@ export default function PostPayoutBadge({
                     ) : null}
                     {curatorPayout ? (
                       <HStack justify="space-between">
-                        <Text fontSize="xs">Curator</Text>
+                        <Text fontSize="xs">{m.payout_badge_curator()}</Text>
                         <Text fontSize="xs" color="fg.muted">
                           {curatorPayout}
                         </Text>
@@ -275,7 +284,7 @@ export default function PostPayoutBadge({
                     textTransform="uppercase"
                     letterSpacing="0.08em"
                   >
-                    Payout
+                    {m.payout_badge_payout()}
                   </Text>
                   <Text fontSize="xs" color="fg.muted">
                     {payoutCountdown}

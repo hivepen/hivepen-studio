@@ -24,6 +24,7 @@ import {
   formatVotePercent,
   sortVoteDetailsByPercent,
 } from '@/lib/posts/votes'
+import { m } from '@/paraglide/messages'
 
 export default function PostActions({
   author,
@@ -89,18 +90,18 @@ export default function PostActions({
         variant="subtle"
         value={commentBody}
         onChange={(event) => setCommentBody(event.target.value)}
-        placeholder="Write a reply"
+        placeholder={m.post_actions_reply_placeholder()}
         size="sm"
       />
       <HStack justify="flex-end">
-        <Tooltip content="Publish comment">
+        <Tooltip content={m.post_actions_publish_comment()}>
           <IconButton
             size="sm"
             variant="ghost"
             rounded="full"
             onClick={handleComment}
             loading={comment.isCommenting}
-            aria-label="Publish comment"
+            aria-label={m.post_actions_publish_comment()}
             _hover={{ bg: 'bg.subtle', borderColor: 'border.muted' }}
           >
             <Send size={16} />
@@ -114,7 +115,7 @@ export default function PostActions({
       )}
       {isCard && (vote.success || comment.success) && (
         <Text fontSize="xs" color="fg.muted">
-          {vote.success ? 'Vote sent.' : 'Comment published.'}
+          {vote.success ? m.post_actions_vote_sent() : m.post_actions_comment_published()}
         </Text>
       )}
     </Stack>
@@ -124,14 +125,14 @@ export default function PostActions({
     <Stack>
       <HStack gap={2} wrap="wrap" justify="end">
         <Group attached borderRadius="full">
-          <Tooltip content="Upvote">
+          <Tooltip content={m.post_actions_upvote()}>
             <IconButton
               size="md"
               variant="ghost"
               rounded="full"
               onClick={handleVote}
               loading={vote.isVoting}
-              aria-label="Upvote"
+              aria-label={m.post_actions_upvote()}
             >
               <ArrowBigUp size={16} />
             </IconButton>
@@ -148,7 +149,7 @@ export default function PostActions({
                 px={2}
                 h="auto"
                 minW="auto"
-                aria-label="See voters"
+                aria-label={m.post_actions_see_voters()}
                 onMouseEnter={() => setShouldFetchVotes(true)}
                 onFocus={() => setShouldFetchVotes(true)}
                 onClick={() => setShouldFetchVotes(true)}
@@ -179,7 +180,7 @@ export default function PostActions({
                       textTransform="uppercase"
                       letterSpacing="0.08em"
                     >
-                      Voters
+                      {m.post_actions_voters()}
                     </Text>
                     {voteDetailsLoading ? (
                       <Stack gap={2}>
@@ -221,7 +222,7 @@ export default function PostActions({
                       </Stack>
                     ) : (
                       <Text fontSize="sm" color="fg.muted">
-                        No votes yet.
+                        {m.post_actions_no_votes()}
                       </Text>
                     )}
                   </Stack>
@@ -238,12 +239,12 @@ export default function PostActions({
             positioning={{ placement: 'top-start' }}
           >
             <Popover.Trigger asChild>
-              <Tooltip content="Comment">
+              <Tooltip content={m.post_actions_comment()}>
                 <Button
                   size="md"
                   variant="ghost"
                   rounded="full"
-                  aria-label="Comment"
+                  aria-label={m.post_actions_comment()}
                   gap={2}
                 >
                   <MessageCircle size={16} />
@@ -271,12 +272,12 @@ export default function PostActions({
             </Portal>
           </Popover.Root>
         ) : (
-          <Tooltip content="Comment">
+          <Tooltip content={m.post_actions_comment()}>
             <Button
               size="md"
               variant="ghost"
               rounded="full"
-              aria-label="Comment"
+              aria-label={m.post_actions_comment()}
               onClick={() => setCommentOpen((prev) => !prev)}
               gap={2}
             >
@@ -299,7 +300,7 @@ export default function PostActions({
           )}
           {(vote.success || comment.success) && (
             <Text fontSize="xs" color="fg.muted" mt={2}>
-              {vote.success ? 'Vote sent.' : 'Comment published.'}
+              {vote.success ? m.post_actions_vote_sent() : m.post_actions_comment_published()}
             </Text>
           )}
           <Collapsible.Root open={commentOpen}>

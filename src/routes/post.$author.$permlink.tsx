@@ -10,6 +10,7 @@ import PostPayoutBadge from '@/components/posts/PostPayoutBadge'
 import PostTag from '@/components/PostTag'
 import DevOnly from '@/components/DevOnly'
 import { renderHiveMarkdown } from '@/lib/posts/markdown'
+import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/post/$author/$permlink')({
   component: PostDetailPage,
@@ -27,7 +28,7 @@ function PostDetailPage() {
           <Link to="/search">
             <HStack gap={2}>
               <ArrowLeft />
-              <Text>Back to search</Text>
+              <Text>{m.post_back_to_search()}</Text>
             </HStack>
           </Link>
         </Button>
@@ -38,7 +39,7 @@ function PostDetailPage() {
           bg="bg.panel"
           p={{ base: 4, md: 6 }}
         >
-          <Text color="fg.muted">Loading post...</Text>
+          <Text color="fg.muted">{m.post_loading()}</Text>
         </Box>
       </Stack>
     )
@@ -52,7 +53,7 @@ function PostDetailPage() {
           <Link to="/search">
             <HStack gap={2}>
               <ArrowLeft />
-              <Text>Back to search</Text>
+              <Text>{m.post_back_to_search()}</Text>
             </HStack>
           </Link>
         </Button>
@@ -63,7 +64,7 @@ function PostDetailPage() {
           bg="bg.panel"
           p={{ base: 4, md: 6 }}
         >
-          <Text color="fg.error">Unable to load this post.</Text>
+          <Text color="fg.error">{m.post_error()}</Text>
         </Box>
       </Stack>
     )
@@ -78,7 +79,7 @@ function PostDetailPage() {
         <Link to="/search">
           <HStack gap={2}>
             <ArrowLeft />
-            <Text>Back to search</Text>
+            <Text>{m.post_back_to_search()}</Text>
           </HStack>
         </Link>
       </Button>
@@ -111,7 +112,7 @@ function PostDetailPage() {
           {post.created ? ` · ${new Date(post.created).toLocaleDateString()}` : ''}
         </Text>
         <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="600">
-          {post.title || '(Untitled)'}
+          {post.title || m.post_untitled()}
         </Text>
         {post.tags.length > 0 ? (
           <HStack gap={2} wrap="wrap">
@@ -132,8 +133,8 @@ function PostDetailPage() {
         gap={4}
       >
         <Tabs.List>
-          <Tabs.Trigger value="post">Post</Tabs.Trigger>
-          <Tabs.Trigger value="details">Post details</Tabs.Trigger>
+          <Tabs.Trigger value="post">{m.post_tab_post()}</Tabs.Trigger>
+          <Tabs.Trigger value="details">{m.post_tab_details()}</Tabs.Trigger>
         </Tabs.List>
         <Tabs.Content value="post">
           <Box
@@ -159,16 +160,18 @@ function PostDetailPage() {
             <Stack gap={4} maxW="72ch" mx="auto">
               <Stack gap={2}>
                 <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
-                  App
+                  {m.post_details_app()}
                 </Text>
-                {post.app ? <PostTag tag={`app:${post.app}`} /> : (
-                  <Text fontSize="sm" color="fg.muted">Unknown</Text>
+                {post.app ? (
+                  <PostTag tag={`app:${post.app}`} />
+                ) : (
+                  <Text fontSize="sm" color="fg.muted">{m.post_details_unknown()}</Text>
                 )}
               </Stack>
 
               <Stack gap={2}>
                 <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
-                  Rewards
+                  {m.post_details_rewards()}
                 </Text>
                 <PostPayoutSummary
                   pending={post.payout.pending}
@@ -181,19 +184,19 @@ function PostDetailPage() {
 
               <Stack gap={2}>
                 <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
-                  Timing
+                  {m.post_details_timing()}
                 </Text>
                 <Text fontSize="sm" color="fg.muted">
-                  Created: {new Date(post.created).toLocaleString()}
+                  {m.post_details_created({ date: new Date(post.created).toLocaleString() })}
                 </Text>
                 {post.updated ? (
                   <Text fontSize="sm" color="fg.muted">
-                    Updated: {new Date(post.updated).toLocaleString()}
+                    {m.post_details_updated({ date: new Date(post.updated).toLocaleString() })}
                   </Text>
                 ) : null}
                 {post.payoutAt ? (
                   <Text fontSize="sm" color="fg.muted">
-                    Payout: {new Date(post.payoutAt).toLocaleString()}
+                    {m.post_details_payout({ date: new Date(post.payoutAt).toLocaleString() })}
                   </Text>
                 ) : null}
               </Stack>
@@ -201,7 +204,7 @@ function PostDetailPage() {
               {post.beneficiaries && post.beneficiaries.length > 0 ? (
                 <Stack gap={2}>
                   <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
-                    Beneficiaries
+                    {m.post_details_beneficiaries()}
                   </Text>
                   <Stack gap={1}>
                     {post.beneficiaries.map((beneficiary) => (
@@ -249,12 +252,12 @@ function PostDetailPage() {
       >
         <Stack gap={4} maxW="72ch" mx="auto">
           <Text fontWeight="600">
-            Comments ({commentsQuery.data?.length ?? 0})
+            {m.post_comments_title({ count: commentsQuery.data?.length ?? 0 })}
           </Text>
           {commentsQuery.isLoading ? (
-            <Text color="fg.muted">Loading comments...</Text>
+            <Text color="fg.muted">{m.post_comments_loading()}</Text>
           ) : commentsQuery.isError ? (
-            <Text color="fg.error">Unable to load comments.</Text>
+            <Text color="fg.error">{m.post_comments_error()}</Text>
           ) : commentsQuery.data && commentsQuery.data.length > 0 ? (
             <Stack gap={4}>
               {commentsQuery.data.map((comment) => (
@@ -288,7 +291,7 @@ function PostDetailPage() {
               ))}
             </Stack>
           ) : (
-            <Text color="fg.muted">No comments yet.</Text>
+            <Text color="fg.muted">{m.post_comments_empty()}</Text>
           )}
         </Stack>
       </Box>

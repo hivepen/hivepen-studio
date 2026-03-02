@@ -14,6 +14,7 @@ import { listCommunities } from '@/lib/hive/client'
 import { fetchCommunity } from '@/lib/hive/community'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { Avatar } from '@/components/ui/avatar'
+import { m } from '@/paraglide/messages'
 
 type CommunityOption = {
   label: string
@@ -169,7 +170,7 @@ export default function CommunityCombobox({
     >
       <Combobox.Label>
         <Text fontSize="sm" color="fg.muted">
-          Community
+          {m.community_label()}
         </Text>
       </Combobox.Label>
       <Combobox.Control>
@@ -186,7 +187,7 @@ export default function CommunityCombobox({
           }
         >
           <Combobox.Input
-            placeholder="Search communities"
+            placeholder={m.community_search_placeholder()}
             bg="bg.panel"
             borderColor="border"
           />
@@ -202,7 +203,7 @@ export default function CommunityCombobox({
           <Combobox.Content bg="bg.panel" borderColor="border">
             <Combobox.Empty>
               <Text fontSize="sm" color="fg.muted">
-                No communities found.
+                {m.community_none_found()}
               </Text>
             </Combobox.Empty>
             {(collection?.items ?? []).map((item) => (

@@ -8,6 +8,7 @@ import usePostsQuery from '@/features/posts/usePostsQuery'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import DevOnly from '@/components/DevOnly'
 import { openConnectAccountDialog } from '@/lib/ui/connectAccountDialog'
+import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/blog')({
   component: MyBlogPage,
@@ -32,7 +33,7 @@ function MyBlogPage() {
         const key = `${post.author}/${post.permlink}`
         const overrides = localStats[key] ?? {}
         return {
-          title: post.title || '(Untitled)',
+          title: post.title || m.post_untitled(),
           author: post.author,
           community: post.communityTitle ?? post.community,
           communityId: post.community,
@@ -53,7 +54,7 @@ function MyBlogPage() {
   if (!account) {
     return (
       <Stack gap={4} p={6}>
-        <Heading size="lg">My blog</Heading>
+        <Heading size="lg">{m.blog_heading()}</Heading>
         <Box
           border="1px solid"
           borderColor="border"
@@ -62,14 +63,14 @@ function MyBlogPage() {
           p={{ base: 4, md: 6 }}
         >
           <Text color="fg.muted" mb={3}>
-            Connect a Hive account to see your posts here.
+            {m.blog_connect_hint()}
           </Text>
           <Button
             variant="outline"
             colorPalette="gray"
             onClick={openConnectAccountDialog}
           >
-            Connect account
+            {m.blog_connect_button()}
           </Button>
         </Box>
       </Stack>
@@ -79,16 +80,16 @@ function MyBlogPage() {
   return (
     <Stack gap={6} p={6}>
       <Box>
-        <Heading size="lg">My blog</Heading>
+        <Heading size="lg">{m.blog_heading()}</Heading>
         <Text color="fg.muted" mt={2}>
-          Showing posts from @{account}.
+          {m.blog_showing_posts({ account })}
         </Text>
       </Box>
 
       <PostsListSection
         posts={posts}
         loading={postsQuery.isFetching}
-        emptyMessage="No posts found for this account."
+        emptyMessage={m.blog_empty_posts()}
         renderActions={(post) =>
           post.permlink ? (
             <PostActions
@@ -119,7 +120,7 @@ function MyBlogPage() {
         }
       />
       {postsQuery.isError && (
-        <Text color="fg.error">Failed to load your posts.</Text>
+        <Text color="fg.error">{m.blog_error()}</Text>
       )}
 
       <DevOnly
