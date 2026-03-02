@@ -11,6 +11,7 @@ type PostPayoutSummaryProps = {
     pending: string
     total: string
   }
+  showDetails?: boolean
 }
 
 export default function PostPayoutSummary({
@@ -20,6 +21,7 @@ export default function PostPayoutSummary({
   total,
   isPaidOut,
   payout,
+  showDetails = true,
 }: PostPayoutSummaryProps) {
   return (
     <Box
@@ -48,7 +50,7 @@ export default function PostPayoutSummary({
             {total}
           </Text>
         </HStack>
-        {author && permlink ? (
+        {showDetails && author && permlink ? (
           <HStack justify="space-between">
             <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
               Details

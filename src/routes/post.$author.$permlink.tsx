@@ -6,6 +6,7 @@ import PostActions from '@/features/posts/PostActions'
 import usePostCommentsQuery from '@/features/posts/usePostCommentsQuery'
 import PostContent from '@/components/posts/PostContent'
 import PostPayoutSummary from '@/components/posts/PostPayoutSummary'
+import PostPayoutBadge from '@/components/posts/PostPayoutBadge'
 import PostTag from '@/components/PostTag'
 import DevOnly from '@/components/DevOnly'
 import { renderHiveMarkdown } from '@/lib/posts/markdown'
@@ -132,7 +133,7 @@ function PostDetailPage() {
       >
         <Tabs.List>
           <Tabs.Trigger value="post">Post</Tabs.Trigger>
-          <Tabs.Trigger value="publishing">Publishing</Tabs.Trigger>
+          <Tabs.Trigger value="details">Post details</Tabs.Trigger>
         </Tabs.List>
         <Tabs.Content value="post">
           <Box
@@ -147,7 +148,7 @@ function PostDetailPage() {
             </Box>
           </Box>
         </Tabs.Content>
-        <Tabs.Content value="publishing">
+        <Tabs.Content value="details">
           <Box
             border="1px solid"
             borderColor="border"
@@ -163,6 +164,19 @@ function PostDetailPage() {
                 {post.app ? <PostTag tag={`app:${post.app}`} /> : (
                   <Text fontSize="sm" color="fg.muted">Unknown</Text>
                 )}
+              </Stack>
+
+              <Stack gap={2}>
+                <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
+                  Rewards
+                </Text>
+                <PostPayoutSummary
+                  pending={post.payout.pending}
+                  total={post.payout.total}
+                  isPaidOut={post.payout.isPaidOut}
+                  payout={post.payout}
+                  showDetails={false}
+                />
               </Stack>
 
               <Stack gap={2}>
@@ -206,22 +220,20 @@ function PostDetailPage() {
         </Tabs.Content>
       </Tabs.Root>
 
-      <PostActions
-        author={post.author}
-        permlink={post.permlink}
-        voteCount={post.votes}
-        commentCount={commentsQuery.data?.length}
-        onCommentSuccess={() => commentsQuery.refetch()}
-      />
-
-      <PostPayoutSummary
-        author={post.author}
-        permlink={post.permlink}
-        pending={post.payout.pending}
-        total={post.payout.total}
-        isPaidOut={post.payout.isPaidOut}
-        payout={post.payout}
-      />
+      <HStack justify="space-between" align="center" wrap="wrap" gap={3}>
+        <PostPayoutBadge
+          author={post.author}
+          permlink={post.permlink}
+          payout={post.payout}
+        />
+        <PostActions
+          author={post.author}
+          permlink={post.permlink}
+          voteCount={post.votes}
+          commentCount={commentsQuery.data?.length}
+          onCommentSuccess={() => commentsQuery.refetch()}
+        />
+      </HStack>
 
       <DevOnly
         summary="Post debug"
