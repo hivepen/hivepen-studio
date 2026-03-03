@@ -70,9 +70,7 @@ export const searchAccounts = async (
   limit = 20
 ): Promise<HiveAccountSearchResult[]> => {
   if (!query) return []
-  try {
-    return await searchAccount(query, limit, 0)
-  } catch {
+  const lookupFromCondenser = async () => {
     try {
       const names = (await hiveClient.call('condenser_api', 'lookup_accounts', [
         query,
@@ -84,6 +82,16 @@ export const searchAccounts = async (
     } catch {
       return []
     }
+  }
+
+  if (typeof window !== 'undefined') {
+    return lookupFromCondenser()
+  }
+
+  try {
+    return await searchAccount(query, limit, 0)
+  } catch {
+    return lookupFromCondenser()
   }
 }
 
