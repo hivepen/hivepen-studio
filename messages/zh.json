@@ -340,5 +340,7 @@
   "communities_empty": "未找到社区。",
   "communities_error": "无法加载社区。",
   "blog_load_more": "加载更多帖子",
-  "blog_loading_more": "正在加载更多帖子…"
+  "blog_loading_more": "正在加载更多帖子…",
+  "posts_load_more": "加载更多帖子",
+  "posts_loading_more": "正在加载更多帖子…"
 }

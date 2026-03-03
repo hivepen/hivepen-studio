@@ -340,5 +340,7 @@
   "communities_empty": "No se encontraron comunidades.",
   "communities_error": "No se pudieron cargar las comunidades.",
   "blog_load_more": "Cargar más posts",
-  "blog_loading_more": "Cargando más posts…"
+  "blog_loading_more": "Cargando más posts…",
+  "posts_load_more": "Cargar más posts",
+  "posts_loading_more": "Cargando más posts…"
 }

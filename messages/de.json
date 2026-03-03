@@ -340,5 +340,7 @@
   "communities_empty": "Keine Communities gefunden.",
   "communities_error": "Communities konnten nicht geladen werden.",
   "blog_load_more": "Mehr Beiträge laden",
-  "blog_loading_more": "Weitere Beiträge werden geladen…"
+  "blog_loading_more": "Weitere Beiträge werden geladen…",
+  "posts_load_more": "Mehr Beiträge laden",
+  "posts_loading_more": "Weitere Beiträge werden geladen…"
 }

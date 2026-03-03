@@ -24,9 +24,10 @@ import CommunityCombobox from '@/components/CommunityCombobox'
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
 import usePostsListState from '@/features/posts/usePostsListState'
-import usePostsQuery from '@/features/posts/usePostsQuery'
+import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import { Field } from '@/components/ui/field'
 import DevOnly from '@/components/DevOnly'
+import type { SearchResult } from '@/lib/hive/search'
 
 const searchSchema = z
   .object({
@@ -258,7 +259,7 @@ function Search() {
   const hasAuthor = Boolean(scopedAuthor)
   const canSearch = Boolean(activeTag) || hasAuthor
 
-  const postsQuery = usePostsQuery({
+  const postsQuery = useInfinitePostsQuery({
     source: hasAuthor ? 'account' : 'ranked',
     sort: filters.sort,
     tag: activeTag,
@@ -278,6 +279,31 @@ function Search() {
 
 
   const [localStats, setLocalStats] = useState<Record<string, { votes?: number; comments?: number }>>({})
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const node = loadMoreRef.current
+    if (!node || !postsQuery.hasNextPage || !canSearch) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (
+          entry.isIntersecting &&
+          postsQuery.hasNextPage &&
+          !postsQuery.isFetchingNextPage
+        ) {
+          postsQuery.fetchNextPage()
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [
+    canSearch,
+    postsQuery.fetchNextPage,
+    postsQuery.hasNextPage,
+    postsQuery.isFetchingNextPage,
+  ])
 
   const sortCollection = useMemo(
     () =>
@@ -293,7 +319,17 @@ function Search() {
   )
 
   const cardResults = useMemo(() => {
-    return (postsQuery.data ?? []).map((post) => {
+    const pages = (postsQuery.data?.pages ?? []) as SearchResult[][]
+    const flattened = pages.flat()
+    const unique = new Map<string, SearchResult>()
+    flattened.forEach((post) => {
+      const key = `${post.author}/${post.permlink}`
+      if (!unique.has(key)) {
+        unique.set(key, post)
+      }
+    })
+
+    return Array.from(unique.values()).map((post) => {
       const key = `${post.author}/${post.permlink}`
       const overrides = localStats[key] ?? {}
       return {
@@ -312,7 +348,7 @@ function Search() {
         payout: post.payout,
       }
     })
-  }, [postsQuery.data, localStats])
+  }, [postsQuery.data?.pages, localStats])
 
   return (
     <Stack gap={6} p={6}>
@@ -573,7 +609,7 @@ function Search() {
 
       <PostsListSection
         posts={cardResults}
-        loading={postsQuery.isFetching}
+        loading={postsQuery.isLoading}
         emptyMessage={
           activeTag || hasAuthor
             ? m.search_empty_no_results()
@@ -608,6 +644,19 @@ function Search() {
           ) : null
         }
       />
+      <Box ref={loadMoreRef} minH="1px" />
+      {postsQuery.hasNextPage && canSearch ? (
+        <Button
+          alignSelf="center"
+          variant="outline"
+          colorPalette="gray"
+          loading={postsQuery.isFetchingNextPage}
+          loadingText={m.posts_loading_more()}
+          onClick={() => postsQuery.fetchNextPage()}
+        >
+          {m.posts_load_more()}
+        </Button>
+      ) : null}
       {postsQuery.isError && (
         <Text color="fg.error">{m.search_error()}</Text>
       )}

@@ -2,12 +2,13 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { Box, Button, Heading, HStack, Stack, Text } from '@chakra-ui/react'
 import { ArrowLeft } from 'lucide-react'
 import useCommunityQuery from '@/features/communities/useCommunityQuery'
-import usePostsQuery from '@/features/posts/usePostsQuery'
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
-import { useMemo, useState } from 'react'
+import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import DevOnly from '@/components/DevOnly'
 import { m } from '@/paraglide/messages'
+import type { SearchResult } from '@/lib/hive/search'
 
 export const Route = createFileRoute('/communities/$communityId')({
   component: CommunityPage,
@@ -16,19 +17,53 @@ export const Route = createFileRoute('/communities/$communityId')({
 function CommunityPage() {
   const { communityId } = Route.useParams()
   const communityQuery = useCommunityQuery(communityId)
-  const postsQuery = usePostsQuery({
+  const postsQuery = useInfinitePostsQuery({
     sort: 'created',
     tag: communityId,
     limit: 20,
   })
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
   const [localStats, setLocalStats] = useState<
     Record<string, { votes?: number; comments?: number }>
   >({})
 
+  useEffect(() => {
+    const node = loadMoreRef.current
+    if (!node || !postsQuery.hasNextPage) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (
+          entry.isIntersecting &&
+          postsQuery.hasNextPage &&
+          !postsQuery.isFetchingNextPage
+        ) {
+          postsQuery.fetchNextPage()
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [
+    postsQuery.fetchNextPage,
+    postsQuery.hasNextPage,
+    postsQuery.isFetchingNextPage,
+  ])
+
   const posts = useMemo(
-    () =>
-      (postsQuery.data ?? []).map((post) => {
+    () => {
+      const pages = (postsQuery.data?.pages ?? []) as SearchResult[][]
+      const flattened = pages.flat()
+      const unique = new Map<string, SearchResult>()
+      flattened.forEach((post) => {
+        const key = `${post.author}/${post.permlink}`
+        if (!unique.has(key)) {
+          unique.set(key, post)
+        }
+      })
+
+      return Array.from(unique.values()).map((post) => {
         const key = `${post.author}/${post.permlink}`
         const overrides = localStats[key] ?? {}
         return {
@@ -46,7 +81,8 @@ function CommunityPage() {
           comments: overrides.comments ?? post.comments,
           payout: post.payout,
         }
-      }),
+      })
+    },
     [postsQuery.data, localStats]
   )
 
@@ -94,7 +130,7 @@ function CommunityPage() {
 
       <PostsListSection
         posts={posts}
-        loading={postsQuery.isFetching}
+        loading={postsQuery.isLoading}
         emptyMessage={m.community_empty_posts()}
         renderActions={(post) =>
           post.permlink ? (
@@ -125,6 +161,19 @@ function CommunityPage() {
           ) : null
         }
       />
+      <Box ref={loadMoreRef} minH="1px" />
+      {postsQuery.hasNextPage ? (
+        <Button
+          alignSelf="center"
+          variant="outline"
+          colorPalette="gray"
+          loading={postsQuery.isFetchingNextPage}
+          loadingText={m.posts_loading_more()}
+          onClick={() => postsQuery.fetchNextPage()}
+        >
+          {m.posts_load_more()}
+        </Button>
+      ) : null}
       {postsQuery.isError && (
         <Text color="fg.error">{m.community_posts_error()}</Text>
       )}

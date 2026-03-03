@@ -162,10 +162,10 @@ function MyBlogPage() {
           variant="outline"
           colorPalette="gray"
           loading={postsQuery.isFetchingNextPage}
-          loadingText={m.blog_loading_more()}
+          loadingText={m.posts_loading_more()}
           onClick={() => postsQuery.fetchNextPage()}
         >
-          {m.blog_load_more()}
+          {m.posts_load_more()}
         </Button>
       ) : null}
       {postsQuery.isError && (

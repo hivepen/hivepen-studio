@@ -3,11 +3,12 @@ import { Box, Button, Heading, HStack, Stack, Text } from '@chakra-ui/react'
 import { Avatar } from '@/components/ui/avatar'
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
-import usePostsQuery from '@/features/posts/usePostsQuery'
+import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import useProfileQuery from '@/features/profile/useProfileQuery'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import DevOnly from '@/components/DevOnly'
 import { m } from '@/paraglide/messages'
+import type { SearchResult } from '@/lib/hive/search'
 
 export const Route = createFileRoute('/profile/$accountname')({
   component: ProfilePage,
@@ -18,18 +19,52 @@ function ProfilePage() {
   const username = accountname.replace(/^@/, '')
 
   const profileQuery = useProfileQuery(username)
-  const postsQuery = usePostsQuery({
+  const postsQuery = useInfinitePostsQuery({
     source: 'account',
     sort: 'posts',
     author: username,
     limit: 20,
   })
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
   const [localStats, setLocalStats] = useState<Record<string, { votes?: number; comments?: number }>>({})
 
+  useEffect(() => {
+    const node = loadMoreRef.current
+    if (!node || !postsQuery.hasNextPage) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (
+          entry.isIntersecting &&
+          postsQuery.hasNextPage &&
+          !postsQuery.isFetchingNextPage
+        ) {
+          postsQuery.fetchNextPage()
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [
+    postsQuery.fetchNextPage,
+    postsQuery.hasNextPage,
+    postsQuery.isFetchingNextPage,
+  ])
+
   const posts = useMemo(
-    () =>
-      (postsQuery.data ?? []).map((post) => {
+    () => {
+      const pages = (postsQuery.data?.pages ?? []) as SearchResult[][]
+      const flattened = pages.flat()
+      const unique = new Map<string, SearchResult>()
+      flattened.forEach((post) => {
+        const key = `${post.author}/${post.permlink}`
+        if (!unique.has(key)) {
+          unique.set(key, post)
+        }
+      })
+
+      return Array.from(unique.values()).map((post) => {
         const key = `${post.author}/${post.permlink}`
         const overrides = localStats[key] ?? {}
         return {
@@ -47,7 +82,8 @@ function ProfilePage() {
           comments: overrides.comments ?? post.comments,
           payout: post.payout,
         }
-      }),
+      })
+    },
     [postsQuery.data, localStats]
   )
 
@@ -104,7 +140,7 @@ function ProfilePage() {
         </Heading>
         <PostsListSection
           posts={posts}
-          loading={postsQuery.isFetching}
+          loading={postsQuery.isLoading}
           emptyMessage={m.profile_empty_posts()}
           renderActions={(post) =>
             post.permlink ? (
@@ -135,6 +171,19 @@ function ProfilePage() {
             ) : null
           }
         />
+        <Box ref={loadMoreRef} minH="1px" />
+        {postsQuery.hasNextPage ? (
+          <Button
+            alignSelf="center"
+            variant="outline"
+            colorPalette="gray"
+            loading={postsQuery.isFetchingNextPage}
+            loadingText={m.posts_loading_more()}
+            onClick={() => postsQuery.fetchNextPage()}
+          >
+            {m.posts_load_more()}
+          </Button>
+        ) : null}
       </Box>
 
       <DevOnly
