@@ -6,5 +6,7 @@ export default function useCommunityQuery(name: string) {
     queryKey: ['community', name],
     queryFn: () => fetchCommunity(name),
     enabled: Boolean(name),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   })
 }

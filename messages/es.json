@@ -330,5 +330,13 @@
   "editor_placeholder_command": "Pulsa '/' para comandos",
   "community_nsfw": "NSFW",
   "keychain_not_detected": "No se detectó Hive Keychain.",
-  "post_actions_votes_load_failed": "No se pudieron cargar los votos."
+  "post_actions_votes_load_failed": "No se pudieron cargar los votos.",
+  "communities_search_label": "Buscar comunidades Hive",
+  "communities_search_placeholder": "Buscar por nombre de comunidad",
+  "communities_search_button": "Buscar",
+  "communities_searching": "Buscando \"{query}\"",
+  "communities_min_chars": "Escribe al menos 2 caracteres.",
+  "communities_view_button": "Ver",
+  "communities_empty": "No se encontraron comunidades.",
+  "communities_error": "No se pudieron cargar las comunidades."
 }

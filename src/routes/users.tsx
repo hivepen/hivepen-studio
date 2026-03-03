@@ -10,6 +10,9 @@ import {
   Text,
   Card,
   Skeleton,
+  InputGroup,
+  IconButton,
+  Icon,
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
@@ -19,25 +22,33 @@ import { searchAccounts } from '@/lib/hive/account'
 import { Field } from '@/components/ui/field'
 import DevOnly from '@/components/DevOnly'
 import { m } from '@/paraglide/messages'
+import { SearchIcon } from 'lucide-react'
+import { hiveAvatarUrl } from '@/lib/posts/tagColorConfig'
+import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 
 export const Route = createFileRoute('/users')({
   component: Users,
 })
 
 function Users() {
-  const [query, setQuery] = useState('')
+  const [query, setQuery, queryReady] = useLocalStorageState(
+    'hivepen.users.query',
+    ''
+  )
   const [debouncedQuery, setDebouncedQuery] = useState('')
 
   useEffect(() => {
+    if (!queryReady) return
     const handle = setTimeout(() => setDebouncedQuery(query.trim()), 300)
     return () => clearTimeout(handle)
-  }, [query])
+  }, [query, queryReady])
 
   const usersQuery = useQuery({
     queryKey: ['users', 'search', debouncedQuery],
     queryFn: () => searchAccounts(debouncedQuery, 20),
     enabled: debouncedQuery.length > 1,
     staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   })
 
   const results = useMemo(() => usersQuery.data ?? [], [usersQuery.data])
@@ -62,23 +73,36 @@ function Users() {
       >
         <Stack gap={4}>
           <Field label={m.users_field_label()}>
-            <Input
-              placeholder={m.users_placeholder()}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              bg="bg.panel"
-              borderColor="border"
-            />
+            <InputGroup
+              startAddon={
+                query.trim().length > 1 ? (
+                  <Avatar size="sm" src={hiveAvatarUrl(query.trim())} />
+                ) : null
+              }
+              endAddon={
+                <IconButton
+                  variant="ghost"
+                  aria-label={m.users_search_button()}
+                  onClick={() => setDebouncedQuery(query.trim())}
+                  loading={usersQuery.isFetching}
+                  disabled={query.trim().length < 2}
+                >
+                  <Icon>
+                    <SearchIcon />
+                  </Icon>
+                </IconButton>
+              }
+            >
+              <Input
+                placeholder={m.users_placeholder()}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                bg="bg.panel"
+                borderColor="border"
+              />
+            </InputGroup>
           </Field>
           <HStack justify="space-between" wrap="wrap" gap={3}>
-            <Button
-              colorPalette="gray"
-              onClick={() => setDebouncedQuery(query.trim())}
-              loading={usersQuery.isFetching}
-              disabled={query.trim().length < 2}
-            >
-              {m.users_search_button()}
-            </Button>
             <Text fontSize="sm" color="fg.muted">
               {debouncedQuery.length > 1
                 ? m.users_searching({ query: debouncedQuery })

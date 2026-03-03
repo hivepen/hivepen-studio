@@ -273,6 +273,7 @@ function Search() {
     queryFn: () => searchAccounts(debouncedAuthor, 6),
     enabled: debouncedAuthor.length > 1,
     staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   })
 
 
@@ -296,7 +297,7 @@ function Search() {
       const key = `${post.author}/${post.permlink}`
       const overrides = localStats[key] ?? {}
       return {
-        title: post.title || '(Untitled)',
+        title: post.title || m.post_untitled(),
         author: post.author,
         community: post.communityTitle ?? post.community,
         communityId: post.community,

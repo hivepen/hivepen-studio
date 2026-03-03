@@ -330,5 +330,13 @@
   "editor_placeholder_command": "Drücke '/' für Befehle",
   "community_nsfw": "NSFW",
   "keychain_not_detected": "Hive Keychain wurde nicht erkannt.",
-  "post_actions_votes_load_failed": "Stimmen konnten nicht geladen werden."
+  "post_actions_votes_load_failed": "Stimmen konnten nicht geladen werden.",
+  "communities_search_label": "Hive-Communities suchen",
+  "communities_search_placeholder": "Nach Community-Namen suchen",
+  "communities_search_button": "Suchen",
+  "communities_searching": "Suche nach \"{query}\"",
+  "communities_min_chars": "Gib mindestens 2 Zeichen ein.",
+  "communities_view_button": "Ansehen",
+  "communities_empty": "Keine Communities gefunden.",
+  "communities_error": "Communities konnten nicht geladen werden."
 }

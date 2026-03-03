@@ -90,5 +90,7 @@ export default function usePostQuery({
     ...getPostQueryOptions(author, permlink),
     enabled: Boolean(author && permlink),
     select: (entry) => (entry ? mapEntryToPost(entry) : null),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   })
 }

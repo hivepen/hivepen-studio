@@ -7,5 +7,7 @@ export default function useProfileQuery(username: string) {
     queryKey: ['profile', normalized],
     enabled: normalized.length > 0,
     queryFn: () => getAccountProfile(normalized),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   })
 }

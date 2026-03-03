@@ -330,5 +330,13 @@
   "editor_placeholder_command": "Press '/' for commands",
   "community_nsfw": "NSFW",
   "keychain_not_detected": "Hive Keychain not detected.",
-  "post_actions_votes_load_failed": "Failed to load votes."
+  "post_actions_votes_load_failed": "Failed to load votes.",
+  "communities_search_label": "Search Hive communities",
+  "communities_search_placeholder": "Search by community name",
+  "communities_search_button": "Search",
+  "communities_searching": "Searching for \"{query}\"",
+  "communities_min_chars": "Type at least 2 characters.",
+  "communities_view_button": "View",
+  "communities_empty": "No communities found.",
+  "communities_error": "Failed to load communities."
 }

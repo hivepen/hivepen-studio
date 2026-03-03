@@ -330,5 +330,13 @@
   "editor_placeholder_command": "按 '/' 查看命令",
   "community_nsfw": "NSFW",
   "keychain_not_detected": "未检测到 Hive Keychain。",
-  "post_actions_votes_load_failed": "无法加载投票。"
+  "post_actions_votes_load_failed": "无法加载投票。",
+  "communities_search_label": "搜索 Hive 社区",
+  "communities_search_placeholder": "按社区名称搜索",
+  "communities_search_button": "搜索",
+  "communities_searching": "正在搜索“{query}”",
+  "communities_min_chars": "至少输入 2 个字符。",
+  "communities_view_button": "查看",
+  "communities_empty": "未找到社区。",
+  "communities_error": "无法加载社区。"
 }

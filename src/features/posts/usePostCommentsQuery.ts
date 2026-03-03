@@ -12,5 +12,7 @@ export default function usePostCommentsQuery({
     queryKey: ['comments', author, permlink],
     queryFn: () => fetchPostComments({ author, permlink }),
     enabled: Boolean(author && permlink),
+    staleTime: 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   })
 }
