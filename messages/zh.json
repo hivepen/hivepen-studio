@@ -338,5 +338,7 @@
   "communities_min_chars": "至少输入 2 个字符。",
   "communities_view_button": "查看",
   "communities_empty": "未找到社区。",
-  "communities_error": "无法加载社区。"
+  "communities_error": "无法加载社区。",
+  "blog_load_more": "加载更多帖子",
+  "blog_loading_more": "正在加载更多帖子…"
 }

@@ -338,5 +338,7 @@
   "communities_min_chars": "Inserisci almeno 2 caratteri.",
   "communities_view_button": "Visualizza",
   "communities_empty": "Nessuna community trovata.",
-  "communities_error": "Impossibile caricare le community."
+  "communities_error": "Impossibile caricare le community.",
+  "blog_load_more": "Carica altri post",
+  "blog_loading_more": "Caricamento di altri post…"
 }

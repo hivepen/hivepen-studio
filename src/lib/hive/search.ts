@@ -50,21 +50,42 @@ export async function searchRankedPosts({
   sort,
   tag,
   limit,
+  startAuthor,
+  startPermlink,
 }: {
   sort: RankedSort
   tag: string
   limit: number
+  startAuthor?: string
+  startPermlink?: string
 }) {
+  const hasCursor = Boolean(startAuthor && startPermlink)
   const response = await hiveClient.hivemind.getRankedPosts({
     sort,
     tag,
-    limit,
+    limit: hasCursor ? limit + 1 : limit,
+    ...(hasCursor
+      ? {
+          start_author: startAuthor,
+          start_permlink: startPermlink,
+        }
+      : {}),
   })
-  const result = (Array.isArray(response)
+  let result = (Array.isArray(response)
     ? response
     : (response as { result?: RankedPost[]; posts?: RankedPost[] })?.result ??
       (response as { posts?: RankedPost[] })?.posts ??
       []) as RankedPost[]
+
+  if (hasCursor && result.length > 0) {
+    const [first, ...rest] = result
+    if (first.author === startAuthor && first.permlink === startPermlink) {
+      result = rest
+    }
+  }
+  if (result.length > limit) {
+    result = result.slice(0, limit)
+  }
 
   return result.map((post) => {
     const metadata =
@@ -139,20 +160,41 @@ export async function searchRankedPosts({
 export async function searchAccountPosts({
   account,
   limit,
+  startAuthor,
+  startPermlink,
 }: {
   account: string
   limit: number
+  startAuthor?: string
+  startPermlink?: string
 }) {
+  const hasCursor = Boolean(startAuthor && startPermlink)
   const response = await hiveClient.hivemind.getAccountPosts({
     account,
     sort: 'posts',
-    limit,
+    limit: hasCursor ? limit + 1 : limit,
+    ...(hasCursor
+      ? {
+          start_author: startAuthor,
+          start_permlink: startPermlink,
+        }
+      : {}),
   })
-  const result = (Array.isArray(response)
+  let result = (Array.isArray(response)
     ? response
     : (response as { result?: RankedPost[]; posts?: RankedPost[] })?.result ??
       (response as { posts?: RankedPost[] })?.posts ??
       []) as RankedPost[]
+
+  if (hasCursor && result.length > 0) {
+    const [first, ...rest] = result
+    if (first.author === startAuthor && first.permlink === startPermlink) {
+      result = rest
+    }
+  }
+  if (result.length > limit) {
+    result = result.slice(0, limit)
+  }
 
   return result.map((post) => {
     const metadata =

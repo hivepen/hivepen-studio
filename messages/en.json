@@ -338,5 +338,7 @@
   "communities_min_chars": "Type at least 2 characters.",
   "communities_view_button": "View",
   "communities_empty": "No communities found.",
-  "communities_error": "Failed to load communities."
+  "communities_error": "Failed to load communities.",
+  "blog_load_more": "Load more posts",
+  "blog_loading_more": "Loading more posts..."
 }

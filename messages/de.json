@@ -338,5 +338,7 @@
   "communities_min_chars": "Gib mindestens 2 Zeichen ein.",
   "communities_view_button": "Ansehen",
   "communities_empty": "Keine Communities gefunden.",
-  "communities_error": "Communities konnten nicht geladen werden."
+  "communities_error": "Communities konnten nicht geladen werden.",
+  "blog_load_more": "Mehr Beiträge laden",
+  "blog_loading_more": "Weitere Beiträge werden geladen…"
 }

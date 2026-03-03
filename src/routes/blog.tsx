@@ -1,14 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Box, Button, Heading, Stack, Text } from '@chakra-ui/react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
-import usePostsQuery from '@/features/posts/usePostsQuery'
+import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import DevOnly from '@/components/DevOnly'
 import { openConnectAccountDialog } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
+import type { SearchResult } from '@/lib/hive/search'
 
 export const Route = createFileRoute('/blog')({
   component: MyBlogPage,
@@ -16,20 +17,54 @@ export const Route = createFileRoute('/blog')({
 
 function MyBlogPage() {
   const [account] = useLocalStorageState<string | null>('hivepen.account', null)
-  const postsQuery = usePostsQuery({
+  const postsQuery = useInfinitePostsQuery({
     source: 'account',
     sort: 'posts',
     author: account ?? undefined,
     limit: 20,
   })
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
   const [localStats, setLocalStats] = useState<
     Record<string, { votes?: number; comments?: number }>
   >({})
 
+  useEffect(() => {
+    const node = loadMoreRef.current
+    if (!node || !postsQuery.hasNextPage) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (
+          entry.isIntersecting &&
+          postsQuery.hasNextPage &&
+          !postsQuery.isFetchingNextPage
+        ) {
+          postsQuery.fetchNextPage()
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [
+    postsQuery.fetchNextPage,
+    postsQuery.hasNextPage,
+    postsQuery.isFetchingNextPage,
+  ])
+
   const posts = useMemo(
-    () =>
-      (postsQuery.data ?? []).map((post) => {
+    () => {
+      const pages = (postsQuery.data?.pages ?? []) as SearchResult[][]
+      const flattened = pages.flat()
+      const unique = new Map<string, SearchResult>()
+      flattened.forEach((post) => {
+        const key = `${post.author}/${post.permlink}`
+        if (!unique.has(key)) {
+          unique.set(key, post)
+        }
+      })
+
+      return Array.from(unique.values()).map((post) => {
         const key = `${post.author}/${post.permlink}`
         const overrides = localStats[key] ?? {}
         return {
@@ -47,8 +82,9 @@ function MyBlogPage() {
           comments: overrides.comments ?? post.comments,
           payout: post.payout,
         }
-      }),
-    [postsQuery.data, localStats]
+      })
+    },
+    [postsQuery.data?.pages, localStats]
   )
 
   if (!account) {
@@ -88,7 +124,7 @@ function MyBlogPage() {
 
       <PostsListSection
         posts={posts}
-        loading={postsQuery.isFetching}
+        loading={postsQuery.isLoading}
         emptyMessage={m.blog_empty_posts()}
         renderActions={(post) =>
           post.permlink ? (
@@ -119,6 +155,19 @@ function MyBlogPage() {
           ) : null
         }
       />
+      <Box ref={loadMoreRef} minH="1px" />
+      {postsQuery.hasNextPage ? (
+        <Button
+          alignSelf="center"
+          variant="outline"
+          colorPalette="gray"
+          loading={postsQuery.isFetchingNextPage}
+          loadingText={m.blog_loading_more()}
+          onClick={() => postsQuery.fetchNextPage()}
+        >
+          {m.blog_load_more()}
+        </Button>
+      ) : null}
       {postsQuery.isError && (
         <Text color="fg.error">{m.blog_error()}</Text>
       )}
@@ -130,6 +179,8 @@ function MyBlogPage() {
           postsCount: posts.length,
           postsPreview: posts.slice(0, 5),
           isFetching: postsQuery.isFetching,
+          isFetchingNextPage: postsQuery.isFetchingNextPage,
+          hasNextPage: postsQuery.hasNextPage,
           isError: postsQuery.isError,
           localStats,
         }}
