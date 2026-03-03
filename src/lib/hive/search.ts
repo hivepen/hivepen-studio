@@ -60,10 +60,11 @@ export async function searchRankedPosts({
   startPermlink?: string
 }) {
   const hasCursor = Boolean(startAuthor && startPermlink)
+  const cappedLimit = Math.min(Math.max(limit, 1), 20)
   const response = await hiveClient.hivemind.getRankedPosts({
     sort,
     tag,
-    limit: hasCursor ? limit + 1 : limit,
+    limit: cappedLimit,
     ...(hasCursor
       ? {
           start_author: startAuthor,
@@ -83,8 +84,8 @@ export async function searchRankedPosts({
       result = rest
     }
   }
-  if (result.length > limit) {
-    result = result.slice(0, limit)
+  if (result.length > cappedLimit) {
+    result = result.slice(0, cappedLimit)
   }
 
   return result.map((post) => {
@@ -169,10 +170,11 @@ export async function searchAccountPosts({
   startPermlink?: string
 }) {
   const hasCursor = Boolean(startAuthor && startPermlink)
+  const cappedLimit = Math.min(Math.max(limit, 1), 20)
   const response = await hiveClient.hivemind.getAccountPosts({
     account,
     sort: 'posts',
-    limit: hasCursor ? limit + 1 : limit,
+    limit: cappedLimit,
     ...(hasCursor
       ? {
           start_author: startAuthor,
@@ -192,8 +194,8 @@ export async function searchAccountPosts({
       result = rest
     }
   }
-  if (result.length > limit) {
-    result = result.slice(0, limit)
+  if (result.length > cappedLimit) {
+    result = result.slice(0, cappedLimit)
   }
 
   return result.map((post) => {

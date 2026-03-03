@@ -31,11 +31,7 @@ export default function useInfinitePostsQuery(params: PostsQueryParams) {
   const source = params.source ?? 'ranked'
   const tag = (params.tag ?? '').trim()
   const author = params.author?.trim()
-  const maxRankedLimit = 20
-  const pageSize =
-    source === 'ranked'
-      ? Math.min(params.limit ?? maxRankedLimit, maxRankedLimit)
-      : params.limit ?? 20
+  const pageSize = Math.min(params.limit ?? 20, 20)
 
   return useInfiniteQuery<PostsPage, Error, PostsPage, Array<unknown>, PostsPageCursor | undefined>({
     queryKey: [
@@ -71,8 +67,11 @@ export default function useInfinitePostsQuery(params: PostsQueryParams) {
       })
       return filterPosts(results, params)
     },
-    getNextPageParam: (lastPage) => {
-      if (lastPage.length < pageSize) return undefined
+    getNextPageParam: (lastPage, _pages, lastPageParam) => {
+      const minLengthForNext = lastPageParam
+        ? Math.max(pageSize - 1, 1)
+        : pageSize
+      if (lastPage.length < minLengthForNext) return undefined
       const last = lastPage[lastPage.length - 1]
       if (!last) return undefined
       return { author: last.author, permlink: last.permlink }
