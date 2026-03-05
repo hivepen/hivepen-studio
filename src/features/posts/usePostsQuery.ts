@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  searchAccountPosts,
-  searchRankedPosts,
-  type RankedSort,
-  type SearchResult,
-} from '@/lib/hive/search'
+  getAccountPostsQueryOptions,
+  getPostsRankedQueryOptions,
+  type Entry,
+} from '@ecency/sdk'
+import { type RankedSort, type SearchResult } from '@/lib/hive/search'
+import { mapEntryToSearchResult } from '@/features/posts/postMapping'
 
 export type PostsQueryParams = {
   source?: 'ranked' | 'account'
@@ -33,28 +34,33 @@ export default function usePostsQuery(params: PostsQueryParams) {
   const source = params.source ?? 'ranked'
   const tag = (params.tag ?? '').trim()
   const author = params.author?.trim()
-  const maxRankedLimit = 20
+  const pageSize = Math.min(params.limit ?? 20, 20)
+  const enabled = source === 'account' ? Boolean(author) : tag.length > 0
 
   return useQuery({
     queryKey: ['posts', source, params.sort, tag, author, params.dateFrom, params.dateTo, params.limit],
-    enabled: source === 'account' ? Boolean(author) : tag.length > 0,
-    queryFn: async () => {
-      if (source === 'account') {
-        const results = await searchAccountPosts({
-          account: author ?? '',
-          limit: params.limit ?? 20,
-        })
-        return filterPosts(results, params)
-      }
-
-      const rankedLimit = Math.min(params.limit ?? maxRankedLimit, maxRankedLimit)
-      const results = await searchRankedPosts({
-        sort: params.sort as RankedSort,
-        tag,
-        limit: rankedLimit,
-      })
-      return filterPosts(results, params)
-    },
+    ...(source === 'account'
+      ? (getAccountPostsQueryOptions(
+          author,
+          'posts',
+          undefined,
+          undefined,
+          pageSize,
+          undefined,
+          enabled
+        ) as object)
+      : (getPostsRankedQueryOptions(
+          params.sort,
+          undefined,
+          undefined,
+          pageSize,
+          tag,
+          undefined,
+          enabled
+        ) as object)),
+    enabled,
+    select: (data: Entry[]) =>
+      filterPosts(data.map(mapEntryToSearchResult), params),
     staleTime: 2 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   })
