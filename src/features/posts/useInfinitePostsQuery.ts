@@ -1,18 +1,85 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import {
-  searchAccountPosts,
-  searchRankedPosts,
-  type RankedSort,
-  type SearchResult,
-} from '@/lib/hive/search'
+  getAccountPostsInfiniteQueryOptions,
+  getPostsRankedInfiniteQueryOptions,
+  type Entry,
+} from '@ecency/sdk'
+import { sumAssetStrings } from '@/lib/hive/payouts'
+import { type SearchResult } from '@/lib/hive/search'
 import type { PostsQueryParams } from '@/features/posts/usePostsQuery'
 
-export type PostsPageCursor = {
-  author: string
-  permlink: string
+export type PostsPage = SearchResult[]
+
+const resolveMetadata = (metadata: Entry['json_metadata']) => {
+  if (!metadata) return {}
+  if (typeof metadata === 'string') {
+    try {
+      return JSON.parse(metadata)
+    } catch {
+      return {}
+    }
+  }
+  return metadata
 }
 
-export type PostsPage = SearchResult[]
+const mapEntryToSearchResult = (entry: Entry): SearchResult => {
+  const metadata = resolveMetadata(entry.json_metadata)
+  const tags = Array.isArray(metadata?.tags) ? metadata.tags : []
+  const imageList = Array.isArray(metadata?.image) ? metadata.image : []
+  const coverUrl = typeof imageList[0] === 'string' ? imageList[0] : undefined
+  const summary =
+    typeof metadata?.description === 'string' ? metadata.description : undefined
+  const app =
+    typeof metadata?.app === 'string'
+      ? metadata.app.split('/')[0]?.trim() || undefined
+      : undefined
+  const pendingPayout =
+    typeof entry.pending_payout_value === 'string'
+      ? entry.pending_payout_value
+      : undefined
+  const authorPayout =
+    typeof entry.author_payout_value === 'string'
+      ? entry.author_payout_value
+      : undefined
+  const curatorPayout =
+    typeof entry.curator_payout_value === 'string'
+      ? entry.curator_payout_value
+      : undefined
+  const totalPayout =
+    authorPayout && curatorPayout
+      ? sumAssetStrings(authorPayout, curatorPayout)
+      : pendingPayout
+  const payout =
+    pendingPayout || totalPayout
+      ? {
+          pending: pendingPayout ?? totalPayout ?? '',
+          total: totalPayout ?? pendingPayout ?? '',
+        }
+      : undefined
+
+  return {
+    author: entry.author,
+    permlink: entry.permlink,
+    title: entry.title,
+    created: entry.created,
+    tags,
+    community: entry.community,
+    communityTitle: entry.community_title,
+    summary,
+    coverUrl,
+    app,
+    payout,
+    votes:
+      typeof entry.total_votes === 'number'
+        ? entry.total_votes
+        : typeof entry.stats?.total_votes === 'number'
+          ? entry.stats.total_votes
+          : Array.isArray(entry.active_votes)
+            ? entry.active_votes.length
+            : undefined,
+    comments: typeof entry.children === 'number' ? entry.children : undefined,
+  }
+}
 
 const filterPosts = (posts: SearchResult[], params: PostsQueryParams) => {
   const author = params.author?.trim()
@@ -32,50 +99,22 @@ export default function useInfinitePostsQuery(params: PostsQueryParams) {
   const tag = (params.tag ?? '').trim()
   const author = params.author?.trim()
   const pageSize = Math.min(params.limit ?? 20, 20)
+  const enabled = source === 'account' ? Boolean(author) : tag.length > 0
 
-  return useInfiniteQuery<PostsPage, Error, PostsPage, Array<unknown>, PostsPageCursor | undefined>({
-    queryKey: [
-      'posts',
-      'infinite',
-      source,
-      params.sort,
-      tag,
-      author,
-      params.dateFrom,
-      params.dateTo,
-      pageSize,
-    ],
-    initialPageParam: undefined,
-    enabled: source === 'account' ? Boolean(author) : tag.length > 0,
-    queryFn: async ({ pageParam }) => {
-      if (source === 'account') {
-        const results = await searchAccountPosts({
-          account: author ?? '',
-          limit: pageSize,
-          startAuthor: pageParam?.author,
-          startPermlink: pageParam?.permlink,
-        })
-        return filterPosts(results, params)
-      }
+  const baseOptions =
+    source === 'account'
+      ? getAccountPostsInfiniteQueryOptions(author, 'posts', pageSize, undefined, enabled)
+      : getPostsRankedInfiniteQueryOptions(params.sort, tag, pageSize, undefined, enabled)
 
-      const results = await searchRankedPosts({
-        sort: params.sort as RankedSort,
-        tag,
-        limit: pageSize,
-        startAuthor: pageParam?.author,
-        startPermlink: pageParam?.permlink,
-      })
-      return filterPosts(results, params)
-    },
-    getNextPageParam: (lastPage, _pages, lastPageParam) => {
-      const minLengthForNext = lastPageParam
-        ? Math.max(pageSize - 1, 1)
-        : pageSize
-      if (lastPage.length < minLengthForNext) return undefined
-      const last = lastPage[lastPage.length - 1]
-      if (!last) return undefined
-      return { author: last.author, permlink: last.permlink }
-    },
+  return useInfiniteQuery({
+    ...(baseOptions as object),
+    enabled,
+    select: (data: any) => ({
+      ...data,
+      pages: data.pages.map((page: Entry[]) =>
+        filterPosts(page.map(mapEntryToSearchResult), params)
+      ),
+    }),
     staleTime: 2 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   })
