@@ -7,6 +7,7 @@ import PostActions from '@/features/posts/PostActions'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import DevOnly from '@/components/DevOnly'
+import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import { m } from '@/paraglide/messages'
 import type { SearchResult } from '@/lib/hive/search'
 
@@ -127,6 +128,12 @@ function CommunityPage() {
           </HStack>
         </Stack>
       </Box>
+      <InfiniteDebugBanner
+        pages={postsQuery.data?.pages?.length ?? 0}
+        totalPosts={posts.length}
+        hasNextPage={postsQuery.hasNextPage}
+        isFetchingNextPage={postsQuery.isFetchingNextPage}
+      />
 
       <PostsListSection
         posts={posts}

@@ -7,6 +7,7 @@ import PostActions from '@/features/posts/PostActions'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import DevOnly from '@/components/DevOnly'
+import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import { openConnectAccountDialog } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
 import type { SearchResult } from '@/lib/hive/search'
@@ -121,6 +122,12 @@ function MyBlogPage() {
           {m.blog_showing_posts({ account })}
         </Text>
       </Box>
+      <InfiniteDebugBanner
+        pages={postsQuery.data?.pages?.length ?? 0}
+        totalPosts={posts.length}
+        hasNextPage={postsQuery.hasNextPage}
+        isFetchingNextPage={postsQuery.isFetchingNextPage}
+      />
 
       <PostsListSection
         posts={posts}

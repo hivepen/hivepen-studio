@@ -7,6 +7,7 @@ import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import useProfileQuery from '@/features/profile/useProfileQuery'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import DevOnly from '@/components/DevOnly'
+import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import { m } from '@/paraglide/messages'
 import type { SearchResult } from '@/lib/hive/search'
 
@@ -133,6 +134,13 @@ function ProfilePage() {
           </HStack>
         </HStack>
       </Box>
+
+      <InfiniteDebugBanner
+        pages={postsQuery.data?.pages?.length ?? 0}
+        totalPosts={posts.length}
+        hasNextPage={postsQuery.hasNextPage}
+        isFetchingNextPage={postsQuery.isFetchingNextPage}
+      />
 
       <Box>
         <Heading size="md" mb={3}>

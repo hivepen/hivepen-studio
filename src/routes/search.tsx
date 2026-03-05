@@ -27,6 +27,7 @@ import usePostsListState from '@/features/posts/usePostsListState'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import { Field } from '@/components/ui/field'
 import DevOnly from '@/components/DevOnly'
+import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import type { SearchResult } from '@/lib/hive/search'
 
 const searchSchema = z
@@ -361,6 +362,12 @@ function Search() {
           {m.search_description()}
         </Text>
       </Box>
+      <InfiniteDebugBanner
+        pages={postsQuery.data?.pages?.length ?? 0}
+        totalPosts={cardResults.length}
+        hasNextPage={postsQuery.hasNextPage}
+        isFetchingNextPage={postsQuery.isFetchingNextPage}
+      />
 
       <Stack gap={4}>
         <Box
