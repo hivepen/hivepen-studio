@@ -43,19 +43,24 @@ const ProfileBanner = ({
         zIndex={0}
       >
         {coverUrl ? (
-          <Image
-            src={coverUrl}
-            alt=""
-            w="full"
-            h="full"
-            objectFit="cover"
-          />
+          <>
+            <Image
+              src={coverUrl}
+              alt=""
+              w="full"
+              h="full"
+              objectFit="cover"
+            />
+            <Box
+              position="absolute"
+              bottom={0}
+              left={0}
+              right={0}
+              h="100px"
+              bg="linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)"
+            />
+          </>
         ) : null}
-        <Box
-          position="absolute"
-          inset={0}
-          bgGradient="linear(to-b, rgba(0,0,0,0.1), rgba(0,0,0,0.4))"
-        />
       </Box>
       <Stack
         px={{ base: 4, md: 5 }}
@@ -72,6 +77,27 @@ const ProfileBanner = ({
               borderColor="bg.panel"
               borderRadius="full"
               bg="bg.panel"
+              position="relative"
+              _after={{
+                content: '""',
+                position: 'absolute',
+                bottom: "34%",
+                right: '-3',
+                width: '9px',
+                height: '8px',
+                borderRadius: '0 0 0 6px',
+                boxShadow: '-3px 3px 0 0 white',
+              }}
+              _before={{
+                content: '""',
+                position: 'absolute',
+                bottom: "34%",
+                left: '-3',
+                width: '9px',
+                height: '8px',
+                borderRadius: '0 0 6px 0',
+                boxShadow: '3px 3px 0 0 white',
+              }}
             >
               <Avatar
                 size={avatarSize}
@@ -80,16 +106,16 @@ const ProfileBanner = ({
               />
             </Box>
             <Stack gap={1}>
-              
+
               {typeof title === 'string' ? (
-                <Text fontSize={isCompact ? 'md' : 'lg'} fontWeight="700">
+                <Text fontSize={isCompact ? 'md' : 'lg'} fontWeight="700" color={coverUrl ? "white" : "fg.default"} textShadow={coverUrl ? "0 0 2px rgba(0,0,0,0.5)" : undefined}>
                   {title}
                 </Text>
               ) : (
                 title
               )}
               {subtitle ? (
-                <Text fontSize="sm" color="fg.muted">
+                <Text fontSize="xs" color="fg.muted" _hover={{textDecoration:'underline',cursor:'pointer'}} title={`Copy "${subtitle}" to clipboard`} onClick={() => navigator.clipboard.writeText(String(subtitle))}>
                   {subtitle}
                 </Text>
               ) : null}
