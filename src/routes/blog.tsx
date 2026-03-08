@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Box, Button, Heading, Stack, Text } from '@chakra-ui/react'
+import { Box, Button, Heading, HStack, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import PostsListSection from '@/features/posts/PostsListSection'
@@ -11,6 +11,8 @@ import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import { openConnectAccountDialog } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
 import type { SearchResult } from '@/lib/hive/search'
+import { Avatar } from '@/components/ui/avatar'
+import { hiveAvatarUrl } from '@/lib/posts/tagColorConfig'
 
 export const Route = createFileRoute('/blog')({
   component: MyBlogPage,
@@ -116,12 +118,15 @@ function MyBlogPage() {
 
   return (
     <Stack gap={6} p={6}>
-      <Box>
-        <Heading size="lg">{m.blog_heading()}</Heading>
-        <Text color="fg.muted" mt={2}>
-          {m.blog_showing_posts({ account })}
-        </Text>
-      </Box>
+      <HStack>
+        <Avatar src={hiveAvatarUrl(account)}/>
+        <Box>
+          <Heading size="lg">{m.blog_heading()}</Heading>
+          <Text color="fg.muted">
+            @{account}
+          </Text>
+        </Box>
+      </HStack>
       <InfiniteDebugBanner
         pages={postsQuery.data?.pages?.length ?? 0}
         totalPosts={posts.length}

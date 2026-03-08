@@ -18,6 +18,8 @@ import { Field } from '@/components/ui/field'
 import DevOnly from '@/components/DevOnly'
 import { m } from '@/paraglide/messages'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
+import { Avatar } from '@/components/ui/avatar'
+import { hiveAvatarUrl } from '@/lib/posts/tagColorConfig'
 
 export const Route = createFileRoute('/communities')({
   component: Communities,
@@ -120,6 +122,7 @@ function Communities() {
                   <Card.Body>
                     <Stack gap={3}>
                       <HStack gap={3} align="center" justify="space-between">
+                        <Avatar src={hiveAvatarUrl(communityId)} name={communityId.at(-1)}/>
                         <Stack gap={1} flex="1" minW={0}>
                           <Link
                             to="/communities/$communityId"

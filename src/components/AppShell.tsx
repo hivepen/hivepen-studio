@@ -207,9 +207,6 @@ export default function AppShell({
                   <Text fontWeight="700" letterSpacing="-0.01em">
                     Hivepen Studio
                   </Text>
-                  <Text fontSize="xs" color="fg.muted">
-                    {m.app_shell_subtitle()}
-                  </Text>
                 </Box>
               )}
             </HStack>
