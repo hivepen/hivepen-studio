@@ -16,7 +16,6 @@ const CommunityCard = ({ community, profile }: CommunityCardProps) => {
   const title = community.title || community.name || community.id
 
   return (
-    <Link to="/communities/$communityId" params={{ communityId }}>
       <ProfileBanner
         title={title}
         subtitle={communityId ? `@${communityId}` : undefined}
@@ -30,15 +29,17 @@ const CommunityCard = ({ community, profile }: CommunityCardProps) => {
         size="compact"
         actions={
           communityId ? (
-            <Button asChild size="sm" colorPalette="gray" boxShadow="0 0 0 4px white" onClick={(e)=>e.stopPropagation()}>
-              <Link to="/communities/$communityId" params={{ communityId }}>
+            <Button asChild size="sm" colorPalette="gray" variant="subtle" boxShadow="0 0 0 4px white" onClick={(e)=>e.stopPropagation()}>
+              {/* <Link to="/communities/$communityId" params={{ communityId }}>
+                {m.communities_view_button()}
+              </Link> */}
+               <Link to="/profile/$accountname" params={{ accountname: 'carlosepc' }}>
                 {m.communities_view_button()}
               </Link>
             </Button>
           ) : null
         }
       />
-    </Link>
   )
 }
 

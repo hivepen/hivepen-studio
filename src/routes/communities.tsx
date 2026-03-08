@@ -87,7 +87,7 @@ function Communities() {
         isDisabled={query.trim().length < 2}
       />
 
-      <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
         {communitiesQuery.isFetching
           ? Array.from({ length: 4 }).map((_, index) => (
               <Skeleton

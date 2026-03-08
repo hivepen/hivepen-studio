@@ -1,4 +1,4 @@
-import { Badge, Text } from '@chakra-ui/react'
+import { Badge, Icon, Text } from '@chakra-ui/react'
 import {
   simpleicon,
   TAG_PALETTES,
@@ -32,7 +32,7 @@ export default function PostTag({ tag }: { tag: string }) {
       Boolean(resolvedStyle?.bg) ||
       Boolean(resolvedStyle?.fg) ||
       Boolean(resolvedStyle?.border)
-
+const TagIcon = resolvedStyle.icon
   return (
     <Badge
       variant="subtle"
@@ -45,7 +45,7 @@ export default function PostTag({ tag }: { tag: string }) {
 
     >
       {/* <img width="16" height="16" src={simpleicon(normalizedTag)} /> */}
-      {resolvedStyle?.avatar ? (
+      {TagIcon ? <Icon size="xs"><TagIcon/></Icon> : resolvedStyle?.avatar ? (
         <Avatar shape="square" bg="none" src={resolvedStyle?.avatar??simpleicon(normalizedTag)} size="xs" w={3} h={3} fallback={<Text color={resolvedStyle?.fg} opacity={0.4}>
           #
         </Text>} />

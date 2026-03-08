@@ -1,4 +1,4 @@
-import { Box, HStack, Image, Stack, Text } from '@chakra-ui/react'
+import { Box, BoxProps, HStack, Image, Stack, Text } from '@chakra-ui/react'
 import { Avatar } from '@/components/ui/avatar'
 
 type ProfileBannerProps = {
@@ -23,7 +23,8 @@ const ProfileBanner = ({
   actions,
   meta,
   size = 'default',
-}: ProfileBannerProps) => {
+  ...props
+}: ProfileBannerProps & BoxProps) => {
   const isCompact = size === 'compact'
   const coverHeight = isCompact ? 120 : 160
   const avatarSize = isCompact ? 'lg' : 'xl'

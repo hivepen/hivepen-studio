@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Box, Button, Heading, HStack, Stack, Text } from '@chakra-ui/react'
+import { Box, Button, Group, Heading, HStack, IconButton, Stack, Text } from '@chakra-ui/react'
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
@@ -11,6 +11,7 @@ import { m } from '@/paraglide/messages'
 import type { SearchResult } from '@/lib/hive/search'
 import ProfileBanner from '@/components/ProfileBanner'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
+import { MessageSquareIcon } from 'lucide-react'
 
 export const Route = createFileRoute('/profile/$accountname')({
   component: ProfilePage,
@@ -119,10 +120,10 @@ function ProfilePage() {
         avatarUrl={profileQuery.data?.profileImage ?? getHiveAvatarUrl(username)}
         coverUrl={profileQuery.data?.coverImage}
         actions={
-          <HStack gap={2}>
-            <Button variant="outline">{m.profile_follow_button()}</Button>
-            <Button variant="outline">{m.profile_message_button()}</Button>
-          </HStack>
+          <Group gap={2} bg="white" rounded="md" p={1}>
+            <Button variant="ghost">{m.profile_follow_button()}</Button>
+            <IconButton variant="ghost" title={m.profile_message_button()}><MessageSquareIcon/></IconButton>
+          </Group>
         }
         meta={profileMeta}
       />

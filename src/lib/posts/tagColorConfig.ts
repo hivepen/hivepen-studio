@@ -1,3 +1,5 @@
+import { BitcoinIcon, CameraIcon, LucideIcon } from "lucide-react"
+
 export const TAG_PALETTES = [
   'gray',
   'red',
@@ -29,6 +31,7 @@ export type TagStyle = {
   fg?: string
   border?: string
   avatar?: string
+  icon?: LucideIcon
   colorPalette?: TagPalette
 }
 const hiveStyle = { bg: HIVE_RED, fg: colorTokens.HIVE[1], avatar: 'https://cdn.simpleicons.org/hive_blockchain/white' }
@@ -89,8 +92,13 @@ export const TAG_STYLE_MAP: Record<string, TagStyle> = {
     border:HIVE_RED,
     avatar:hiveAvatarUrl('actifit')
   },
+  //Hive communities and popular accounts
+  worldmappin:{avatar:hiveAvatarUrl('worldmappin')},
 
   //Platforms
+
+  //General icons
+  photography:{icon:CameraIcon},
 
   // Software / tools
   vercel: {

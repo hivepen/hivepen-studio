@@ -151,8 +151,9 @@ function PostCardMedia({
       backgroundImage={coverUrl ? `url(${coverUrl})` : undefined}
       transition="backgrounds"
       transitionDuration="0.2s"
-      backgroundSize="cover"
-      backgroundPosition="center"
+      backgroundSize="contain"
+      backgroundRepeat="no-repeat"
+      backgroundPosition="0% 50%"
       display="flex"
       alignItems="center"
       justifyContent="center"
