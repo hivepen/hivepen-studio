@@ -8,6 +8,7 @@ import {
   Text,
   Card,
   Skeleton,
+  Button
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
@@ -107,11 +108,11 @@ function Users() {
                           style={{ textDecoration: 'none' }}
                         >
                           <Text fontWeight="600" lineClamp={1}>
-                            @{user.name}
+                            {user.full_name || m.users_default_name()}
                           </Text>
                         </Link>
                         <Text fontSize="sm" color="fg.muted" lineClamp={1}>
-                          {user.full_name || m.users_default_name()}
+                          @{user.name}
                         </Text>
                       </Stack>
                       <Button asChild size="sm" variant="outline" colorPalette="gray">

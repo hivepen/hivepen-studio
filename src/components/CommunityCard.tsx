@@ -1,4 +1,4 @@
-import { Button, Text } from '@chakra-ui/react'
+import { Button } from '@chakra-ui/react'
 import { Link } from '@tanstack/react-router'
 import ProfileBanner from '@/components/ProfileBanner'
 import { type HiveCommunity } from '@/lib/hive/client'
@@ -17,21 +17,7 @@ const CommunityCard = ({ community, profile }: CommunityCardProps) => {
 
   return (
     <ProfileBanner
-      title={
-        communityId ? (
-          <Link
-            to="/communities/$communityId"
-            params={{ communityId }}
-            style={{ textDecoration: 'none' }}
-          >
-            <Text fontWeight="600" lineClamp={1}>
-              {title}
-            </Text>
-          </Link>
-        ) : (
-          title
-        )
-      }
+      title={title}
       subtitle={communityId ? `#${communityId}` : undefined}
       description={community.about}
       avatarName={communityId}

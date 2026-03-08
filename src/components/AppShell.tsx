@@ -69,8 +69,8 @@ export default function AppShell({
   const profileImage = profileQuery.data?.profileImage ?? null
   const accountLabel = useMemo(() => {
     if (!account) return m.app_shell_connect_account()
-    return `@${account}`
-  }, [account, locale])
+    return profileQuery.data?.displayName || `@${account}`
+  }, [account, locale, profileQuery.data?.displayName])
 
   const navGroups: NavGroup[] = useMemo(
     () => [
