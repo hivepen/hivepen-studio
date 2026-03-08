@@ -1,30 +1,23 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   Box,
-  Button,
   Heading,
   HStack,
-  Input,
   SimpleGrid,
   Stack,
   Text,
   Card,
   Skeleton,
-  InputGroup,
-  IconButton,
-  Icon,
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { searchAccounts } from '@/lib/hive/account'
-import { Field } from '@/components/ui/field'
 import DevOnly from '@/components/DevOnly'
 import { m } from '@/paraglide/messages'
-import { SearchIcon } from 'lucide-react'
-import { hiveAvatarUrl } from '@/lib/posts/tagColorConfig'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
+import SearchPanel from '@/components/SearchPanel'
 
 export const Route = createFileRoute('/users')({
   component: Users,
@@ -64,53 +57,21 @@ function Users() {
         </Text>
       </Box>
 
-      <Box
-        border="1px solid"
-        borderColor="border"
-        borderRadius="16px"
-        bg="bg.panel"
-        p={{ base: 4, md: 6 }}
-      >
-        <Stack gap={4}>
-          <Field label={m.users_field_label()}>
-            <InputGroup
-              startAddon={
-                query.trim().length > 1 ? (
-                  <Avatar size="sm" src={hiveAvatarUrl(query.trim())} />
-                ) : null
-              }
-              endAddon={
-                <IconButton
-                  variant="ghost"
-                  aria-label={m.users_search_button()}
-                  onClick={() => setDebouncedQuery(query.trim())}
-                  loading={usersQuery.isFetching}
-                  disabled={query.trim().length < 2}
-                >
-                  <Icon>
-                    <SearchIcon />
-                  </Icon>
-                </IconButton>
-              }
-            >
-              <Input
-                placeholder={m.users_placeholder()}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                bg="bg.panel"
-                borderColor="border"
-              />
-            </InputGroup>
-          </Field>
-          <HStack justify="space-between" wrap="wrap" gap={3}>
-            <Text fontSize="sm" color="fg.muted">
-              {debouncedQuery.length > 1
-                ? m.users_searching({ query: debouncedQuery })
-                : m.users_min_chars()}
-            </Text>
-          </HStack>
-        </Stack>
-      </Box>
+      <SearchPanel
+        label={m.users_field_label()}
+        placeholder={m.users_placeholder()}
+        value={query}
+        onChange={setQuery}
+        onSearch={() => setDebouncedQuery(query.trim())}
+        buttonLabel={m.users_search_button()}
+        helperText={
+          debouncedQuery.length > 1
+            ? m.users_searching({ query: debouncedQuery })
+            : m.users_min_chars()
+        }
+        isLoading={usersQuery.isFetching}
+        isDisabled={query.trim().length < 2}
+      />
 
       <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
         {usersQuery.isFetching
@@ -167,9 +128,6 @@ function Users() {
                         {user.about}
                       </Text>
                     ) : null}
-                    <Text fontSize="xs" color="fg.muted">
-                      {m.users_reputation({ reputation: user.reputation })}
-                    </Text>
                   </Stack>
                 </Card.Body>
               </Card.Root>

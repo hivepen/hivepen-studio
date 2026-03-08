@@ -30,12 +30,12 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { getHiveKeychain, signLogin } from '@/lib/hive/keychain'
-import { fetchAccount } from '@/lib/hive/client'
 import AccountConnectDialog from './AccountConnectDialog'
 import { Avatar } from '@/components/ui/avatar'
 import { CONNECT_ACCOUNT_DIALOG_EVENT } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
+import useProfileQuery from '@/features/profile/useProfileQuery'
 
 type NavItem = {
   label: string
@@ -63,9 +63,10 @@ export default function AppShell({
   const [isConnecting, setIsConnecting] = useState(false)
   const [keychainAvailable] = useState(() => Boolean(getHiveKeychain()))
   const [showConnectDialog, setShowConnectDialog] = useState(false)
-  const [profileImage, setProfileImage] = useState<string | null>(null)
+  const profileQuery = useProfileQuery(account)
   const locale = getLocale()
 
+  const profileImage = profileQuery.data?.profileImage ?? null
   const accountLabel = useMemo(() => {
     if (!account) return m.app_shell_connect_account()
     return `@${account}`
@@ -136,19 +137,6 @@ export default function AppShell({
     }
   }, [])
 
-  const loadProfileImage = async (username: string) => {
-    try {
-      const accountData = await fetchAccount(username)
-      const metadata = accountData?.json_metadata
-        ? JSON.parse(accountData.json_metadata)
-        : null
-      const image = metadata?.profile?.profile_image as string | undefined
-      setProfileImage(image ?? null)
-    } catch {
-      setProfileImage(null)
-    }
-  }
-
   const handleConnect = async (username: string) => {
     if (!keychainAvailable) {
       return
@@ -158,7 +146,6 @@ export default function AppShell({
     const response = await signLogin(username.trim(), message)
     if (response.success) {
       setAccount(username.trim())
-      await loadProfileImage(username.trim())
       setShowConnectDialog(false)
     } else {
       window.alert(response.message ?? m.app_shell_login_rejected())
@@ -168,13 +155,11 @@ export default function AppShell({
 
   const handleLogout = () => {
     setAccount(null)
-    setProfileImage(null)
     router.navigate({ to: '/' })
   }
 
   const handleSwitchAccount = () => {
     setAccount(null)
-    setProfileImage(null)
     router.navigate({ to: '/' })
     setShowConnectDialog(true)
   }

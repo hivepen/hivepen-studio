@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Box, Button, Heading, HStack, Stack, Text } from '@chakra-ui/react'
+import { Box, Button, Heading, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import PostsListSection from '@/features/posts/PostsListSection'
@@ -8,11 +8,12 @@ import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
+import ProfileBanner from '@/components/ProfileBanner'
 import { openConnectAccountDialog } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
 import type { SearchResult } from '@/lib/hive/search'
-import { Avatar } from '@/components/ui/avatar'
 import { hiveAvatarUrl } from '@/lib/posts/tagColorConfig'
+import useProfileQuery from '@/features/profile/useProfileQuery'
 
 export const Route = createFileRoute('/blog')({
   component: MyBlogPage,
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/blog')({
 
 function MyBlogPage() {
   const [account] = useLocalStorageState<string | null>('hivepen.account', null)
+  const profileQuery = useProfileQuery(account)
   const postsQuery = useInfinitePostsQuery({
     source: 'account',
     sort: 'posts',
@@ -118,15 +120,18 @@ function MyBlogPage() {
 
   return (
     <Stack gap={6} p={6}>
-      <HStack>
-        <Avatar src={hiveAvatarUrl(account)}/>
-        <Box>
-          <Heading size="lg">{m.blog_heading()}</Heading>
-          <Text color="fg.muted">
-            @{account}
-          </Text>
-        </Box>
-      </HStack>
+      <Heading size="lg">{m.blog_heading()}</Heading>
+      <ProfileBanner
+        title={profileQuery.data?.displayName || `@${account}`}
+        subtitle={profileQuery.data?.displayName ? `@${account}` : undefined}
+        description={profileQuery.data?.about}
+        avatarName={account ?? undefined}
+        avatarUrl={
+          profileQuery.data?.profileImage || hiveAvatarUrl(account)
+        }
+        coverUrl={profileQuery.data?.coverImage}
+        size="compact"
+      />
       <InfiniteDebugBanner
         pages={postsQuery.data?.pages?.length ?? 0}
         totalPosts={posts.length}

@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Box, Button, Heading, HStack, Stack, Text } from '@chakra-ui/react'
-import { Avatar } from '@/components/ui/avatar'
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
@@ -10,6 +9,8 @@ import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import { m } from '@/paraglide/messages'
 import type { SearchResult } from '@/lib/hive/search'
+import ProfileBanner from '@/components/ProfileBanner'
+import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 
 export const Route = createFileRoute('/profile/$accountname')({
   component: ProfilePage,
@@ -88,52 +89,43 @@ function ProfilePage() {
     [postsQuery.data, localStats]
   )
 
+  const profileMeta = (
+    <HStack gap={4} mt={1} color="fg.muted" fontSize="sm" wrap="wrap">
+      {profileQuery.data?.postCount !== undefined ? (
+        <Text>
+          {m.profile_posts_count({ count: profileQuery.data.postCount })}
+        </Text>
+      ) : null}
+      {profileQuery.data?.followerCount !== undefined ? (
+        <Text>
+          {m.profile_followers({ count: profileQuery.data.followerCount })}
+        </Text>
+      ) : null}
+      {profileQuery.data?.followingCount !== undefined ? (
+        <Text>
+          {m.profile_following({ count: profileQuery.data.followingCount })}
+        </Text>
+      ) : null}
+    </HStack>
+  )
+
   return (
     <Stack gap={6} p={6}>
-      <Box
-        border="1px solid"
-        borderColor="border"
-        borderRadius="16px"
-        bg="bg.panel"
-        p={{ base: 4, md: 6 }}
-      >
-        <HStack align="center" justify="space-between" wrap="wrap">
-          <HStack gap={4} align="center">
-            <Avatar
-              size="lg"
-              src={profileQuery.data?.profileImage}
-              name={username}
-            />
-            <Box>
-              <Heading size="md">@{username}</Heading>
-              <Text color="fg.muted" mt={1} maxW="520px">
-                {profileQuery.data?.about ?? m.profile_fallback_about()}
-              </Text>
-              <HStack gap={4} mt={3} color="fg.muted" fontSize="sm">
-                {profileQuery.data?.postCount !== undefined ? (
-                  <Text>
-                    {m.profile_posts_count({ count: profileQuery.data.postCount })}
-                  </Text>
-                ) : null}
-                {profileQuery.data?.followerCount !== undefined ? (
-                  <Text>
-                    {m.profile_followers({ count: profileQuery.data.followerCount })}
-                  </Text>
-                ) : null}
-                {profileQuery.data?.followingCount !== undefined ? (
-                  <Text>
-                    {m.profile_following({ count: profileQuery.data.followingCount })}
-                  </Text>
-                ) : null}
-              </HStack>
-            </Box>
-          </HStack>
+      <ProfileBanner
+        title={profileQuery.data?.displayName || `@${username}`}
+        subtitle={profileQuery.data?.displayName ? `@${username}` : undefined}
+        description={profileQuery.data?.about ?? m.profile_fallback_about()}
+        avatarName={username}
+        avatarUrl={profileQuery.data?.profileImage ?? getHiveAvatarUrl(username)}
+        coverUrl={profileQuery.data?.coverImage}
+        actions={
           <HStack gap={2}>
             <Button variant="outline">{m.profile_follow_button()}</Button>
             <Button variant="outline">{m.profile_message_button()}</Button>
           </HStack>
-        </HStack>
-      </Box>
+        }
+        meta={profileMeta}
+      />
 
       <InfiniteDebugBanner
         pages={postsQuery.data?.pages?.length ?? 0}
