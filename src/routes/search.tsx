@@ -367,6 +367,14 @@ function Search() {
         totalPosts={cardResults.length}
         hasNextPage={postsQuery.hasNextPage}
         isFetchingNextPage={postsQuery.isFetchingNextPage}
+        lastPost={
+          cardResults.length > 0
+            ? {
+                author: cardResults[cardResults.length - 1].author,
+                permlink: cardResults[cardResults.length - 1].permlink,
+              }
+            : undefined
+        }
       />
 
       <Stack gap={4}>

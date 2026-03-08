@@ -5,6 +5,7 @@ type InfiniteDebugBannerProps = {
   totalPosts?: number
   hasNextPage?: boolean
   isFetchingNextPage?: boolean
+  lastPost?: { author: string; permlink: string }
 }
 
 const shouldShow =
@@ -16,6 +17,7 @@ const InfiniteDebugBanner = ({
   totalPosts,
   hasNextPage,
   isFetchingNextPage,
+  lastPost,
 }: InfiniteDebugBannerProps) => {
   if (!shouldShow) return null
 
@@ -58,6 +60,14 @@ const InfiniteDebugBanner = ({
           </Text>
           <Code fontSize="xs">{String(Boolean(isFetchingNextPage))}</Code>
         </HStack>
+        {lastPost ? (
+          <HStack gap={2}>
+            <Text fontSize="xs" color="yellow.800">
+              Cursor
+            </Text>
+            <Code fontSize="xs">{`@${lastPost.author}/${lastPost.permlink}`}</Code>
+          </HStack>
+        ) : null}
       </HStack>
     </Box>
   )

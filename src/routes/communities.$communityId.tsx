@@ -133,6 +133,14 @@ function CommunityPage() {
         totalPosts={posts.length}
         hasNextPage={postsQuery.hasNextPage}
         isFetchingNextPage={postsQuery.isFetchingNextPage}
+        lastPost={
+          posts.length > 0
+            ? {
+                author: posts[posts.length - 1].author,
+                permlink: posts[posts.length - 1].permlink,
+              }
+            : undefined
+        }
       />
 
       <PostsListSection
