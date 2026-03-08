@@ -36,7 +36,12 @@ const ProfileBanner = ({
       bg="bg.panel"
       overflow="hidden"
     >
-      <Box position="relative" h={`${coverHeight}px`} bg="bg.muted">
+      <Box
+        position="relative"
+        h={`${coverHeight}px`}
+        bg="bg.muted"
+        zIndex={0}
+      >
         {coverUrl ? (
           <Image
             src={coverUrl}
@@ -52,7 +57,14 @@ const ProfileBanner = ({
           bgGradient="linear(to-b, rgba(0,0,0,0.1), rgba(0,0,0,0.4))"
         />
       </Box>
-      <Stack px={{ base: 4, md: 5 }} pb={{ base: 4, md: 5 }} mt={-8} gap={3}>
+      <Stack
+        px={{ base: 4, md: 5 }}
+        pb={{ base: 4, md: 5 }}
+        mt={-8}
+        gap={3}
+        position="relative"
+        zIndex={1}
+      >
         <HStack justify="space-between" align="end" wrap="wrap" gap={3}>
           <HStack align="end" gap={3}>
             <Box
@@ -68,6 +80,7 @@ const ProfileBanner = ({
               />
             </Box>
             <Stack gap={1}>
+              
               {typeof title === 'string' ? (
                 <Text fontSize={isCompact ? 'md' : 'lg'} fontWeight="700">
                   {title}

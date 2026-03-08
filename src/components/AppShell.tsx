@@ -19,12 +19,15 @@ import {
   FilePenLine,
   Home,
   LayoutDashboard,
+  LogOut,
   MessageSquare,
   NotebookPen,
   NotebookText,
   Search,
   Settings,
+  Shuffle,
   Users,
+  UserPlus,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -265,30 +268,46 @@ export default function AppShell({
             <Menu.Positioner>
               <Menu.Content minW="220px" bg="bg.panel" borderColor="border">
                 {!account && (
-                  <Menu.Item
-                    value="connect"
-                    onSelect={() => setShowConnectDialog(true)}
-                    disabled={isConnecting}
-                  >
-                    {isConnecting ? m.app_shell_menu_connecting() : m.app_shell_menu_connect_account()}
-                  </Menu.Item>
-                )}
+                <Menu.Item
+                  value="connect"
+                  onSelect={() => setShowConnectDialog(true)}
+                  disabled={isConnecting}
+                >
+                  <HStack gap={2}>
+                    <Icon as={UserPlus} boxSize={4} />
+                    <Text>
+                      {isConnecting
+                        ? m.app_shell_menu_connecting()
+                        : m.app_shell_menu_connect_account()}
+                    </Text>
+                  </HStack>
+                </Menu.Item>
+              )}
                 <Menu.Item
                   value="switch"
                   onSelect={handleSwitchAccount}
                   disabled={!account}
                 >
-                  {m.app_shell_menu_switch_account()}
+                  <HStack gap={2}>
+                    <Icon as={Shuffle} boxSize={4} />
+                    <Text>{m.app_shell_menu_switch_account()}</Text>
+                  </HStack>
                 </Menu.Item>
                 <Menu.Item
                   value="settings"
                   onSelect={() => router.navigate({ to: '/settings' })}
                   disabled={!account}
                 >
-                  {m.app_shell_menu_account_settings()}
+                  <HStack gap={2}>
+                    <Icon as={Settings} boxSize={4} />
+                    <Text>{m.app_shell_menu_account_settings()}</Text>
+                  </HStack>
                 </Menu.Item>
                 <Menu.Item value="logout" onSelect={handleLogout} disabled={!account}>
-                  {m.app_shell_menu_logout()}
+                  <HStack gap={2}>
+                    <Icon as={LogOut} boxSize={4} />
+                    <Text>{m.app_shell_menu_logout()}</Text>
+                  </HStack>
                 </Menu.Item>
               </Menu.Content>
             </Menu.Positioner>
