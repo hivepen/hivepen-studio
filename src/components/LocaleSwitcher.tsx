@@ -46,9 +46,10 @@ export default function ParaglideLocaleSwitcher() {
         }
       }}
       size="sm"
+      maxW={'32'}
     >
       <Select.Control>
-        <Select.Trigger bg="bg.panel" borderColor="border" minW="220px">
+        <Select.Trigger bg="bg.panel" borderColor="border">
           <Select.ValueText placeholder={m.settings_language_label()} />
           <Select.IndicatorGroup>
             <Select.Indicator />

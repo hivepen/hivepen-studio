@@ -9,6 +9,8 @@ import {
   Menu,
   VStack,
   Image,
+  Show,
+  IconButton,
 } from '@chakra-ui/react'
 import {
   BarChart3,
@@ -28,17 +30,19 @@ import {
   Shuffle,
   Users,
   UserPlus,
+  SidebarCloseIcon,
+  SidebarOpenIcon,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { getHiveKeychain, signLogin } from '@/lib/hive/keychain'
 import AccountConnectDialog from './AccountConnectDialog'
-import { Avatar } from '@/components/ui/avatar'
 import { CONNECT_ACCOUNT_DIALOG_EVENT } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
 import useProfileQuery from '@/features/profile/useProfileQuery'
+import AccountAvatar from './AccountAvatar'
 
 type NavItem = {
   label: string
@@ -58,7 +62,7 @@ export default function AppShell({
 }) {
   const router = useRouter()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const [account, setAccount] = useLocalStorageState<string | null>(
     'hivepen.account',
     null
@@ -171,14 +175,17 @@ export default function AppShell({
     <Flex minH="100vh" bg="bg">
       <Box
         as="aside"
-        w={collapsed ? '84px' : '280px'}
+        w={{ base: collapsed ? '0' : '280px', md: collapsed ? '84px' : '280px' }}
         bg="bg.panel"
         borderRight="1px solid"
         borderColor="border"
         transition="width 0.2s ease"
-        position="sticky"
+        position={{ base: "fixed", md: "sticky" }}
+        left={0}
         top={0}
+        zIndex={20}
         h="100vh"
+        overflowX="hidden"
       >
         <Flex direction="column" h="100%" px={4} py={5} gap={6}>
           <HStack justify="space-between" align="center">
@@ -188,7 +195,7 @@ export default function AppShell({
                 h={10}
                 overflow="hidden"
               >
-                <Image src='https://images.hive.blog/u/hivepen/avatar' alt='Hivepen Studio Isotype'/>
+                <Image src='https://images.hive.blog/u/hivepen/avatar' alt='Hivepen Studio Isotype' />
               </Box>
               {!collapsed && (
                 <Box>
@@ -198,14 +205,17 @@ export default function AppShell({
                 </Box>
               )}
             </HStack>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCollapsed((prev) => !prev)}
-              aria-label={m.app_shell_toggle_sidebar()}
-            >
-              {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-            </Button>
+            <Show when={!collapsed}>
+              <IconButton
+                display={{ md: 'none' }}
+                variant="ghost"
+                size="sm"
+                onClick={() => setCollapsed((prev) => !prev)}
+                aria-label={m.app_shell_toggle_sidebar()}
+              >
+                <Icon as={collapsed ? SidebarOpenIcon : SidebarCloseIcon} />
+              </IconButton>
+            </Show>
           </HStack>
 
           <VStack align="stretch" gap={4} flex="1">
@@ -248,11 +258,7 @@ export default function AppShell({
                 px={3}
                 py={6}
               >
-                <Avatar
-                  size="sm"
-                  src={profileImage ?? undefined}
-                  name={account ?? 'Guest'}
-                />
+                <AccountAvatar size="sm" username={account} />
                 {!collapsed && (
                   <Box textAlign="left">
                     <Text fontWeight="600" fontSize="sm">
@@ -268,21 +274,21 @@ export default function AppShell({
             <Menu.Positioner>
               <Menu.Content minW="220px" bg="bg.panel" borderColor="border">
                 {!account && (
-                <Menu.Item
-                  value="connect"
-                  onSelect={() => setShowConnectDialog(true)}
-                  disabled={isConnecting}
-                >
-                  <HStack gap={2}>
-                    <Icon as={UserPlus} boxSize={4} />
-                    <Text>
-                      {isConnecting
-                        ? m.app_shell_menu_connecting()
-                        : m.app_shell_menu_connect_account()}
-                    </Text>
-                  </HStack>
-                </Menu.Item>
-              )}
+                  <Menu.Item
+                    value="connect"
+                    onSelect={() => setShowConnectDialog(true)}
+                    disabled={isConnecting}
+                  >
+                    <HStack gap={2}>
+                      <Icon as={UserPlus} boxSize={4} />
+                      <Text>
+                        {isConnecting
+                          ? m.app_shell_menu_connecting()
+                          : m.app_shell_menu_connect_account()}
+                      </Text>
+                    </HStack>
+                  </Menu.Item>
+                )}
                 <Menu.Item
                   value="switch"
                   onSelect={handleSwitchAccount}
@@ -324,11 +330,22 @@ export default function AppShell({
           borderBottom="1px solid"
           borderColor="border"
           bg="bg.panel"
-          px={{ base: 6, md: 10 }}
-          py={4}
+          paddingInlineStart={{ base: 2, md: 4 }}
+          paddingInlineEnd={{ base: 4, md: 6 }}
+          paddingBlock={4}
         >
           <HStack justify="space-between" gap={4} align="center">
             <HStack gap={2} fontSize="sm" color="fg.muted">
+              <IconButton
+                variant="ghost"
+                size="sm"
+                onClick={() => setCollapsed((prev) => !prev)}
+                aria-label={m.app_shell_toggle_sidebar()}
+              >
+                <Icon as={collapsed ? SidebarOpenIcon : SidebarCloseIcon} />
+
+              </IconButton>
+
               <Text>Hivepen</Text>
               {breadcrumb.map((item, index) => (
                 <HStack key={`${item}-${index}`} gap={2}>
@@ -380,12 +397,12 @@ function NavButton({
       _hover={{ bg: 'bg.subtle', color: 'fg' }}
     >
       <Link to={to}
-      activeProps={{
-        style: {
-          background: 'var(--chakra-colors-bg-muted)',
-          color: 'var(--chakra-colors-fg)',
-        },
-      }}>
+        activeProps={{
+          style: {
+            background: 'var(--chakra-colors-bg-muted)',
+            color: 'var(--chakra-colors-fg)',
+          },
+        }}>
         <Icon as={icon} boxSize={4.5} />
         {!collapsed && (
           <Text fontSize="sm" fontWeight="500">

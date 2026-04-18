@@ -32,7 +32,7 @@ export default function PostTag({ tag }: { tag: string }) {
       Boolean(resolvedStyle?.bg) ||
       Boolean(resolvedStyle?.fg) ||
       Boolean(resolvedStyle?.border)
-const TagIcon = resolvedStyle.icon
+const TagIcon = resolvedStyle?.icon
   return (
     <Badge
       variant="subtle"
