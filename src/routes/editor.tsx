@@ -1,5 +1,5 @@
 import { ClientOnly, createFileRoute } from '@tanstack/react-router'
-import { Box, Button, Icon, Input, Stack, Tabs, Text } from '@chakra-ui/react'
+import { Box, Button, HStack, Icon, Input, Show, Stack, Tabs, Text } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useEditor, type Editor as TiptapEditor } from '@tiptap/react'
 import {
@@ -366,36 +366,35 @@ function Editor() {
     <Box h="100%" overflow="hidden">
       {collaborationReady && (
         <Stack h="100%" minH={0}>
-          <CustomHeader
-            title={
-              <Input
-                value={postPayload.title}
-                onChange={(event) =>
-                  setPostPayload((prev) => ({
-                    ...prev,
-                    title: event.target.value,
-                  }))
-                }
-                variant="flushed"
-                placeholder={m.editor_untitled_placeholder()}
+          <HStack p="4" gap="8">
+            <Input
+              value={postPayload.title}
+              onChange={(event) =>
+                setPostPayload((prev) => ({
+                  ...prev,
+                  title: event.target.value,
+                }))
+              }
+              variant="flushed"
+              placeholder={m.editor_untitled_placeholder()}
 
-                // border="none"
-                fontSize="lg"
-                fontWeight="600"
-              />
-            }
-          >
+              // border="none"
+              fontSize="lg"
+              fontWeight="600"
+            />
             <EditorCollaborationUsers users={[]} />
-            <Button
-              colorPalette="gray"
-              onClick={handlePublish}
-              loading={isPublishing}
-              disabled={!keychainDetected || !publishReady}
-            >
-              {m.editor_publish_button()}
-              <SendIcon size={16} />
-            </Button>
-          </CustomHeader>
+            <Show when={publishReady}>
+              <Button
+                colorPalette="gray"
+                onClick={handlePublish}
+                loading={isPublishing}
+                disabled={!keychainDetected || !publishReady}
+              >
+                {m.editor_publish_button()}
+                <SendIcon size={16} />
+              </Button>
+            </Show>
+          </HStack >
 
           {status && (
             <Box
@@ -432,14 +431,15 @@ function Editor() {
             >
               <Tabs.Root
                 defaultValue="editor"
-                variant="outline"
+
                 mt={0}
                 display="flex"
                 flexDirection="column"
                 h="100%"
                 minH={0}
               >
-                <Tabs.List flex="0 0 auto">
+                <Tabs.List>
+                  <Box borderBottomWidth={0.5} borderColor="colorPalette.border" w="2"></Box>
                   <Tabs.Trigger value="editor">
                     <Icon as={SquarePen} boxSize={4} />
                     {m.editor_tab_content()}
