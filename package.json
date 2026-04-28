@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3000",
+    "dev": "vite dev --port 3710",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@aioha/aioha": "^1.8.2",
+    "@chakra-ui/charts": "^3.35.0",
     "@chakra-ui/react": "^3.33.0",
     "@ecency/sdk": "^2.0.14",
     "@emotion/react": "^11.14.0",
@@ -59,6 +60,7 @@
     "prisma": "^7.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "recharts": "^3.8.1",
     "sanitize-html": "^2.17.1",
     "tailwindcss": "^4.0.6",
     "tiptap-extension-global-drag-handle": "^0.1.18",

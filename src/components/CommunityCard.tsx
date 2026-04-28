@@ -9,9 +9,10 @@ import { m } from '@/paraglide/messages'
 type CommunityCardProps = {
   community: HiveCommunity
   profile?: AccountProfile
+  onSelect?: (community: HiveCommunity) => void
 }
 
-const CommunityCard = ({ community, profile }: CommunityCardProps) => {
+const CommunityCard = ({ community, profile, onSelect }: CommunityCardProps) => {
   const communityId = community.name || community.id
   const title = community.title || community.name || community.id
 
@@ -29,11 +30,19 @@ const CommunityCard = ({ community, profile }: CommunityCardProps) => {
         size="compact"
         actions={
           communityId ? (
-            <Button asChild size="sm" colorPalette="gray" variant="subtle" boxShadow="0 0 0 4px white" onClick={(e)=>e.stopPropagation()}>
-              {/* <Link to="/communities/$communityId" params={{ communityId }}>
-                {m.communities_view_button()}
-              </Link> */}
-               <Link to="/profile/$accountname" params={{ accountname: 'carlosepc' }}>
+            <Button
+              asChild
+              size="sm"
+              colorPalette="gray"
+              variant="subtle"
+              boxShadow="0 0 0 4px white"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <Link
+                to="/communities/$communityId"
+                params={{ communityId }}
+                onClick={() => onSelect?.(community)}
+              >
                 {m.communities_view_button()}
               </Link>
             </Button>

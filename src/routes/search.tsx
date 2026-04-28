@@ -29,6 +29,8 @@ import { Field } from '@/components/ui/field'
 import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import type { SearchResult } from '@/lib/hive/search'
+import { discoveryCache } from '@/features/discovery-cache'
+import useDiscoverySnapshot from '@/features/discovery-cache/useDiscoverySnapshot'
 
 const searchSchema = z
   .object({
@@ -259,6 +261,10 @@ function Search() {
   }, [debouncedAuthor, scope, username, filters, setUsername, syncQueryParams])
   const hasAuthor = Boolean(scopedAuthor)
   const canSearch = Boolean(activeTag) || hasAuthor
+  const {
+    snapshot: cachedAuthorSuggestions,
+    refresh: refreshCachedAuthorSuggestions,
+  } = useDiscoverySnapshot('accounts', authorInput.trim(), authorInput.trim() ? 6 : 5)
 
   const postsQuery = useInfinitePostsQuery({
     source: hasAuthor ? 'account' : 'ranked',
@@ -277,6 +283,17 @@ function Search() {
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   })
+
+  useEffect(() => {
+    if (!authorSuggestionsQuery.data || debouncedAuthor.length < 2) return
+    discoveryCache.cacheSearchResults('accounts', debouncedAuthor, authorSuggestionsQuery.data)
+    refreshCachedAuthorSuggestions()
+  }, [authorSuggestionsQuery.data, debouncedAuthor, refreshCachedAuthorSuggestions])
+
+  const authorSuggestions =
+    authorInput.trim() === debouncedAuthor && authorSuggestionsQuery.data !== undefined
+      ? authorSuggestionsQuery.data
+      : cachedAuthorSuggestions.results
 
 
   const [localStats, setLocalStats] = useState<Record<string, { votes?: number; comments?: number }>>({})
@@ -499,7 +516,8 @@ function Search() {
                   bg="bg.panel"
                   borderColor="border"
                 />
-                {debouncedAuthor.length > 1 ? (
+                {authorInput.trim().length > 1 ||
+                (authorInput.trim().length === 0 && authorSuggestions.length > 0) ? (
                   <Box
                     border="1px solid"
                     borderColor="border"
@@ -508,14 +526,13 @@ function Search() {
                     mt={2}
                     p={2}
                   >
-                    {authorSuggestionsQuery.isFetching ? (
+                    {authorSuggestionsQuery.isFetching && authorSuggestions.length === 0 ? (
                       <Text fontSize="xs" color="fg.muted">
                         {m.search_author_searching()}
                       </Text>
-                    ) : authorSuggestionsQuery.data &&
-                      authorSuggestionsQuery.data.length > 0 ? (
+                    ) : authorSuggestions.length > 0 ? (
                       <Stack gap={2}>
-                        {authorSuggestionsQuery.data.map((user) => (
+                        {authorSuggestions.map((user) => (
                           <HStack
                             key={user.name}
                             justify="space-between"
@@ -524,6 +541,10 @@ function Search() {
                             <Link
                               to="/profile/$accountname"
                               params={{ accountname: user.name }}
+                              onClick={() => {
+                                discoveryCache.recordSelection('accounts', user)
+                                refreshCachedAuthorSuggestions()
+                              }}
                               style={{ textDecoration: 'none' }}
                             >
                               <Text fontSize="sm" fontWeight="600">
@@ -534,7 +555,11 @@ function Search() {
                               size="xs"
                               variant="outline"
                               colorPalette="gray"
-                              onClick={() => setAuthorInput(user.name)}
+                              onClick={() => {
+                                discoveryCache.recordSelection('accounts', user)
+                                refreshCachedAuthorSuggestions()
+                                setAuthorInput(user.name)
+                              }}
                             >
                               {m.search_author_use()}
                             </Button>
@@ -543,7 +568,9 @@ function Search() {
                       </Stack>
                     ) : (
                       <Text fontSize="xs" color="fg.muted">
-                        {m.search_author_no_users()}
+                        {authorInput.trim().length === 0
+                          ? m.users_recent_help()
+                          : m.search_author_no_users()}
                       </Text>
                     )}
                   </Box>

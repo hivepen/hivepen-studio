@@ -14,11 +14,13 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { Avatar } from '@/components/ui/avatar'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
-import { searchAccounts } from '@/lib/hive/account'
+import { searchAccounts, type HiveAccountSearchResult } from '@/lib/hive/account'
 import DevOnly from '@/components/DevOnly'
 import { m } from '@/paraglide/messages'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import SearchPanel from '@/components/SearchPanel'
+import { discoveryCache } from '@/features/discovery-cache'
+import useDiscoverySnapshot from '@/features/discovery-cache/useDiscoverySnapshot'
 
 export const Route = createFileRoute('/users')({
   component: Users,
@@ -30,6 +32,9 @@ function Users() {
     ''
   )
   const [debouncedQuery, setDebouncedQuery] = useState('')
+  const trimmedQuery = query.trim()
+  const { snapshot: cachedUsers, refresh: refreshCachedUsers } =
+    useDiscoverySnapshot('accounts', trimmedQuery, trimmedQuery ? 20 : 8)
 
   useEffect(() => {
     if (!queryReady) return
@@ -45,7 +50,30 @@ function Users() {
     gcTime: 30 * 60 * 1000,
   })
 
-  const results = useMemo(() => usersQuery.data ?? [], [usersQuery.data])
+  useEffect(() => {
+    if (!usersQuery.data || debouncedQuery.length < 2) return
+    discoveryCache.cacheSearchResults('accounts', debouncedQuery, usersQuery.data)
+    refreshCachedUsers()
+  }, [debouncedQuery, refreshCachedUsers, usersQuery.data])
+
+  const results = useMemo(() => {
+    if (trimmedQuery === debouncedQuery && usersQuery.data !== undefined) {
+      return usersQuery.data
+    }
+    return cachedUsers.results
+  }, [cachedUsers.results, debouncedQuery, trimmedQuery, usersQuery.data])
+
+  const handleUserSelect = (user: HiveAccountSearchResult) => {
+    discoveryCache.recordSelection('accounts', user)
+    refreshCachedUsers()
+  }
+
+  const helperText =
+    trimmedQuery.length === 0 && cachedUsers.results.length > 0
+      ? m.users_recent_help()
+      : trimmedQuery.length > 1
+        ? m.users_cached_help({ query: trimmedQuery })
+        : m.users_min_chars()
 
   return (
     <Stack gap={6} p={6}>
@@ -65,17 +93,13 @@ function Users() {
         onChange={setQuery}
         onSearch={() => setDebouncedQuery(query.trim())}
         buttonLabel={m.users_search_button()}
-        helperText={
-          debouncedQuery.length > 1
-            ? m.users_searching({ query: debouncedQuery })
-            : m.users_min_chars()
-        }
+        helperText={helperText}
         isLoading={usersQuery.isFetching}
         isDisabled={query.trim().length < 2}
       />
 
       <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
-        {usersQuery.isFetching
+        {usersQuery.isFetching && results.length === 0
           ? Array.from({ length: 4 }).map((_, index) => (
               <Card.Root key={`user-skeleton-${index}`} variant="outline">
                 <Card.Body>
@@ -105,6 +129,7 @@ function Users() {
                         <Link
                           to="/profile/$accountname"
                           params={{ accountname: user.name }}
+                          onClick={() => handleUserSelect(user)}
                           style={{ textDecoration: 'none' }}
                         >
                           <Text fontWeight="600" lineClamp={1}>
@@ -119,6 +144,7 @@ function Users() {
                         <Link
                           to="/profile/$accountname"
                           params={{ accountname: user.name }}
+                          onClick={() => handleUserSelect(user)}
                         >
                           {m.users_view_button()}
                         </Link>

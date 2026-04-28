@@ -10,6 +10,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { listCommunities } from '@/lib/hive/client'
+import type { HiveCommunity } from '@/lib/hive/client'
 import DevOnly from '@/components/DevOnly'
 import { m } from '@/paraglide/messages'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
@@ -17,6 +18,8 @@ import SearchPanel from '@/components/SearchPanel'
 import CommunityCard from '@/components/CommunityCard'
 import useProfilesQuery from '@/features/profile/useProfilesQuery'
 import { type AccountProfile } from '@/features/profile/profileTypes'
+import { discoveryCache } from '@/features/discovery-cache'
+import useDiscoverySnapshot from '@/features/discovery-cache/useDiscoverySnapshot'
 
 export const Route = createFileRoute('/communities')({
   component: Communities,
@@ -28,6 +31,9 @@ function Communities() {
     ''
   )
   const [debouncedQuery, setDebouncedQuery] = useState('')
+  const trimmedQuery = query.trim()
+  const { snapshot: cachedCommunities, refresh: refreshCachedCommunities } =
+    useDiscoverySnapshot('communities', trimmedQuery, trimmedQuery ? 20 : 9)
 
   useEffect(() => {
     if (!queryReady) return
@@ -43,7 +49,18 @@ function Communities() {
     gcTime: 30 * 60 * 1000,
   })
 
-  const results = useMemo(() => communitiesQuery.data ?? [], [communitiesQuery.data])
+  useEffect(() => {
+    if (!communitiesQuery.data || debouncedQuery.length < 2) return
+    discoveryCache.cacheSearchResults('communities', debouncedQuery, communitiesQuery.data)
+    refreshCachedCommunities()
+  }, [communitiesQuery.data, debouncedQuery, refreshCachedCommunities])
+
+  const results = useMemo(() => {
+    if (trimmedQuery === debouncedQuery && communitiesQuery.data !== undefined) {
+      return communitiesQuery.data
+    }
+    return cachedCommunities.results
+  }, [cachedCommunities.results, communitiesQuery.data, debouncedQuery, trimmedQuery])
   const communityIds = useMemo(
     () =>
       results
@@ -59,6 +76,18 @@ function Communities() {
     })
     return map
   }, [profilesQuery.data])
+
+  const handleCommunitySelect = (community: HiveCommunity) => {
+    discoveryCache.recordSelection('communities', community)
+    refreshCachedCommunities()
+  }
+
+  const helperText =
+    trimmedQuery.length === 0 && cachedCommunities.results.length > 0
+      ? m.communities_recent_help()
+      : trimmedQuery.length > 1
+        ? m.communities_cached_help({ query: trimmedQuery })
+        : m.communities_min_chars()
 
   return (
     <Stack gap={6} p={6}>
@@ -78,17 +107,13 @@ function Communities() {
         onChange={setQuery}
         onSearch={() => setDebouncedQuery(query.trim())}
         buttonLabel={m.communities_search_button()}
-        helperText={
-          debouncedQuery.length > 1
-            ? m.communities_searching({ query: debouncedQuery })
-            : m.communities_min_chars()
-        }
+        helperText={helperText}
         isLoading={communitiesQuery.isFetching}
         isDisabled={query.trim().length < 2}
       />
 
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
-        {communitiesQuery.isFetching
+        {communitiesQuery.isFetching && results.length === 0
           ? Array.from({ length: 4 }).map((_, index) => (
               <Skeleton
                 key={`community-skeleton-${index}`}
@@ -103,6 +128,7 @@ function Communities() {
                   key={community.id || community.name}
                   community={community}
                   profile={communityId ? profilesByName.get(communityId) : undefined}
+                  onSelect={handleCommunitySelect}
                 />
               )
             })}
