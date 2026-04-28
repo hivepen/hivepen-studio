@@ -12,14 +12,18 @@ import { useEffect, useRef, useState } from 'react'
 
 import { listCommunities } from '@/lib/hive/client'
 import { fetchCommunity } from '@/lib/hive/community'
+import type { HiveCommunity } from '@/lib/hive/client'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { Avatar } from '@/components/ui/avatar'
 import { m } from '@/paraglide/messages'
+import { discoveryCache } from '@/features/discovery-cache'
+import useDiscoverySnapshot from '@/features/discovery-cache/useDiscoverySnapshot'
 
 type CommunityOption = {
   label: string
   value: string
   description?: string
+  community: HiveCommunity
 }
 
 export default function CommunityCombobox({
@@ -34,6 +38,9 @@ export default function CommunityCombobox({
   const [selectedItem, setSelectedItem] = useState<CommunityOption | null>(null)
   const userTypingRef = useRef(false)
   const prevValueRef = useRef(value)
+  const trimmedQuery = query.trim()
+  const { snapshot: cachedCommunities, refresh: refreshCachedCommunities } =
+    useDiscoverySnapshot('communities', trimmedQuery, trimmedQuery ? 12 : 8)
 
   const { collection, set } = useListCollection({
     initialItems: [],
@@ -41,10 +48,19 @@ export default function CommunityCombobox({
     itemToValue: (item) => item.value,
   })
 
+  const toOption = (community: HiveCommunity): CommunityOption => ({
+    label: community.title || community.name || community.id,
+    value: community.name || community.id,
+    description: community.about,
+    community,
+  })
+
   useEffect(() => {
-    const trimmed = query.trim()
-    if (!trimmed) {
-      const fallback = selectedItem ? [selectedItem] : []
+    if (!trimmedQuery) {
+      const fallback = cachedCommunities.results.map(toOption)
+      if (selectedItem && !fallback.some((item) => item.value === selectedItem.value)) {
+        fallback.unshift(selectedItem)
+      }
       set(fallback)
       setLoading(false)
       return
@@ -54,14 +70,12 @@ export default function CommunityCombobox({
     setLoading(true)
 
     const handle = setTimeout(() => {
-      listCommunities(trimmed)
+      listCommunities(trimmedQuery)
         .then((result) => {
           if (!active) return
-          const items = result.map((community) => ({
-            label: community.title || community.name || community.id,
-            value: community.name || community.id,
-            description: community.about,
-          }))
+          discoveryCache.cacheSearchResults('communities', trimmedQuery, result)
+          refreshCachedCommunities()
+          const items = result.map(toOption)
           if (selectedItem && !items.some((item) => item.value === selectedItem.value)) {
             items.unshift(selectedItem)
           }
@@ -87,7 +101,7 @@ export default function CommunityCombobox({
       active = false
       clearTimeout(handle)
     }
-  }, [query, selectedItem, set])
+  }, [cachedCommunities.results, refreshCachedCommunities, selectedItem, set, trimmedQuery])
 
   useEffect(() => {
     if (value === prevValueRef.current) return
@@ -99,7 +113,13 @@ export default function CommunityCombobox({
       return
     }
     setSelectedItem((prev) =>
-      prev?.value === value ? prev : { label: value, value }
+      prev?.value === value
+        ? prev
+        : {
+            label: value,
+            value,
+            community: { id: value, name: value },
+          }
     )
     setQuery(value)
   }, [value])
@@ -117,6 +137,7 @@ export default function CommunityCombobox({
           label,
           value: resolvedValue,
           description: match.about,
+          community: match,
         })
         if (!userTypingRef.current) {
           setQuery(label)
@@ -139,14 +160,17 @@ export default function CommunityCombobox({
           collection.items.find((item) => item.value === selectedValue) ??
           (selectedValue
             ? {
-              label: selectedValue,
-              value: selectedValue,
-            }
+                label: selectedValue,
+                value: selectedValue,
+                community: { id: selectedValue, name: selectedValue },
+              }
             : null)
 
         userTypingRef.current = false
         setSelectedItem(nextItem)
         if (nextItem) {
+          discoveryCache.recordSelection('communities', nextItem.community)
+          refreshCachedCommunities()
           setQuery(nextItem.label)
         }
         const nextValue = selectedValue ?? ''
@@ -166,7 +190,9 @@ export default function CommunityCombobox({
         }
         setQuery(nextValue)
       }}
-      openOnChange={(details) => details.inputValue.length > 1}
+      openOnChange={(details) =>
+        details.inputValue.length === 0 || details.inputValue.length > 1
+      }
     >
       <Combobox.Label>
         <Text fontSize="sm" color="fg.muted">
