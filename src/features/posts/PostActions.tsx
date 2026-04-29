@@ -11,9 +11,8 @@ import {
   Popover,
   Portal,
   Skeleton,
-  Flex,
   For,
-  Center,
+  Wrap,
 } from '@chakra-ui/react'
 import { useState } from 'react'
 import { ArrowBigUp, MessageCircle, Send } from 'lucide-react'
@@ -29,6 +28,7 @@ import {
 } from '@/lib/posts/votes'
 import { m } from '@/paraglide/messages'
 import AccountAvatar from '@/components/AccountAvatar'
+import { Link } from '@tanstack/react-router'
 
 export default function PostActions({
   author,
@@ -201,44 +201,63 @@ export default function PostActions({
                           </HStack>
 
                         {/* VOTERS List */}
-                        {sortedVoteDetails.map((vote) => (
-                          <HStack
-                            key={vote.account}
-                            justify="space-between"
-                            gap={4}
-                          >
-                            <HStack gap={2} minW={0}>
-                              <Avatar
+                        <For each={sortedVoteDetails.filter(vote=>vote.percent>=0.1)}>
+                          {(vote) => (
+                            <HStack
+                              key={vote.account}
+                              justify="space-between"
+                              gap={4}
+                            >
+                              <HStack asChild gap={2} minW={0}>
+                              <Link to='/profile/$accountname' params={{accountname:vote.account}}>
+                                <AccountAvatar
+                                  size="xs"
+                                  boxSize={6}
+                                  username={vote.account}
+                                />
+                          
+                                <HStack gap="0.5">
+                                  <Text fontWeight="400" fontSize="xs" as="span" color="colorPalette.emphasized">@</Text>
+                                   <Text as="span"
+                                    fontSize="sm"
+                                    fontWeight="semibold"
+                                    lineClamp={1}
+                                  >
+                                    {vote.account}
+                                  </Text>
+                                </HStack>
+                                </Link>
+                              </HStack>
+                              <Stack gap="0" align="end">
+                                <Text
+                                  fontSize="xs"
+                                  color="fg.muted"
+                                  fontWeight="600"
+                                >
+                                  {formatVotePercent(vote.percent)}
+                                </Text>
+                                <Box rounded="full" me="1" bg="colorPalette.subtle" h="1" w={formatVotePercent(vote.percent)}></Box>
+                              </Stack>
+                            </HStack>
+                          )}
+                        </For>
+                        <HStack align="center">
+                          <Box h={0.5} bg="colorPalette.subtle" flex="1"></Box>
+                          <Text color="fg.muted" fontSize="xs">0 - 0.1%</Text>
+                        </HStack>
+                        <Wrap>
+                        <For each={sortedVoteDetails.filter(vote=>vote.percent<=0.1)}>
+                          {(vote) => (
+                            <Link to='/profile/$accountname' params={{accountname:vote.account}}>
+                              <AccountAvatar
                                 size="xs"
                                 boxSize={6}
-                                name={vote.account}
-                                src={getHiveAvatarUrl(vote.account)}
+                                username={vote.account}
                               />
-                              
-                              <HStack gap="0.5">
-                                <Text fontWeight="400" fontSize="xs" as="span" color="colorPalette.emphasized">@</Text>
-                                 <Text as="span"
-                                  fontSize="sm"
-                                  fontWeight="semibold"
-                                  lineClamp={1}
-                                >
-                                  {vote.account}
-                                </Text>
-                              </HStack>
-
-                            </HStack>
-                            <Stack gap="0" align="end">
-                              <Text
-                                fontSize="xs"
-                                color="fg.muted"
-                                fontWeight="600"
-                              >
-                                {formatVotePercent(vote.percent)}
-                              </Text>
-                              <Box rounded="full" me="1" bg="colorPalette.subtle" h="1" w={formatVotePercent(vote.percent)}></Box>
-                            </Stack>
-                          </HStack>
-                        ))}
+                            </Link>
+                          )}
+                        </For>
+                        </Wrap>
                       </Stack>
                     ) : (
                       <Text fontSize="sm" color="fg.muted">
