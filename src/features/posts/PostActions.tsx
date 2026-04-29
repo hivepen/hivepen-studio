@@ -11,6 +11,9 @@ import {
   Popover,
   Portal,
   Skeleton,
+  Flex,
+  For,
+  Center,
 } from '@chakra-ui/react'
 import { useState } from 'react'
 import { ArrowBigUp, MessageCircle, Send } from 'lucide-react'
@@ -25,6 +28,7 @@ import {
   sortVoteDetailsByPercent,
 } from '@/lib/posts/votes'
 import { m } from '@/paraglide/messages'
+import AccountAvatar from '@/components/AccountAvatar'
 
 export default function PostActions({
   author,
@@ -147,16 +151,12 @@ export default function PostActions({
                 variant="ghost"
                 size="sm"
                 px={2}
-                h="auto"
-                minW="auto"
                 aria-label={m.post_actions_see_voters()}
                 onMouseEnter={() => setShouldFetchVotes(true)}
                 onFocus={() => setShouldFetchVotes(true)}
-                onClick={() => setShouldFetchVotes(true)}
+                onClick={() => setShouldFetchVotes(true)} fontSize="sm" fontWeight="600"
               >
-                <Text fontSize="sm" fontWeight="600">
                   {resolvedVoteCount}
-                </Text>
               </Button>
             </Popover.Trigger>
             <Portal>
@@ -173,7 +173,7 @@ export default function PostActions({
                   overflowY="auto"
                   boxShadow="lg"
                 >
-                  <Stack gap={3}>
+                  <Stack>
                     <Text
                       fontSize="xs"
                       color="fg.muted"
@@ -190,6 +190,17 @@ export default function PostActions({
                       </Stack>
                     ) : hasVoteDetails ? (
                       <Stack gap={2}>
+                          {/* participation decorative chart (no details) */}
+                          <HStack overflow="hidden" rounded="lg" gap="0.5">
+                            <For each={sortedVoteDetails.filter(vote=>vote.percent>=1)}>
+                              {
+                                (vote) => <HStack h={1} bg="colorPalette.subtle" gap="0.5" colorPalette={'gray'} key={vote.account} rounded="xs"  width={formatVotePercent(vote.percent)} >
+                                </HStack>
+                              }
+                            </For>
+                          </HStack>
+
+                        {/* VOTERS List */}
                         {sortedVoteDetails.map((vote) => (
                           <HStack
                             key={vote.account}
@@ -199,24 +210,33 @@ export default function PostActions({
                             <HStack gap={2} minW={0}>
                               <Avatar
                                 size="xs"
+                                boxSize={6}
                                 name={vote.account}
                                 src={getHiveAvatarUrl(vote.account)}
                               />
-                              <Text
-                                fontSize="sm"
-                                fontWeight="500"
-                                lineClamp={1}
-                              >
-                                @{vote.account}
-                              </Text>
+                              
+                              <HStack gap="0.5">
+                                <Text fontWeight="400" fontSize="xs" as="span" color="colorPalette.emphasized">@</Text>
+                                 <Text as="span"
+                                  fontSize="sm"
+                                  fontWeight="semibold"
+                                  lineClamp={1}
+                                >
+                                  {vote.account}
+                                </Text>
+                              </HStack>
+
                             </HStack>
-                            <Text
-                              fontSize="xs"
-                              color="fg.muted"
-                              fontWeight="600"
-                            >
-                              {formatVotePercent(vote.percent)}
-                            </Text>
+                            <Stack gap="0" align="end">
+                              <Text
+                                fontSize="xs"
+                                color="fg.muted"
+                                fontWeight="600"
+                              >
+                                {formatVotePercent(vote.percent)}
+                              </Text>
+                              <Box rounded="full" me="1" bg="colorPalette.subtle" h="1" w={formatVotePercent(vote.percent)}></Box>
+                            </Stack>
                           </HStack>
                         ))}
                       </Stack>
