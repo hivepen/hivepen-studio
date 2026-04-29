@@ -29,9 +29,11 @@ type CommunityOption = {
 export default function CommunityCombobox({
   value,
   onChange,
+  size = 'md',
 }: {
   value: string
   onChange: (value: string) => void
+  size?: 'sm' | 'md'
 }) {
   const [query, setQuery] = useState(value)
   const [loading, setLoading] = useState(false)
@@ -58,7 +60,10 @@ export default function CommunityCombobox({
   useEffect(() => {
     if (!trimmedQuery) {
       const fallback = cachedCommunities.results.map(toOption)
-      if (selectedItem && !fallback.some((item) => item.value === selectedItem.value)) {
+      if (
+        selectedItem &&
+        !fallback.some((item) => item.value === selectedItem.value)
+      ) {
         fallback.unshift(selectedItem)
       }
       set(fallback)
@@ -76,7 +81,10 @@ export default function CommunityCombobox({
           discoveryCache.cacheSearchResults('communities', trimmedQuery, result)
           refreshCachedCommunities()
           const items = result.map(toOption)
-          if (selectedItem && !items.some((item) => item.value === selectedItem.value)) {
+          if (
+            selectedItem &&
+            !items.some((item) => item.value === selectedItem.value)
+          ) {
             items.unshift(selectedItem)
           }
           const matched = selectedItem
@@ -101,7 +109,13 @@ export default function CommunityCombobox({
       active = false
       clearTimeout(handle)
     }
-  }, [cachedCommunities.results, refreshCachedCommunities, selectedItem, set, trimmedQuery])
+  }, [
+    cachedCommunities.results,
+    refreshCachedCommunities,
+    selectedItem,
+    set,
+    trimmedQuery,
+  ])
 
   useEffect(() => {
     if (value === prevValueRef.current) return
@@ -119,7 +133,7 @@ export default function CommunityCombobox({
             label: value,
             value,
             community: { id: value, name: value },
-          }
+          },
     )
     setQuery(value)
   }, [value])
@@ -154,6 +168,7 @@ export default function CommunityCombobox({
       collection={collection}
       value={selectedItem ? [selectedItem.value] : []}
       inputValue={query}
+      size={size}
       onValueChange={(details) => {
         const selectedValue = details.value[0]
         const nextItem =
@@ -214,7 +229,7 @@ export default function CommunityCombobox({
         >
           <Combobox.Input
             placeholder={m.community_search_placeholder()}
-            bg="bg.panel"
+            bg="bg"
             borderColor="border"
           />
         </InputGroup>

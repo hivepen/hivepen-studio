@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { zodValidator } from '@tanstack/zod-adapter'
 import { z } from 'zod'
 import {
-  Badge,
   Box,
   Button,
   Heading,
@@ -387,16 +386,14 @@ function Search() {
   }, [postsQuery.data?.pages, localStats])
 
   return (
-    <Stack gap={6} p={6}>
-      <Box>
-        <Badge colorPalette="purple" variant="subtle" mb={2}>
-          {m.search_badge()}
-        </Badge>
-        <Heading size="lg">{m.search_heading()}</Heading>
-        <Text color="fg.muted" mt={2} maxW="720px">
-          {m.search_description()}
-        </Text>
-      </Box>
+    <Stack
+      gap={{ base: 5, md: 6 }}
+      maxW="7xl"
+      mx="auto"
+      p={{ base: 4, md: 6 }}
+      w="full"
+    >
+      <Heading size="lg">{m.search_heading()}</Heading>
       <InfiniteDebugBanner
         pages={postsQuery.data?.pages?.length ?? 0}
         totalPosts={cardResults.length}
@@ -412,24 +409,49 @@ function Search() {
         }
       />
 
-      <Stack gap={4}>
-        <Box
-          border="1px solid"
-          borderColor="border"
-          borderRadius="16px"
-          bg="bg.panel"
-          p={{ base: 4, md: 6 }}
-        >
-          <Stack gap={4}>
-            <HStack justify="space-between" wrap="wrap" gap={3}>
-              <Stack gap={1}>
-                <Text fontSize="sm" fontWeight="600">
-                  {m.search_filters_title()}
-                </Text>
-                <Text fontSize="xs" color="fg.muted">
-                  {m.search_filters_subtitle()}
-                </Text>
-              </Stack>
+      <Box
+        border="1px solid"
+        borderColor="border"
+        borderRadius="12px"
+        bg="bg.panel"
+        p={{ base: 4, md: 5 }}
+      >
+        <Stack gap={4}>
+          <Stack
+            direction={{ base: 'column', lg: 'row' }}
+            justify="space-between"
+            align={{ base: 'stretch', lg: 'center' }}
+            gap={3}
+          >
+            <HStack wrap="wrap" gap={2}>
+              <Button
+                size="sm"
+                flex={{ base: 1, sm: 'initial' }}
+                minW={{ sm: '120px' }}
+                variant={scope === 'all' ? 'solid' : 'outline'}
+                colorPalette="gray"
+                onClick={() => {
+                  setScope('all')
+                  syncQueryParams({ ...filters, author: '' }, 'all', '')
+                }}
+              >
+                {m.search_scope_all()}
+              </Button>
+              <Button
+                size="sm"
+                flex={{ base: 1, sm: 'initial' }}
+                minW={{ sm: '120px' }}
+                variant={scope === 'user' ? 'solid' : 'outline'}
+                colorPalette="gray"
+                onClick={() => {
+                  setScope('user')
+                  syncQueryParams(filters, 'user', username)
+                }}
+              >
+                {m.search_scope_user()}
+              </Button>
+            </HStack>
+            <Box w={{ base: 'full', sm: '220px' }}>
               <Select.Root
                 collection={sortCollection}
                 value={[filters.sort]}
@@ -447,11 +469,7 @@ function Search() {
                 size="sm"
               >
                 <Select.Control>
-                  <Select.Trigger
-                    maxW="220px"
-                    bg="bg.panel"
-                    borderColor="border"
-                  >
+                  <Select.Trigger w="full" bg="bg" borderColor="border">
                     <Select.ValueText
                       placeholder={m.search_sort_placeholder()}
                     />
@@ -461,7 +479,7 @@ function Search() {
                   </Select.Trigger>
                 </Select.Control>
                 <Select.Positioner>
-                  <Select.Content>
+                  <Select.Content bg="bg.panel">
                     {sortCollection.items.map((item) => (
                       <Select.Item key={item.value} item={item}>
                         <Select.ItemText>{item.label}</Select.ItemText>
@@ -471,69 +489,37 @@ function Search() {
                   </Select.Content>
                 </Select.Positioner>
               </Select.Root>
-            </HStack>
+            </Box>
+          </Stack>
 
-            <Stack gap={2}>
-              <Text fontSize="sm" color="fg.muted">
-                {m.search_scope_label()}
-              </Text>
-              <Stack direction={{ base: 'column', md: 'row' }} gap={3}>
-                <Button
-                  variant={scope === 'all' ? 'solid' : 'outline'}
-                  colorPalette="gray"
-                  onClick={() => {
-                    setScope('all')
-                    syncQueryParams({ ...filters, author: '' }, 'all', '')
-                  }}
-                >
-                  {m.search_scope_all()}
-                </Button>
-                <Button
-                  variant={scope === 'user' ? 'solid' : 'outline'}
-                  colorPalette="gray"
-                  onClick={() => {
-                    setScope('user')
-                    syncQueryParams(filters, 'user', username)
-                  }}
-                >
-                  {m.search_scope_user()}
-                </Button>
-              </Stack>
-            </Stack>
-
-            <SimpleGrid columns={{ base: 1, xl: 2 }} gap={4}>
-              <CommunityCombobox
-                value={filters.community}
-                onChange={(value) =>
+          <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} gap={4}>
+            <CommunityCombobox
+              size="sm"
+              value={filters.community}
+              onChange={(value) =>
+                setFilters((prev) => {
+                  const next = { ...prev, community: value }
+                  syncQueryParams(next, scope)
+                  return next
+                })
+              }
+            />
+            <Field label={m.search_tag_label()} required={!filters.community}>
+              <Input
+                placeholder={m.search_tag_placeholder()}
+                value={filters.tag}
+                onChange={(event) =>
                   setFilters((prev) => {
-                    const next = { ...prev, community: value }
+                    const next = { ...prev, tag: event.target.value }
                     syncQueryParams(next, scope)
                     return next
                   })
                 }
+                bg="bg"
+                borderColor="border"
               />
-              <Field
-                label={m.search_tag_label()}
-                helperText={m.search_tag_helper()}
-                required={!filters.community}
-              >
-                <Input
-                  placeholder={m.search_tag_placeholder()}
-                  value={filters.tag}
-                  onChange={(event) =>
-                    setFilters((prev) => {
-                      const next = { ...prev, tag: event.target.value }
-                      syncQueryParams(next, scope)
-                      return next
-                    })
-                  }
-                  bg="bg.panel"
-                  borderColor="border"
-                />
-              </Field>
-            </SimpleGrid>
-
-            <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
+            </Field>
+            <Box gridColumn={{ base: 'auto', md: '1 / -1', xl: 'auto' }}>
               <Field label={m.search_author_label()}>
                 <AccountCombobox
                   emptyText={m.search_author_no_users()}
@@ -551,78 +537,86 @@ function Search() {
                   value={authorInput}
                 />
               </Field>
-              <Field label={m.search_from_label()}>
-                <Input
-                  type="date"
-                  value={filters.dateFrom}
-                  onChange={(event) =>
-                    setFilters((prev) => {
-                      const next = { ...prev, dateFrom: event.target.value }
-                      syncQueryParams(next, scope)
-                      return next
-                    })
-                  }
-                  bg="bg.panel"
-                  borderColor="border"
-                />
-              </Field>
-              <Field label={m.search_to_label()}>
-                <Input
-                  type="date"
-                  value={filters.dateTo}
-                  onChange={(event) =>
-                    setFilters((prev) => {
-                      const next = { ...prev, dateTo: event.target.value }
-                      syncQueryParams(next, scope)
-                      return next
-                    })
-                  }
-                  bg="bg.panel"
-                  borderColor="border"
-                />
-              </Field>
-            </SimpleGrid>
+            </Box>
+          </SimpleGrid>
 
-            <HStack justify="space-between" wrap="wrap" gap={3}>
-              <HStack gap={2}>
-                <Button
-                  colorPalette="gray"
-                  onClick={() => postsQuery.refetch()}
-                  loading={postsQuery.isFetching}
-                  disabled={!canSearch}
-                >
-                  {m.search_run()}
-                </Button>
-                <Button
-                  variant="outline"
-                  colorPalette="gray"
-                  onClick={() => {
-                    const cleared: SearchFilters = {
-                      sort: 'trending',
-                      tag: '',
-                      community: '',
-                      author: '',
-                      dateFrom: '',
-                      dateTo: '',
-                    }
-                    setFilters(cleared)
-                    setUsername('')
-                    setScope('all')
-                    syncQueryParams(cleared, 'all', '')
-                  }}
-                >
-                  {m.search_clear()}
-                </Button>
-              </HStack>
+          <SimpleGrid columns={{ base: 1, sm: 2 }} gap={4}>
+            <Field label={m.search_from_label()}>
+              <Input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(event) =>
+                  setFilters((prev) => {
+                    const next = { ...prev, dateFrom: event.target.value }
+                    syncQueryParams(next, scope)
+                    return next
+                  })
+                }
+                bg="bg"
+                borderColor="border"
+              />
+            </Field>
+            <Field label={m.search_to_label()}>
+              <Input
+                type="date"
+                value={filters.dateTo}
+                onChange={(event) =>
+                  setFilters((prev) => {
+                    const next = { ...prev, dateTo: event.target.value }
+                    syncQueryParams(next, scope)
+                    return next
+                  })
+                }
+                bg="bg"
+                borderColor="border"
+              />
+            </Field>
+          </SimpleGrid>
+
+          <Stack
+            direction={{ base: 'column', md: 'row' }}
+            justify="space-between"
+            align={{ base: 'stretch', md: 'center' }}
+            gap={3}
+          >
+            <Stack direction={{ base: 'column', sm: 'row' }} gap={2}>
+              <Button
+                colorPalette="gray"
+                onClick={() => postsQuery.refetch()}
+                loading={postsQuery.isFetching}
+                disabled={!canSearch}
+              >
+                {m.search_run()}
+              </Button>
+              <Button
+                variant="outline"
+                colorPalette="gray"
+                onClick={() => {
+                  const cleared: SearchFilters = {
+                    sort: 'trending',
+                    tag: '',
+                    community: '',
+                    author: '',
+                    dateFrom: '',
+                    dateTo: '',
+                  }
+                  setFilters(cleared)
+                  setUsername('')
+                  setScope('all')
+                  syncQueryParams(cleared, 'all', '')
+                }}
+              >
+                {m.search_clear()}
+              </Button>
+            </Stack>
+            {activeTag || hasAuthor ? (
               <Text fontSize="sm" color="fg.muted">
-                {activeTag || hasAuthor
-                  ? `${m.search_status_searching()}${activeTag ? ` ${m.search_status_by_tag({ tag: activeTag })}` : ''}${hasAuthor ? ` ${m.search_status_for_author({ author: scopedAuthor ?? '' })}` : ''}`
-                  : m.search_status_select_prompt()}
+                {`${m.search_status_searching()}${activeTag ? ` ${m.search_status_by_tag({ tag: activeTag })}` : ''}${hasAuthor ? ` ${m.search_status_for_author({ author: scopedAuthor ?? '' })}` : ''}`}
               </Text>
-            </HStack>
+            ) : null}
           </Stack>
-        </Box>
-      </Stack>
+        </Stack>
+      </Box>
 
       <PostsListSection
         posts={cardResults}
