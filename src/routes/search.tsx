@@ -272,6 +272,10 @@ function Search() {
     authorInput.trim(),
     authorInput.trim() ? 6 : 5,
   )
+  const {
+    snapshot: featuredAuthorSuggestions,
+    refresh: refreshFeaturedAuthorSuggestions,
+  } = useDiscoverySnapshot('accounts', '', 8)
 
   const postsQuery = useInfinitePostsQuery({
     source: hasAuthor ? 'account' : 'ranked',
@@ -523,11 +527,13 @@ function Search() {
               <Field label={m.search_author_label()}>
                 <AccountCombobox
                   emptyText={m.search_author_no_users()}
+                  featuredSuggestions={featuredAuthorSuggestions.results}
                   loading={authorSuggestionsQuery.isFetching}
                   onChange={setAuthorInput}
                   onSuggestionSelect={(user) => {
                     discoveryCache.recordSelection('accounts', user)
                     refreshCachedAuthorSuggestions()
+                    refreshFeaturedAuthorSuggestions()
                   }}
                   placeholder={m.search_author_placeholder()}
                   recentText={m.users_recent_help()}

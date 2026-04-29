@@ -1,14 +1,16 @@
 import {
   Box,
+  Button,
   Combobox,
   InputGroup,
   Portal,
   Spinner,
   Stack,
   Text,
+  Wrap,
   createListCollection,
 } from '@chakra-ui/react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import AccountAvatar from '@/components/AccountAvatar'
 import type { HiveAccountSearchResult } from '@/lib/hive/account'
@@ -22,6 +24,7 @@ type AccountComboboxProps = {
   value: string
   onChange: (value: string) => void
   suggestions: HiveAccountSearchResult[]
+  featuredSuggestions?: HiveAccountSearchResult[]
   loading?: boolean
   placeholder?: string
   searchingText: string
@@ -37,6 +40,7 @@ export default function AccountCombobox({
   value,
   onChange,
   suggestions,
+  featuredSuggestions = [],
   loading = false,
   placeholder,
   searchingText,
@@ -45,7 +49,11 @@ export default function AccountCombobox({
   size = 'md',
   onSuggestionSelect,
 }: AccountComboboxProps) {
-  const normalizedValue = normalizeUsername(value)
+  const [query, setQuery] = useState(value)
+  const [open, setOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<AccountOption | null>(null)
+  const prevValueRef = useRef(value)
+  const normalizedValue = normalizeUsername(query)
   const avatarBoxSize = size === 'sm' ? 4 : 6
 
   const items = useMemo(
@@ -68,18 +76,89 @@ export default function AccountCombobox({
     [items],
   )
 
-  const selectedItem =
-    normalizedValue.length > 0
-      ? (items.find(
-          (item) => item.name.toLowerCase() === normalizedValue.toLowerCase(),
-        ) ?? null)
-      : null
+  const featuredItems = useMemo(() => {
+    const seen = new Set<string>()
+    return featuredSuggestions
+      .map((account) => ({
+        ...account,
+        label: account.full_name?.trim() || account.name,
+        value: account.name,
+      }))
+      .filter((account) => {
+        const key = account.name.toLowerCase()
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+  }, [featuredSuggestions])
+
+  useEffect(() => {
+    if (value === prevValueRef.current) return
+    prevValueRef.current = value
+    setQuery(value)
+    if (!value) {
+      setSelectedItem(null)
+      return
+    }
+    setSelectedItem((prev) => {
+      if (prev?.name.toLowerCase() === normalizeUsername(value).toLowerCase()) {
+        return prev
+      }
+      const matched =
+        items.find(
+          (item) =>
+            item.name.toLowerCase() === normalizeUsername(value).toLowerCase(),
+        ) ??
+        featuredItems.find(
+          (item) =>
+            item.name.toLowerCase() === normalizeUsername(value).toLowerCase(),
+        )
+      return (
+        matched ?? {
+          name: normalizeUsername(value),
+          full_name: '',
+          about: '',
+          reputation: 0,
+          label: normalizeUsername(value),
+          value: normalizeUsername(value),
+        }
+      )
+    })
+  }, [featuredItems, items, value])
+
+  useEffect(() => {
+    if (!selectedItem) return
+    const matched =
+      items.find(
+        (item) => item.name.toLowerCase() === selectedItem.name.toLowerCase(),
+      ) ??
+      featuredItems.find(
+        (item) => item.name.toLowerCase() === selectedItem.name.toLowerCase(),
+      )
+    if (!matched) return
+    setSelectedItem((prev) => {
+      if (!prev || prev.name.toLowerCase() !== matched.name.toLowerCase()) {
+        return prev
+      }
+      return matched
+    })
+  }, [featuredItems, items, selectedItem])
+
+  const handleAccountSelect = (account: AccountOption) => {
+    prevValueRef.current = account.name
+    setSelectedItem(account)
+    setQuery(account.name)
+    setOpen(false)
+    onSuggestionSelect?.(account)
+    onChange(account.name)
+  }
 
   return (
     <Combobox.Root
       allowCustomValue
       collection={collection}
-      inputValue={value}
+      inputValue={query}
+      open={open}
       openOnClick
       openOnChange={(details) => {
         const nextValue = normalizeUsername(details.inputValue)
@@ -88,20 +167,24 @@ export default function AccountCombobox({
       positioning={{ sameWidth: true }}
       size={size}
       value={selectedItem ? [selectedItem.value] : []}
+      onOpenChange={(details) => setOpen(details.open)}
       onInputValueChange={(details) => {
         if (
           details.reason !== 'input-change' &&
-          normalizeUsername(details.inputValue).length > 0
+          details.reason !== 'clear-trigger'
         ) {
           return
         }
-        onChange(normalizeUsername(details.inputValue))
+        const nextValue = normalizeUsername(details.inputValue)
+        prevValueRef.current = nextValue
+        setSelectedItem(null)
+        setQuery(nextValue)
+        onChange(nextValue)
       }}
       onValueChange={(details) => {
         const nextItem = details.items[0]
         if (!nextItem) return
-        onSuggestionSelect?.(nextItem)
-        onChange(nextItem.name)
+        handleAccountSelect(nextItem)
       }}
     >
       <Combobox.Control>
@@ -149,6 +232,25 @@ export default function AccountCombobox({
                   {normalizedValue.length === 0 ? recentText : emptyText}
                 </Text>
               </Combobox.Empty>
+            ) : null}
+            {featuredItems.length > 0 ? (
+              <Wrap px="3" py="3" gap="2">
+                {featuredItems.map((item) => (
+                  <Button
+                    key={`featured-${item.value}`}
+                    aria-label={`Use @${item.name}`}
+                    borderRadius="full"
+                    minW="auto"
+                    h="auto"
+                    p="0"
+                    variant="ghost"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => handleAccountSelect(item)}
+                  >
+                    <AccountAvatar boxSize={6} size="xs" username={item.name} />
+                  </Button>
+                ))}
+              </Wrap>
             ) : null}
             {items.map((item) => (
               <Combobox.Item key={item.value} item={item}>
