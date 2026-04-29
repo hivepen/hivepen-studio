@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { zodValidator } from '@tanstack/zod-adapter'
 import { z } from 'zod'
 import {
@@ -21,6 +21,7 @@ import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
 
 import CommunityCombobox from '@/components/CommunityCombobox'
+import AccountCombobox from '@/components/AccountCombobox'
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
 import usePostsListState from '@/features/posts/usePostsListState'
@@ -98,12 +99,12 @@ function Search() {
 
   const hasQueryParams = Boolean(
     searchParams.sort ||
-      searchParams.tag ||
-      searchParams.community ||
-      searchParams.author ||
-      searchParams.dateFrom ||
-      searchParams.dateTo ||
-      searchParams.scope
+    searchParams.tag ||
+    searchParams.community ||
+    searchParams.author ||
+    searchParams.dateFrom ||
+    searchParams.dateTo ||
+    searchParams.scope,
   )
 
   const [filters, setFilters] = useState<SearchFilters>(() => {
@@ -125,8 +126,7 @@ function Search() {
     }
     return { ...defaultFilters }
   })
-  const scopeFromParams =
-    searchParams.scope === 'user' ? 'user' : 'all'
+  const scopeFromParams = searchParams.scope === 'user' ? 'user' : 'all'
   useEffect(() => {
     if (hasQueryParams) {
       if (scopeFromParams !== scope) {
@@ -146,7 +146,11 @@ function Search() {
     if (stored.scope && stored.scope !== scope) {
       setScope(stored.scope)
     }
-    if (stored.scope === 'user' && stored.author && stored.author !== username) {
+    if (
+      stored.scope === 'user' &&
+      stored.author &&
+      stored.author !== username
+    ) {
       setUsername(stored.author)
     }
   }, [
@@ -163,7 +167,7 @@ function Search() {
     (
       nextFilters: SearchFilters,
       nextScope: typeof scope = scope,
-      authorOverride?: string
+      authorOverride?: string,
     ) => {
       if (!readyRef.current) {
         return
@@ -185,7 +189,7 @@ function Search() {
         },
       })
     },
-    [navigate, scope, username]
+    [navigate, scope, username],
   )
 
   useEffect(() => {
@@ -200,7 +204,7 @@ function Search() {
       dateTo: (searchParams.dateTo as string | undefined) ?? '',
     }
     setFilters((prev) =>
-      JSON.stringify(prev) === JSON.stringify(nextFilters) ? prev : nextFilters
+      JSON.stringify(prev) === JSON.stringify(nextFilters) ? prev : nextFilters,
     )
   }, [
     hasQueryParams,
@@ -233,7 +237,7 @@ function Search() {
       ? username.trim()
       : filters.author.trim() || undefined
   const [authorInput, setAuthorInput] = useState(
-    scope === 'user' ? username : filters.author
+    scope === 'user' ? username : filters.author,
   )
   const [debouncedAuthor, setDebouncedAuthor] = useState(authorInput)
   useEffect(() => {
@@ -264,7 +268,11 @@ function Search() {
   const {
     snapshot: cachedAuthorSuggestions,
     refresh: refreshCachedAuthorSuggestions,
-  } = useDiscoverySnapshot('accounts', authorInput.trim(), authorInput.trim() ? 6 : 5)
+  } = useDiscoverySnapshot(
+    'accounts',
+    authorInput.trim(),
+    authorInput.trim() ? 6 : 5,
+  )
 
   const postsQuery = useInfinitePostsQuery({
     source: hasAuthor ? 'account' : 'ranked',
@@ -286,17 +294,27 @@ function Search() {
 
   useEffect(() => {
     if (!authorSuggestionsQuery.data || debouncedAuthor.length < 2) return
-    discoveryCache.cacheSearchResults('accounts', debouncedAuthor, authorSuggestionsQuery.data)
+    discoveryCache.cacheSearchResults(
+      'accounts',
+      debouncedAuthor,
+      authorSuggestionsQuery.data,
+    )
     refreshCachedAuthorSuggestions()
-  }, [authorSuggestionsQuery.data, debouncedAuthor, refreshCachedAuthorSuggestions])
+  }, [
+    authorSuggestionsQuery.data,
+    debouncedAuthor,
+    refreshCachedAuthorSuggestions,
+  ])
 
   const authorSuggestions =
-    authorInput.trim() === debouncedAuthor && authorSuggestionsQuery.data !== undefined
+    authorInput.trim() === debouncedAuthor &&
+    authorSuggestionsQuery.data !== undefined
       ? authorSuggestionsQuery.data
       : cachedAuthorSuggestions.results
 
-
-  const [localStats, setLocalStats] = useState<Record<string, { votes?: number; comments?: number }>>({})
+  const [localStats, setLocalStats] = useState<
+    Record<string, { votes?: number; comments?: number }>
+  >({})
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -312,7 +330,7 @@ function Search() {
           postsQuery.fetchNextPage()
         }
       },
-      { rootMargin: '200px' }
+      { rootMargin: '200px' },
     )
     observer.observe(node)
     return () => observer.disconnect()
@@ -333,7 +351,7 @@ function Search() {
           { label: m.search_sort_payout(), value: 'payout' },
         ],
       }),
-    [locale]
+    [locale],
   )
 
   const cardResults = useMemo(() => {
@@ -416,7 +434,9 @@ function Search() {
                 collection={sortCollection}
                 value={[filters.sort]}
                 onValueChange={(details) => {
-                  const value = details.value[0] as SearchFilters['sort'] | undefined
+                  const value = details.value[0] as
+                    | SearchFilters['sort']
+                    | undefined
                   if (!value) return
                   setFilters((prev) => {
                     const next = { ...prev, sort: value }
@@ -427,8 +447,14 @@ function Search() {
                 size="sm"
               >
                 <Select.Control>
-                  <Select.Trigger maxW="220px" bg="bg.panel" borderColor="border">
-                    <Select.ValueText placeholder={m.search_sort_placeholder()} />
+                  <Select.Trigger
+                    maxW="220px"
+                    bg="bg.panel"
+                    borderColor="border"
+                  >
+                    <Select.ValueText
+                      placeholder={m.search_sort_placeholder()}
+                    />
                     <Select.IndicatorGroup>
                       <Select.Indicator />
                     </Select.IndicatorGroup>
@@ -509,72 +535,21 @@ function Search() {
 
             <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
               <Field label={m.search_author_label()}>
-                <Input
+                <AccountCombobox
+                  emptyText={m.search_author_no_users()}
+                  loading={authorSuggestionsQuery.isFetching}
+                  onChange={setAuthorInput}
+                  onSuggestionSelect={(user) => {
+                    discoveryCache.recordSelection('accounts', user)
+                    refreshCachedAuthorSuggestions()
+                  }}
                   placeholder={m.search_author_placeholder()}
+                  recentText={m.users_recent_help()}
+                  searchingText={m.search_author_searching()}
+                  size="sm"
+                  suggestions={authorSuggestions}
                   value={authorInput}
-                  onChange={(event) => setAuthorInput(event.target.value)}
-                  bg="bg.panel"
-                  borderColor="border"
                 />
-                {authorInput.trim().length > 1 ||
-                (authorInput.trim().length === 0 && authorSuggestions.length > 0) ? (
-                  <Box
-                    border="1px solid"
-                    borderColor="border"
-                    borderRadius="12px"
-                    bg="bg.panel"
-                    mt={2}
-                    p={2}
-                  >
-                    {authorSuggestionsQuery.isFetching && authorSuggestions.length === 0 ? (
-                      <Text fontSize="xs" color="fg.muted">
-                        {m.search_author_searching()}
-                      </Text>
-                    ) : authorSuggestions.length > 0 ? (
-                      <Stack gap={2}>
-                        {authorSuggestions.map((user) => (
-                          <HStack
-                            key={user.name}
-                            justify="space-between"
-                            wrap="wrap"
-                          >
-                            <Link
-                              to="/profile/$accountname"
-                              params={{ accountname: user.name }}
-                              onClick={() => {
-                                discoveryCache.recordSelection('accounts', user)
-                                refreshCachedAuthorSuggestions()
-                              }}
-                              style={{ textDecoration: 'none' }}
-                            >
-                              <Text fontSize="sm" fontWeight="600">
-                                @{user.name}
-                              </Text>
-                            </Link>
-                            <Button
-                              size="xs"
-                              variant="outline"
-                              colorPalette="gray"
-                              onClick={() => {
-                                discoveryCache.recordSelection('accounts', user)
-                                refreshCachedAuthorSuggestions()
-                                setAuthorInput(user.name)
-                              }}
-                            >
-                              {m.search_author_use()}
-                            </Button>
-                          </HStack>
-                        ))}
-                      </Stack>
-                    ) : (
-                      <Text fontSize="xs" color="fg.muted">
-                        {authorInput.trim().length === 0
-                          ? m.users_recent_help()
-                          : m.search_author_no_users()}
-                      </Text>
-                    )}
-                  </Box>
-                ) : null}
               </Field>
               <Field label={m.search_from_label()}>
                 <Input
@@ -669,7 +644,10 @@ function Search() {
                 setLocalStats((prev) => {
                   const key = `${post.author}/${post.permlink}`
                   const current = prev[key]?.votes ?? post.votes ?? 0
-                  return { ...prev, [key]: { ...prev[key], votes: current + 1 } }
+                  return {
+                    ...prev,
+                    [key]: { ...prev[key], votes: current + 1 },
+                  }
                 })
               }
               onCommentSuccess={() =>
@@ -699,9 +677,7 @@ function Search() {
           {m.posts_load_more()}
         </Button>
       ) : null}
-      {postsQuery.isError && (
-        <Text color="fg.error">{m.search_error()}</Text>
-      )}
+      {postsQuery.isError && <Text color="fg.error">{m.search_error()}</Text>}
 
       <DevOnly
         summary="Search debug"
