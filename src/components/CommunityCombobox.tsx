@@ -10,7 +10,11 @@ import {
 } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
 
-import { listCommunities } from '@/lib/hive/client'
+import {
+  getCommunityIdentifier,
+  getCommunityLabel,
+  listCommunities,
+} from '@/lib/hive/client'
 import { fetchCommunity } from '@/lib/hive/community'
 import type { HiveCommunity } from '@/lib/hive/client'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
@@ -51,8 +55,8 @@ export default function CommunityCombobox({
   })
 
   const toOption = (community: HiveCommunity): CommunityOption => ({
-    label: community.title || community.name || community.id,
-    value: community.name || community.id,
+    label: getCommunityLabel(community),
+    value: getCommunityIdentifier(community),
     description: community.about,
     community,
   })
@@ -145,8 +149,8 @@ export default function CommunityCombobox({
     fetchCommunity(selectedItem.value)
       .then((match) => {
         if (!active || !match) return
-        const label = match.title || match.name || match.id
-        const resolvedValue = match.name || match.id
+        const label = getCommunityLabel(match)
+        const resolvedValue = getCommunityIdentifier(match)
         setSelectedItem({
           label,
           value: resolvedValue,

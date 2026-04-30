@@ -1,7 +1,7 @@
 import { Button } from '@chakra-ui/react'
 import { Link } from '@tanstack/react-router'
 import ProfileBanner from '@/components/ProfileBanner'
-import { type HiveCommunity } from '@/lib/hive/client'
+import { getCommunityIdentifier, getCommunityLabel, type HiveCommunity } from '@/lib/hive/client'
 import { type AccountProfile } from '@/features/profile/profileTypes'
 import { hiveAvatarUrl } from '@/lib/posts/tagColorConfig'
 import { m } from '@/paraglide/messages'
@@ -13,8 +13,8 @@ type CommunityCardProps = {
 }
 
 const CommunityCard = ({ community, profile, onSelect }: CommunityCardProps) => {
-  const communityId = community.name || community.id
-  const title = community.title || community.name || community.id
+  const communityId = getCommunityIdentifier(community)
+  const title = getCommunityLabel(community)
 
   return (
       <ProfileBanner

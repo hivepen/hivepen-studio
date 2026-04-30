@@ -1,7 +1,7 @@
 import { hiveClient } from './client'
 
 export type HiveCommunityDetail = {
-  id: string
+  id: string | number
   name: string
   title?: string
   about?: string
@@ -25,4 +25,5 @@ export const fetchCommunity = async (name: string) => {
  * @param id The string to check.
  * @returns True if the string is a valid Hive community ID, false otherwise.
  */
-export const isCommunityId = (id: string):boolean => id.trim().toLowerCase().startsWith('hive-') //TODO: check length, maybe use regex to match the pattern: hive-10053 hive-161155 hive-<any number>
+export const isCommunityId = (id: string): boolean =>
+  id.trim().toLowerCase().startsWith('hive-') //TODO: check length, maybe use regex to match the pattern: hive-10053 hive-161155 hive-<any number>

@@ -9,12 +9,26 @@ export const fetchAccount = async (username: string) => {
   return account ?? null
 }
 
+export const toHiveText = (value: unknown) => {
+  if (typeof value === 'string') return value.trim()
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  return ''
+}
+
 export type HiveCommunity = {
-  id: string
+  id: string | number
   name: string
   title?: string
   about?: string
 }
+
+export const getCommunityIdentifier = (
+  community: Pick<HiveCommunity, 'id' | 'name'>
+) => toHiveText(community.name) || toHiveText(community.id)
+
+export const getCommunityLabel = (
+  community: Pick<HiveCommunity, 'id' | 'name' | 'title'>
+) => toHiveText(community.title) || getCommunityIdentifier(community)
 
 export const listCommunities = async (query: string) => {
   const result = await hiveClient.hivemind.listCommunities({

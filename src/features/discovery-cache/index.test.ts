@@ -94,4 +94,21 @@ describe('discovery cache store', () => {
     const snapshot = store.getSnapshot('accounts', '', 3)
     expect(snapshot.results.map((entry) => entry.name)).toEqual(['alpha', 'gamma', 'beta'])
   })
+
+  it('handles numeric community ids without crashing', () => {
+    const store = createDiscoveryCacheStore(createMemoryStorage())
+    const community = {
+      id: 1337,
+      name: '',
+      title: 'Numeric Community',
+      about: 'Test community',
+    }
+
+    expect(() =>
+      store.cacheSearchResults('communities', 'numeric', [community])
+    ).not.toThrow()
+
+    const snapshot = store.getSnapshot('communities', '1337')
+    expect(snapshot.results).toEqual([community])
+  })
 })

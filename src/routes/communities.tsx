@@ -9,7 +9,7 @@ import {
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
-import { listCommunities } from '@/lib/hive/client'
+import { getCommunityIdentifier, listCommunities } from '@/lib/hive/client'
 import type { HiveCommunity } from '@/lib/hive/client'
 import DevOnly from '@/components/DevOnly'
 import { m } from '@/paraglide/messages'
@@ -64,7 +64,7 @@ function Communities() {
   const communityIds = useMemo(
     () =>
       results
-        .map((community) => (community.name || community.id || '').trim())
+        .map((community) => getCommunityIdentifier(community))
         .filter(Boolean),
     [results]
   )
@@ -122,7 +122,7 @@ function Communities() {
               />
             ))
           : results.map((community) => {
-              const communityId = community.name || community.id
+              const communityId = getCommunityIdentifier(community)
               return (
                 <CommunityCard
                   key={community.id || community.name}

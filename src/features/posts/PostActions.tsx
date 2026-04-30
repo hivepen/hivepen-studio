@@ -228,7 +228,7 @@ export default function PostActions({
                                 </HStack>
                                 </Link>
                               </HStack>
-                              <Stack gap="0" align="end">
+                              <Stack gap="0" align="start">
                                 <Text
                                   fontSize="xs"
                                   color="fg.muted"
@@ -236,7 +236,7 @@ export default function PostActions({
                                 >
                                   {formatVotePercent(vote.percent)}
                                 </Text>
-                                <Box rounded="full" me="1" bg="colorPalette.subtle" h="1" w={formatVotePercent(vote.percent)}></Box>
+                                <Box rounded="full" me="1" bg="colorPalette.muted" h="1" w={formatVotePercent(vote.percent)}></Box>
                               </Stack>
                             </HStack>
                           )}

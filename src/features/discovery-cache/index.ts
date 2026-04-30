@@ -1,5 +1,10 @@
 import type { HiveAccountSearchResult } from '@/lib/hive/account'
-import type { HiveCommunity } from '@/lib/hive/client'
+import {
+  getCommunityIdentifier,
+  getCommunityLabel,
+  toHiveText,
+  type HiveCommunity,
+} from '@/lib/hive/client'
 import type {
   CachedEntity,
   CachedSearchBucket,
@@ -39,11 +44,11 @@ const getStorage = (storage?: DiscoveryStorageLike) => {
   return window.localStorage
 }
 
-const normalizeKey = (value: string) => value.trim().toLowerCase().replace(/^@/, '')
+const normalizeKey = (value: unknown) => toHiveText(value).toLowerCase().replace(/^@/, '')
 
 const normalizeQuery = (value: string) => value.trim().toLowerCase().replace(/^@/, '')
 
-const uniqueStrings = (values: string[]) => {
+const uniqueStrings = (values: unknown[]) => {
   const unique = new Set<string>()
   values.map(normalizeKey).filter(Boolean).forEach((value) => unique.add(value))
   return Array.from(unique)
@@ -52,7 +57,7 @@ const uniqueStrings = (values: string[]) => {
 const resolveAccountKey = (account: HiveAccountSearchResult) => normalizeKey(account.name)
 
 const resolveCommunityKey = (community: HiveCommunity) =>
-  normalizeKey(community.name || community.id)
+  normalizeKey(getCommunityIdentifier(community))
 
 const resolveEntityKey = <T extends DiscoveryEntityType>(
   type: T,
@@ -74,7 +79,11 @@ const resolveAliases = <T extends DiscoveryEntityType>(
   }
 
   const community = value as HiveCommunity
-  return uniqueStrings([community.name, community.id, community.title ?? ''])
+  return uniqueStrings([
+    getCommunityIdentifier(community),
+    community.id,
+    getCommunityLabel(community),
+  ])
 }
 
 const pruneRecent = (recent: DiscoveryRecentEntry[]) => recent.slice(0, RECENT_LIMIT)
