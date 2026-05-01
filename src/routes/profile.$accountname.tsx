@@ -1,17 +1,26 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { Box, Button, Group, Heading, HStack, IconButton, Stack, Text } from '@chakra-ui/react'
+import { Link, createFileRoute } from '@tanstack/react-router'
+import {
+  Box,
+  Button,
+  Group,
+  HStack,
+  Heading,
+  IconButton,
+  Stack,
+  Text,
+} from '@chakra-ui/react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { MessageSquareIcon, Wallet } from 'lucide-react'
+import type { SearchResult } from '@/lib/hive/search'
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import useProfileQuery from '@/features/profile/useProfileQuery'
-import { useEffect, useMemo, useRef, useState } from 'react'
 import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import { m } from '@/paraglide/messages'
-import type { SearchResult } from '@/lib/hive/search'
 import ProfileBanner from '@/components/ProfileBanner'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
-import { MessageSquareIcon } from 'lucide-react'
 
 export const Route = createFileRoute('/profile/$accountname')({
   component: ProfilePage,
@@ -30,7 +39,9 @@ function ProfilePage() {
   })
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
-  const [localStats, setLocalStats] = useState<Record<string, { votes?: number; comments?: number }>>({})
+  const [localStats, setLocalStats] = useState<
+    Partial<Record<string, { votes?: number; comments?: number }>>
+  >({})
 
   useEffect(() => {
     const node = loadMoreRef.current
@@ -45,7 +56,7 @@ function ProfilePage() {
           postsQuery.fetchNextPage()
         }
       },
-      { rootMargin: '200px' }
+      { rootMargin: '200px' },
     )
     observer.observe(node)
     return () => observer.disconnect()
@@ -55,40 +66,37 @@ function ProfilePage() {
     postsQuery.isFetchingNextPage,
   ])
 
-  const posts = useMemo(
-    () => {
-      const pages = (postsQuery.data?.pages ?? []) as SearchResult[][]
-      const flattened = pages.flat()
-      const unique = new Map<string, SearchResult>()
-      flattened.forEach((post) => {
-        const key = `${post.author}/${post.permlink}`
-        if (!unique.has(key)) {
-          unique.set(key, post)
-        }
-      })
+  const posts = useMemo(() => {
+    const pages = (postsQuery.data?.pages ?? []) as Array<Array<SearchResult>>
+    const flattened = pages.flat()
+    const unique = new Map<string, SearchResult>()
+    flattened.forEach((post) => {
+      const key = `${post.author}/${post.permlink}`
+      if (!unique.has(key)) {
+        unique.set(key, post)
+      }
+    })
 
-      return Array.from(unique.values()).map((post) => {
-        const key = `${post.author}/${post.permlink}`
-        const overrides = localStats[key] ?? {}
-        return {
-          title: post.title || m.post_untitled(),
-          author: post.author,
-          community: post.communityTitle ?? post.community,
-          communityId: post.community,
-          tags: post.tags,
-          summary: post.summary,
-          coverUrl: post.coverUrl,
-          app: post.app,
-          createdAt: new Date(post.created).toLocaleDateString(),
-          permlink: post.permlink,
-          votes: overrides.votes ?? post.votes,
-          comments: overrides.comments ?? post.comments,
-          payout: post.payout,
-        }
-      })
-    },
-    [postsQuery.data, localStats]
-  )
+    return Array.from(unique.values()).map((post) => {
+      const key = `${post.author}/${post.permlink}`
+      const overrides = localStats[key] ?? {}
+      return {
+        title: post.title || m.post_untitled(),
+        author: post.author,
+        community: post.communityTitle ?? post.community,
+        communityId: post.community,
+        tags: post.tags,
+        summary: post.summary,
+        coverUrl: post.coverUrl,
+        app: post.app,
+        createdAt: new Date(post.created).toLocaleDateString(),
+        permlink: post.permlink,
+        votes: overrides.votes ?? post.votes,
+        comments: overrides.comments ?? post.comments,
+        payout: post.payout,
+      }
+    })
+  }, [postsQuery.data, localStats])
 
   const profileMeta = (
     <HStack gap={4} mt={1} color="fg.muted" fontSize="sm" wrap="wrap">
@@ -117,12 +125,25 @@ function ProfilePage() {
         subtitle={profileQuery.data?.displayName ? `@${username}` : undefined}
         description={profileQuery.data?.about ?? m.profile_fallback_about()}
         avatarName={username}
-        avatarUrl={profileQuery.data?.profileImage ?? getHiveAvatarUrl(username)}
+        avatarUrl={
+          profileQuery.data?.profileImage ?? getHiveAvatarUrl(username)
+        }
         coverUrl={profileQuery.data?.coverImage}
         actions={
           <Group gap={2} bg="white" rounded="md" p={1}>
+            <Button asChild variant="subtle" colorPalette="red">
+              <Link
+                to="/$accountname/wallet"
+                params={{ accountname: `@${username}` }}
+              >
+                <Wallet />
+                {m.profile_wallet_button()}
+              </Link>
+            </Button>
             <Button variant="ghost">{m.profile_follow_button()}</Button>
-            <IconButton variant="ghost" title={m.profile_message_button()}><MessageSquareIcon/></IconButton>
+            <IconButton variant="ghost" title={m.profile_message_button()}>
+              <MessageSquareIcon />
+            </IconButton>
           </Group>
         }
         meta={profileMeta}
@@ -153,23 +174,26 @@ function ProfilePage() {
           emptyMessage={m.profile_empty_posts()}
           renderActions={(post) =>
             post.permlink ? (
-            <PostActions
-              author={post.author}
-              permlink={post.permlink}
-              voteCount={post.votes}
-              commentCount={post.comments}
-              variant="card"
-              onVoteSuccess={() =>
-                setLocalStats((prev) => {
-                  const key = `${post.author}/${post.permlink}`
-                  const current = prev[key]?.votes ?? post.votes ?? 0
-                    return { ...prev, [key]: { ...prev[key], votes: current + 1 } }
+              <PostActions
+                author={post.author}
+                permlink={post.permlink}
+                voteCount={post.votes}
+                commentCount={post.comments}
+                variant="card"
+                onVoteSuccess={() =>
+                  setLocalStats((prev) => {
+                    const key = `${post.author}/${post.permlink}`
+                    const current = prev[key]?.votes ?? post.votes
+                    return {
+                      ...prev,
+                      [key]: { ...prev[key], votes: current + 1 },
+                    }
                   })
                 }
                 onCommentSuccess={() =>
                   setLocalStats((prev) => {
                     const key = `${post.author}/${post.permlink}`
-                    const current = prev[key]?.comments ?? post.comments ?? 0
+                    const current = prev[key]?.comments ?? post.comments
                     return {
                       ...prev,
                       [key]: { ...prev[key], comments: current + 1 },

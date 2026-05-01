@@ -5,21 +5,18 @@ import {
   Flex,
   HStack,
   Icon,
-  Text,
-  Menu,
-  VStack,
-  Image,
-  Show,
   IconButton,
+  Image,
+  Menu,
+  Show,
+  Text,
+  VStack,
 } from '@chakra-ui/react'
 import {
   BarChart3,
   BookOpen,
-  ChevronLeft,
-  ChevronRight,
   ChevronRightIcon,
   FilePenLine,
-  Home,
   LayoutDashboard,
   LogOut,
   MessageSquare,
@@ -28,21 +25,23 @@ import {
   Search,
   Settings,
   Shuffle,
-  Users,
-  UserPlus,
   SidebarCloseIcon,
   SidebarOpenIcon,
+  UserPlus,
+  Users,
+  Wallet,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import AccountConnectDialog from './AccountConnectDialog'
+import AccountAvatar from './AccountAvatar'
+import type { Home } from 'lucide-react'
 
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { getHiveKeychain, signLogin } from '@/lib/hive/keychain'
-import AccountConnectDialog from './AccountConnectDialog'
 import { CONNECT_ACCOUNT_DIALOG_EVENT } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
 import useProfileQuery from '@/features/profile/useProfileQuery'
-import AccountAvatar from './AccountAvatar'
 
 type NavItem = {
   label: string
@@ -52,20 +51,18 @@ type NavItem = {
 
 type NavGroup = {
   label: string
-  items: NavItem[]
+  items: Array<NavItem>
 }
 
-export default function AppShell({
-  children,
-}: {
-  children?: React.ReactNode
-}) {
+export default function AppShell({ children }: { children?: React.ReactNode }) {
   const router = useRouter()
-  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
   const [collapsed, setCollapsed] = useState(true)
   const [account, setAccount] = useLocalStorageState<string | null>(
     'hivepen.account',
-    null
+    null,
   )
   const [isConnecting, setIsConnecting] = useState(false)
   const [keychainAvailable] = useState(() => Boolean(getHiveKeychain()))
@@ -73,42 +70,69 @@ export default function AppShell({
   const profileQuery = useProfileQuery(account)
   const locale = getLocale()
 
-  const profileImage = profileQuery.data?.profileImage ?? null
   const accountLabel = useMemo(() => {
     if (!account) return m.app_shell_connect_account()
     return profileQuery.data?.displayName || `@${account}`
   }, [account, locale, profileQuery.data?.displayName])
 
-  const navGroups: NavGroup[] = useMemo(
+  const navGroups: Array<NavGroup> = useMemo(
     () => [
       {
         label: m.app_shell_nav_group_content_creation(),
         items: [
           { label: m.app_shell_nav_write(), to: '/editor', icon: NotebookPen },
           { label: m.app_shell_nav_my_blog(), to: '/blog', icon: BookOpen },
-          { label: m.app_shell_nav_drafts(), to: '/drafts', icon: NotebookText },
-          { label: m.app_shell_nav_analytics(), to: '/analytics', icon: BarChart3 },
-          { label: m.app_shell_nav_dashboard(), to: '/dashboard', icon: LayoutDashboard },
+          {
+            label: m.app_shell_nav_drafts(),
+            to: '/drafts',
+            icon: NotebookText,
+          },
+          {
+            label: m.app_shell_nav_analytics(),
+            to: '/analytics',
+            icon: BarChart3,
+          },
+          {
+            label: m.app_shell_nav_dashboard(),
+            to: '/dashboard',
+            icon: LayoutDashboard,
+          },
         ],
       },
       {
         label: m.app_shell_nav_group_discover(),
         items: [
           { label: m.app_shell_nav_search(), to: '/search', icon: Search },
-          { label: m.app_shell_nav_communities(), to: '/communities', icon: Users },
+          {
+            label: m.app_shell_nav_communities(),
+            to: '/communities',
+            icon: Users,
+          },
           { label: m.app_shell_nav_users(), to: '/users', icon: Users },
-          { label: m.app_shell_nav_engagement(), to: '/engagement', icon: MessageSquare },
+          {
+            label: m.app_shell_nav_engagement(),
+            to: '/engagement',
+            icon: MessageSquare,
+          },
         ],
       },
       {
         label: m.app_shell_nav_group_app(),
         items: [
-          { label: m.app_shell_nav_settings(), to: '/settings', icon: Settings },
-          { label: m.app_shell_nav_prototype(), to: '/prototype', icon: FilePenLine },
+          {
+            label: m.app_shell_nav_settings(),
+            to: '/settings',
+            icon: Settings,
+          },
+          {
+            label: m.app_shell_nav_prototype(),
+            to: '/prototype',
+            icon: FilePenLine,
+          },
         ],
       },
     ],
-    [locale]
+    [locale],
   )
 
   const breadcrumb = useMemo(() => {
@@ -125,6 +149,7 @@ export default function AppShell({
       analytics: m.breadcrumb_analytics(),
       settings: m.breadcrumb_settings(),
       prototype: m.breadcrumb_prototype(),
+      wallet: m.profile_wallet_button(),
     }
     if (segments.length === 0) return [m.breadcrumb_dashboard()]
     return segments.map((segment) => map[segment] ?? segment)
@@ -134,12 +159,12 @@ export default function AppShell({
     const handleOpenConnectDialog = () => setShowConnectDialog(true)
     window.addEventListener(
       CONNECT_ACCOUNT_DIALOG_EVENT,
-      handleOpenConnectDialog
+      handleOpenConnectDialog,
     )
     return () => {
       window.removeEventListener(
         CONNECT_ACCOUNT_DIALOG_EVENT,
-        handleOpenConnectDialog
+        handleOpenConnectDialog,
       )
     }
   }, [])
@@ -175,12 +200,15 @@ export default function AppShell({
     <Flex minH="100vh" bg="bg">
       <Box
         as="aside"
-        w={{ base: collapsed ? '0' : '280px', md: collapsed ? '84px' : '280px' }}
+        w={{
+          base: collapsed ? '0' : '280px',
+          md: collapsed ? '84px' : '280px',
+        }}
         bg="bg.panel"
         borderRight="1px solid"
         borderColor="border"
         transition="width 0.2s ease"
-        position={{ base: "fixed", md: "sticky" }}
+        position={{ base: 'fixed', md: 'sticky' }}
         left={0}
         top={0}
         zIndex={20}
@@ -190,12 +218,11 @@ export default function AppShell({
         <Flex direction="column" h="100%" px={4} py={5} gap={6}>
           <HStack justify="space-between" align="center">
             <HStack gap={3} overflow="hidden">
-              <Box
-                w={10}
-                h={10}
-                overflow="hidden"
-              >
-                <Image src='https://images.hive.blog/u/hivepen/avatar' alt='Hivepen Studio Isotype' />
+              <Box w={10} h={10} overflow="hidden">
+                <Image
+                  src="https://images.hive.blog/u/hivepen/avatar"
+                  alt="Hivepen Studio Isotype"
+                />
               </Box>
               {!collapsed && (
                 <Box>
@@ -265,7 +292,9 @@ export default function AppShell({
                       {accountLabel}
                     </Text>
                     <Text fontSize="xs" color="fg.muted">
-                      {account ? m.app_shell_account_menu() : m.app_shell_connect_hive_account()}
+                      {account
+                        ? m.app_shell_account_menu()
+                        : m.app_shell_connect_hive_account()}
                     </Text>
                   </Box>
                 )}
@@ -300,6 +329,23 @@ export default function AppShell({
                   </HStack>
                 </Menu.Item>
                 <Menu.Item
+                  value="wallet"
+                  onSelect={() =>
+                    account
+                      ? router.navigate({
+                          to: '/$accountname/wallet',
+                          params: { accountname: `@${account}` },
+                        })
+                      : undefined
+                  }
+                  disabled={!account}
+                >
+                  <HStack gap={2}>
+                    <Icon as={Wallet} boxSize={4} />
+                    <Text>{m.app_shell_menu_wallet()}</Text>
+                  </HStack>
+                </Menu.Item>
+                <Menu.Item
                   value="settings"
                   onSelect={() => router.navigate({ to: '/settings' })}
                   disabled={!account}
@@ -309,7 +355,11 @@ export default function AppShell({
                     <Text>{m.app_shell_menu_account_settings()}</Text>
                   </HStack>
                 </Menu.Item>
-                <Menu.Item value="logout" onSelect={handleLogout} disabled={!account}>
+                <Menu.Item
+                  value="logout"
+                  onSelect={handleLogout}
+                  disabled={!account}
+                >
                   <HStack gap={2}>
                     <Icon as={LogOut} boxSize={4} />
                     <Text>{m.app_shell_menu_logout()}</Text>
@@ -343,14 +393,17 @@ export default function AppShell({
                 aria-label={m.app_shell_toggle_sidebar()}
               >
                 <Icon as={collapsed ? SidebarOpenIcon : SidebarCloseIcon} />
-
               </IconButton>
 
               <Text>Hivepen</Text>
               {breadcrumb.map((item, index) => (
                 <HStack key={`${item}-${index}`} gap={2}>
-                  <Icon color="fg.subtle"><ChevronRightIcon size="14" /></Icon>
-                  <Text color={index === breadcrumb.length - 1 ? 'fg' : 'fg.muted'}>
+                  <Icon color="fg.subtle">
+                    <ChevronRightIcon size="14" />
+                  </Icon>
+                  <Text
+                    color={index === breadcrumb.length - 1 ? 'fg' : 'fg.muted'}
+                  >
                     {item}
                   </Text>
                 </HStack>
@@ -396,13 +449,15 @@ function NavButton({
       color="fg.muted"
       _hover={{ bg: 'bg.subtle', color: 'fg' }}
     >
-      <Link to={to}
+      <Link
+        to={to}
         activeProps={{
           style: {
             background: 'var(--chakra-colors-bg-muted)',
             color: 'var(--chakra-colors-fg)',
           },
-        }}>
+        }}
+      >
         <Icon as={icon} boxSize={4.5} />
         {!collapsed && (
           <Text fontSize="sm" fontWeight="500">
