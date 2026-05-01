@@ -22,7 +22,7 @@ const normalizeBaseUrl = (value: string) => {
 }
 
 const resolveBaseUrl = () => {
-  if (typeof window !== 'undefined' && window.location?.origin) {
+  if (typeof window !== 'undefined' && window.location.origin) {
     return normalizeBaseUrl(window.location.origin)
   }
 
@@ -69,7 +69,7 @@ const getRenderer = () => {
       assetsHeight: 480,
       imageProxyFn: proxyImage,
       hashtagUrlFn: (hashtag) => `/search?tag=${hashtag}`,
-      usertagUrlFn: (account) => `/profile/${account}`,
+      usertagUrlFn: (account) => `/@${account}`,
       isLinkSafeFn: isLinkSafe,
       addExternalCssClassToMatchingLinksFn: () => false,
       ipfsPrefix: 'https://ipfs.io/ipfs/',
