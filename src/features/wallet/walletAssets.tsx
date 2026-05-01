@@ -7,101 +7,73 @@ const HIVE_ENGINE_ICON_URL = 'https://hive-engine.com/images/favicon.svg'
 const TRIBALDEX_TOKEN_ICON_BASE =
   'https://cdn.tribaldex.com/tribaldex/token-icons'
 
-export type WalletAssetTone = {
-  bg: string
-  fg: string
-  ring: string
-  soft: string
-}
+export type WalletColorPalette =
+  | 'red'
+  | 'orange'
+  | 'yellow'
+  | 'green'
+  | 'teal'
+  | 'blue'
+  | 'cyan'
+  | 'purple'
+  | 'pink'
 
 export type WalletAssetMeta = {
-  symbol: string
-  label: string
+  colorPalette: WalletColorPalette
   iconUrl?: string
-  tone: WalletAssetTone
+  label: string
+  symbol: string
 }
 
-const toneSequence: Array<WalletAssetTone> = [
-  {
-    bg: '#FFF1F3',
-    fg: '#9F1239',
-    ring: '#E31337',
-    soft: '#FFD6DD',
-  },
-  {
-    bg: '#ECFDF3',
-    fg: '#166534',
-    ring: '#00960E',
-    soft: '#BBF7D0',
-  },
-  {
-    bg: '#EEF4FF',
-    fg: '#1D4ED8',
-    ring: '#3B82F6',
-    soft: '#BFDBFE',
-  },
-  {
-    bg: '#FFF7ED',
-    fg: '#C2410C',
-    ring: '#F97316',
-    soft: '#FED7AA',
-  },
-  {
-    bg: '#FAF5FF',
-    fg: '#7C3AED',
-    ring: '#8B5CF6',
-    soft: '#DDD6FE',
-  },
-  {
-    bg: '#ECFEFF',
-    fg: '#0F766E',
-    ring: '#14B8A6',
-    soft: '#A5F3FC',
-  },
+const paletteSequence: Array<WalletColorPalette> = [
+  'red',
+  'green',
+  'blue',
+  'orange',
+  'purple',
+  'cyan',
+  'pink',
+  'teal',
+  'yellow',
 ]
 
 const specialAssets = {
-  HIVE: {
-    symbol: 'HIVE',
-    label: 'HIVE',
-    iconUrl: HIVE_ICON_URL,
-    tone: toneSequence[0],
-  },
-  HP: {
-    symbol: 'HP',
-    label: 'Hive Power',
-    iconUrl: HIVE_ICON_URL,
-    tone: {
-      bg: '#F5F3FF',
-      fg: '#6D28D9',
-      ring: '#7C3AED',
-      soft: '#DDD6FE',
-    },
+  ENGINE: {
+    colorPalette: 'orange',
+    iconUrl: HIVE_ENGINE_ICON_URL,
+    label: 'Hive Engine',
+    symbol: 'ENGINE',
   },
   HBD: {
-    symbol: 'HBD',
-    label: 'HBD',
+    colorPalette: 'green',
     iconUrl: HBD_ICON_URL,
-    tone: toneSequence[1],
+    label: 'HBD',
+    symbol: 'HBD',
+  },
+  HIVE: {
+    colorPalette: 'red',
+    iconUrl: HIVE_ICON_URL,
+    label: 'HIVE',
+    symbol: 'HIVE',
+  },
+  HP: {
+    colorPalette: 'purple',
+    iconUrl: HIVE_ICON_URL,
+    label: 'Hive Power',
+    symbol: 'HP',
   },
   RC: {
-    symbol: 'RC',
+    colorPalette: 'blue',
     label: 'Resource credits',
-    tone: toneSequence[2],
-  },
-  ENGINE: {
-    symbol: 'ENGINE',
-    label: 'Hive Engine',
-    iconUrl: HIVE_ENGINE_ICON_URL,
-    tone: toneSequence[3],
+    symbol: 'RC',
   },
 } satisfies Record<string, WalletAssetMeta>
 
 const trimSwapPrefix = (symbol: string) => symbol.replace(/^SWAP\./, '')
 
-const getSymbolTone = (symbol: string): WalletAssetTone => {
+const getSymbolPalette = (symbol: string): WalletColorPalette => {
   const seed = [...symbol].reduce((sum, char) => sum + char.charCodeAt(0), 0)
-  return toneSequence[seed % toneSequence.length]
+  return paletteSequence[seed % paletteSequence.length]
 }
 
 export const getWalletAssetMeta = (rawSymbol: string): WalletAssetMeta => {
@@ -110,16 +82,16 @@ export const getWalletAssetMeta = (rawSymbol: string): WalletAssetMeta => {
   if (normalized === 'SWAP.HIVE') {
     return {
       ...specialAssets.HIVE,
-      symbol: normalized,
       label: normalized,
+      symbol: normalized,
     }
   }
 
   if (normalized === 'SWAP.HBD') {
     return {
       ...specialAssets.HBD,
-      symbol: normalized,
       label: normalized,
+      symbol: normalized,
     }
   }
 
@@ -128,31 +100,32 @@ export const getWalletAssetMeta = (rawSymbol: string): WalletAssetMeta => {
   }
 
   return {
-    symbol: normalized,
-    label: normalized,
+    colorPalette: getSymbolPalette(trimSwapPrefix(normalized)),
     iconUrl: `${TRIBALDEX_TOKEN_ICON_BASE}/${normalized}.png`,
-    tone: getSymbolTone(trimSwapPrefix(normalized)),
+    label: normalized,
+    symbol: normalized,
   }
 }
 
 function AssetImage({
-  src,
   alt,
   fallback,
+  src,
 }: {
-  src?: string
   alt: string
   fallback: string
+  src?: string
 }) {
   const [broken, setBroken] = useState(false)
 
   if (!src || broken) {
     return (
       <Text
+        color="colorPalette.fg"
         fontSize="xs"
         fontWeight="700"
-        textTransform="uppercase"
         lineClamp={1}
+        textTransform="uppercase"
       >
         {fallback}
       </Text>
@@ -161,11 +134,11 @@ function AssetImage({
 
   return (
     <Image
-      src={src}
       alt={alt}
       boxSize="full"
       objectFit="contain"
       onError={() => setBroken(true)}
+      src={src}
     />
   )
 }
@@ -174,52 +147,51 @@ export function WalletAssetIcon({
   symbol,
   size = '9',
 }: {
-  symbol: string
   size?: string
+  symbol: string
 }) {
   const asset = getWalletAssetMeta(symbol)
 
   return (
     <Box
-      boxSize={size}
-      borderRadius="full"
-      bg={asset.tone.bg}
-      color={asset.tone.fg}
-      border="1px solid"
-      borderColor={asset.tone.soft}
-      display="inline-flex"
       alignItems="center"
+      bg="colorPalette.subtle"
+      border="1px solid"
+      borderColor="colorPalette.muted"
+      borderRadius="full"
+      boxSize={size}
+      colorPalette={asset.colorPalette}
+      display="inline-flex"
+      flexShrink={0}
       justifyContent="center"
       overflow="hidden"
-      flexShrink={0}
-      boxShadow={`inset 0 0 0 1px ${asset.tone.soft}`}
       p="1.5"
     >
       <AssetImage
-        src={asset.iconUrl}
         alt={`${asset.label} icon`}
         fallback={asset.symbol.replace(/^SWAP\./, '').slice(0, 3)}
+        src={asset.iconUrl}
       />
     </Box>
   )
 }
 
 export function WalletAssetBadge({
-  symbol,
-  label,
   detail,
+  label,
+  symbol,
 }: {
-  symbol: string
-  label?: string
   detail?: string
+  label?: string
+  symbol: string
 }) {
   const asset = getWalletAssetMeta(symbol)
 
   return (
-    <HStack gap={3} minW={0}>
+    <HStack colorPalette={asset.colorPalette} gap={3} minW={0}>
       <WalletAssetIcon symbol={symbol} />
       <Box minW={0}>
-        <Text fontWeight="600" lineClamp={1}>
+        <Text color="fg" fontWeight="600" lineClamp={1}>
           {label ?? asset.label}
         </Text>
         {detail ? (

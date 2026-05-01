@@ -1,12 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import {
+  Badge,
   Box,
   Button,
   Grid,
   HStack,
   Heading,
   Icon,
-  IconButton,
   SimpleGrid,
   Skeleton,
   Stack,
@@ -20,7 +20,6 @@ import {
   ExternalLink,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
   WalletCards,
 } from 'lucide-react'
 import { useMemo } from 'react'
@@ -30,13 +29,15 @@ import type {
   HiveWalletActivity,
   HiveWalletOverview,
 } from '@/lib/hive/wallet'
+import type {WalletColorPalette} from '@/features/wallet/walletAssets';
 import { Alert } from '@/components/ui/alert'
 import { Avatar } from '@/components/ui/avatar'
 import useProfileQuery from '@/features/profile/useProfileQuery'
 import {
   WalletAssetBadge,
   WalletAssetIcon,
-  getWalletAssetMeta,
+  
+  getWalletAssetMeta
 } from '@/features/wallet/walletAssets'
 import useWalletQuery from '@/features/wallet/useWalletQuery'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
@@ -264,6 +265,7 @@ function SummaryBand({ wallet }: { wallet: HiveWalletOverview }) {
         value={formatHbdEstimate(metrics.estimatedHbdValue)}
         help={`HIVE at ${formatHbdEstimate(metrics.hivePriceHbd)}`}
         icon={WalletCards}
+        palette="red"
         symbol="HIVE"
       />
       <CompactStat
@@ -271,6 +273,7 @@ function SummaryBand({ wallet }: { wallet: HiveWalletOverview }) {
         value={formatTokenAmount(metrics.hivePower, 'HP')}
         help={`${formatTokenAmount(metrics.effectiveHivePower, 'HP')} effective`}
         icon={ShieldCheck}
+        palette="purple"
         symbol="HP"
       />
       <CompactStat
@@ -278,6 +281,7 @@ function SummaryBand({ wallet }: { wallet: HiveWalletOverview }) {
         value={formatTokenAmount(metrics.savingsHbd, 'HBD')}
         help={`${formatTokenAmount(metrics.savingsHive, 'HIVE')} saved`}
         icon={Coins}
+        palette="green"
         symbol="HBD"
       />
       <CompactStat
@@ -285,6 +289,7 @@ function SummaryBand({ wallet }: { wallet: HiveWalletOverview }) {
         value={formatNullablePercent(metrics.rcPercent)}
         help="Available RC"
         icon={Activity}
+        palette="blue"
         symbol="RC"
       />
     </SimpleGrid>
@@ -297,15 +302,13 @@ function AssetHighlights({ wallet }: { wallet: HiveWalletOverview }) {
   return (
     <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
       <SectionPanel
+        colorPalette="red"
         title="Core assets"
         accentSymbol="HIVE"
         description="Public balances available on-chain right now."
       >
-        <SimpleGrid
-          columns={{ base: 1, sm: 2, lg: 4 }}
-          gap={{ base: 5, md: 6 }}
-        >
-          <AssetSpotlight
+        <Stack gap={3}>
+          <AssetMetricTile
             symbol="HIVE"
             label="Liquid + savings"
             value={formatTokenAmount(
@@ -316,7 +319,7 @@ function AssetHighlights({ wallet }: { wallet: HiveWalletOverview }) {
               (metrics.liquidHive + metrics.savingsHive) * metrics.hivePriceHbd,
             )}
           />
-          <AssetSpotlight
+          <AssetMetricTile
             symbol="HBD"
             label="Liquid + savings"
             value={formatTokenAmount(
@@ -325,47 +328,49 @@ function AssetHighlights({ wallet }: { wallet: HiveWalletOverview }) {
             )}
             detail={`APR ${formatPercent(metrics.hbdInterestRate)}`}
           />
-        </SimpleGrid>
+        </Stack>
       </SectionPanel>
       <SectionPanel
+        colorPalette="purple"
         title="Powered stake"
         accentSymbol="HP"
         description="Ownership, delegation, and governance weight."
       >
-        <SimpleGrid columns={{ base: 1, sm: 2 }} gap={4}>
-          <AssetSpotlight
+        <Stack gap={3}>
+          <AssetMetricTile
             symbol="HP"
             label="Effective Hive Power"
             value={formatTokenAmount(metrics.effectiveHivePower, 'HP')}
             detail={`${formatTokenAmount(metrics.receivedHivePower, 'HP')} received`}
           />
-          <AssetSpotlight
+          <AssetMetricTile
             symbol="HP"
             label="Delegated out"
             value={formatTokenAmount(metrics.delegatedHivePower, 'HP')}
             detail={`${formatTokenAmount(metrics.hivePower, 'HP')} owned`}
           />
-        </SimpleGrid>
+        </Stack>
       </SectionPanel>
       <SectionPanel
+        colorPalette="orange"
         title="Activity edge"
         accentSymbol="ENGINE"
         description="A quick read on rewards, RC, and side balances."
       >
-        <SimpleGrid columns={{ base: 1, sm: 2 }} gap={4}>
-          <AssetSpotlight
+        <Stack gap={3}>
+          <AssetMetricTile
             symbol="RC"
             label="Resource credits"
             value={formatNullablePercent(metrics.rcPercent)}
             detail={formatCompactRc(wallet.rcAccount?.max_rc)}
           />
-          <AssetSpotlight
+          <AssetMetricTile
             symbol="ENGINE"
             label="Hive Engine tokens"
             value={String(wallet.hiveEngineBalances.length)}
             detail="Distinct balances"
           />
-        </SimpleGrid>
+        </Stack>
       </SectionPanel>
     </SimpleGrid>
   )
@@ -376,50 +381,65 @@ function CompactStat({
   value,
   help,
   icon,
+  palette,
   symbol,
 }: {
   label: string
   value: string
   help: string
   icon: typeof WalletCards
+  palette: WalletColorPalette
   symbol: string
 }) {
-  const asset = getWalletAssetMeta(symbol)
-
   return (
     <Stat.Root
-      bg={`linear-gradient(135deg, ${asset.tone.bg} 0%, ${asset.tone.bg} 62%, ${asset.tone.soft} 100%)`}
+      bg="colorPalette.subtle"
+      border="1px solid"
+      borderColor="colorPalette.muted"
       borderRadius="16px"
+      colorPalette={palette}
+      gap={4}
+      justifyContent="space-between"
+      minH="132px"
       px={{ base: 4, md: 5 }}
       py={{ base: 4, md: 4.5 }}
-      minH="132px"
     >
-      <HStack justify="space-between" align="start" mb={5}>
-        <Stat.Label color={asset.tone.fg}>{label}</Stat.Label>
-        <HStack gap={2}>
-          <WalletAssetIcon symbol={symbol} size="8" />
-          <Box
-            boxSize="8"
-            borderRadius="full"
-            bg="whiteAlpha.700"
-            color={asset.tone.fg}
-            display="inline-flex"
-            alignItems="center"
-            justifyContent="center"
+      <HStack align="start" justify="space-between">
+        <Stack gap={1}>
+          <Stat.Label color="colorPalette.fg">{label}</Stat.Label>
+          <Badge
+            alignSelf="start"
+            colorPalette={palette}
+            fontWeight="600"
+            size="sm"
+            variant="subtle"
           >
-            <Icon as={icon} boxSize={4} />
-          </Box>
-        </HStack>
+            {getWalletAssetMeta(symbol).label}
+          </Badge>
+        </Stack>
+        <Box
+          alignItems="center"
+          bg="bg.panel"
+          border="1px solid"
+          borderColor="colorPalette.muted"
+          borderRadius="full"
+          color="colorPalette.fg"
+          display="inline-flex"
+          justifyContent="center"
+          p="2"
+        >
+          <Icon as={icon} boxSize={4} />
+        </Box>
       </HStack>
-      <Stat.ValueText fontSize="xl" lineHeight="1.2">
+      <Stat.ValueText fontSize={{ base: '2xl', md: '3xl' }} lineHeight="1.05">
         {value}
       </Stat.ValueText>
-      <Stat.HelpText color={asset.tone.fg}>{help}</Stat.HelpText>
+      <Stat.HelpText color="colorPalette.muted">{help}</Stat.HelpText>
     </Stat.Root>
   )
 }
 
-function AssetSpotlight({
+function AssetMetricTile({
   symbol,
   label,
   value,
@@ -430,24 +450,42 @@ function AssetSpotlight({
   value: string
   detail: string
 }) {
+  const asset = getWalletAssetMeta(symbol)
+
   return (
-    <Stack gap={3}>
+    <HStack
+      align="start"
+      bg="colorPalette.subtle"
+      border="1px solid"
+      borderColor="colorPalette.muted"
+      borderRadius="14px"
+      colorPalette={asset.colorPalette}
+      justify="space-between"
+      p={3}
+      gap={4}
+    >
       <WalletAssetBadge symbol={symbol} label={label} />
-      <Stack gap={0.5}>
-        <Text fontWeight="700" fontSize="lg" lineHeight="1.2">
+      <Stack gap={0.5} textAlign="end">
+        <Text
+          color="colorPalette.fg"
+          fontSize="lg"
+          fontWeight="700"
+          lineHeight="1.1"
+        >
           {value}
         </Text>
-        <Text color="fg.muted" fontSize="sm">
+        <Text color="colorPalette.muted" fontSize="sm">
           {detail}
         </Text>
       </Stack>
-    </Stack>
+    </HStack>
   )
 }
 
 function BalancesTable({ rows }: { rows: Array<BalanceRow> }) {
   return (
     <SectionPanel
+      colorPalette="red"
       title="Balances"
       accentSymbol="HIVE"
       description="Liquid, savings, stake, and pending rewards."
@@ -466,11 +504,7 @@ function BalancesTable({ rows }: { rows: Array<BalanceRow> }) {
             {rows.map((row) => (
               <Table.Row key={row.label}>
                 <Table.Cell>
-                  <WalletAssetBadge
-                    symbol={row.symbol}
-                    label={row.label}
-                    detail={row.description}
-                  />
+                  <WalletAssetBadge symbol={row.symbol} label={row.label} />
                 </Table.Cell>
                 <Table.Cell color="fg.muted">{row.description}</Table.Cell>
                 <Table.Cell textAlign="end" whiteSpace="nowrap">
@@ -498,6 +532,7 @@ function ResourcesPanel({ wallet }: { wallet: HiveWalletOverview }) {
 
   return (
     <SectionPanel
+      colorPalette="blue"
       title="Resources"
       accentSymbol="RC"
       description="Voting power, witness capacity, and savings settings."
@@ -549,7 +584,7 @@ function MetricLine({ label, value, detail }: MetricLineProps) {
   return (
     <HStack justify="space-between" gap={4} align="start">
       <Stack gap={0} minW={0}>
-        <Text fontSize="sm" color="fg.muted">
+        <Text fontSize="sm" color="colorPalette.muted">
           {label}
         </Text>
         {detail ? (
@@ -558,7 +593,12 @@ function MetricLine({ label, value, detail }: MetricLineProps) {
           </Text>
         ) : null}
       </Stack>
-      <Text fontSize="sm" fontWeight="600" textAlign="end">
+      <Text
+        color="colorPalette.fg"
+        fontSize="sm"
+        fontWeight="600"
+        textAlign="end"
+      >
         {value}
       </Text>
     </HStack>
@@ -568,6 +608,7 @@ function MetricLine({ label, value, detail }: MetricLineProps) {
 function DelegationsPanel({ wallet }: { wallet: HiveWalletOverview }) {
   return (
     <SectionPanel
+      colorPalette="purple"
       title="Outgoing HP"
       accentSymbol="HP"
       description="Stake currently delegated to other Hive accounts."
@@ -606,14 +647,19 @@ function DelegationRow({
   return (
     <HStack justify="space-between" gap={4} align="start">
       <Stack gap={0} minW={0}>
-        <Text fontSize="sm" fontWeight="600">
+        <Text color="colorPalette.fg" fontSize="sm" fontWeight="600">
           @{delegation.delegatee}
         </Text>
-        <Text fontSize="xs" color="fg.muted">
+        <Text fontSize="xs" color="colorPalette.muted">
           Available after {formatDate(delegation.min_delegation_time)}
         </Text>
       </Stack>
-      <Text fontSize="sm" fontWeight="600" whiteSpace="nowrap">
+      <Text
+        color="colorPalette.fg"
+        fontSize="sm"
+        fontWeight="600"
+        whiteSpace="nowrap"
+      >
         {formatTokenAmount(hp, 'HP')}
       </Text>
     </HStack>
@@ -623,6 +669,7 @@ function DelegationRow({
 function HiveEngineTable({ balances }: { balances: Array<HiveEngineBalance> }) {
   return (
     <SectionPanel
+      colorPalette="orange"
       title="Hive Engine"
       accentSymbol="ENGINE"
       description="Public sidechain balances from Tribaldex token metadata."
@@ -646,13 +693,13 @@ function HiveEngineTable({ balances }: { balances: Array<HiveEngineBalance> }) {
                   <Table.Cell>
                     <WalletAssetBadge symbol={balance.symbol} />
                   </Table.Cell>
-                  <Table.Cell textAlign="end">
+                  <Table.Cell color="colorPalette.fg" textAlign="end">
                     {formatEngineAmount(balance.balance)}
                   </Table.Cell>
-                  <Table.Cell textAlign="end">
+                  <Table.Cell color="colorPalette.fg" textAlign="end">
                     {formatEngineAmount(balance.stake)}
                   </Table.Cell>
-                  <Table.Cell textAlign="end" color="fg.muted">
+                  <Table.Cell textAlign="end" color="colorPalette.muted">
                     {formatEngineDelegations(balance)}
                   </Table.Cell>
                 </Table.Row>
@@ -672,6 +719,7 @@ function HiveEngineTable({ balances }: { balances: Array<HiveEngineBalance> }) {
 function ActivityTable({ activity }: { activity: Array<HiveWalletActivity> }) {
   return (
     <SectionPanel
+      colorPalette="orange"
       title="Recent activity"
       accentSymbol="ENGINE"
       description="The last public wallet and governance operations we can read."
@@ -715,24 +763,26 @@ function ActivityTable({ activity }: { activity: Array<HiveWalletActivity> }) {
 }
 
 function SectionPanel({
+  colorPalette,
   title,
   accentSymbol,
   description,
   children,
 }: {
+  colorPalette: WalletColorPalette
   title: string
   accentSymbol?: string
   description?: string
   children: React.ReactNode
 }) {
-  const asset = accentSymbol ? getWalletAssetMeta(accentSymbol) : null
-
   return (
     <Box
       bg="bg.panel"
+      border="1px solid"
+      borderColor="colorPalette.muted"
       borderRadius="16px"
+      colorPalette={colorPalette}
       p={{ base: 4, md: 5 }}
-      boxShadow={asset ? `inset 0 1px 0 ${asset.tone.soft}` : undefined}
     >
       <Stack gap={4}>
         <HStack justify="space-between" align="start" gap={3} wrap="wrap">
@@ -741,26 +791,16 @@ function SectionPanel({
               {accentSymbol ? (
                 <WalletAssetIcon symbol={accentSymbol} size="8" />
               ) : null}
-              <Heading size="sm">{title}</Heading>
+              <Heading color="colorPalette.fg" size="sm">
+                {title}
+              </Heading>
             </HStack>
             {description ? (
-              <Text color="fg.muted" fontSize="sm">
+              <Text color="colorPalette.muted" fontSize="sm">
                 {description}
               </Text>
             ) : null}
           </Stack>
-          {asset ? (
-            <IconButton
-              aria-label={`${title} accent`}
-              variant="ghost"
-              size="sm"
-              color={asset.tone.fg}
-              bg={asset.tone.bg}
-              pointerEvents="none"
-            >
-              <Sparkles />
-            </IconButton>
-          ) : null}
         </HStack>
         {children}
       </Stack>
