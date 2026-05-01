@@ -21,8 +21,10 @@ import { Route as CommunitiesRouteImport } from './routes/communities'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountnameIndexRouteImport } from './routes/$accountname.index'
 import { Route as ProfileAccountnameRouteImport } from './routes/profile.$accountname'
 import { Route as CommunitiesCommunityIdRouteImport } from './routes/communities.$communityId'
+import { Route as AccountnameWalletRouteImport } from './routes/$accountname.wallet'
 import { Route as PostAuthorPermlinkRouteImport } from './routes/post.$author.$permlink'
 
 const UsersRoute = UsersRouteImport.update({
@@ -85,6 +87,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountnameIndexRoute = AccountnameIndexRouteImport.update({
+  id: '/$accountname/',
+  path: '/$accountname/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileAccountnameRoute = ProfileAccountnameRouteImport.update({
   id: '/profile/$accountname',
   path: '/profile/$accountname',
@@ -94,6 +101,11 @@ const CommunitiesCommunityIdRoute = CommunitiesCommunityIdRouteImport.update({
   id: '/$communityId',
   path: '/$communityId',
   getParentRoute: () => CommunitiesRoute,
+} as any)
+const AccountnameWalletRoute = AccountnameWalletRouteImport.update({
+  id: '/$accountname/wallet',
+  path: '/$accountname/wallet',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PostAuthorPermlinkRoute = PostAuthorPermlinkRouteImport.update({
   id: '/post/$author/$permlink',
@@ -114,8 +126,10 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
+  '/$accountname/wallet': typeof AccountnameWalletRoute
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
+  '/$accountname/': typeof AccountnameIndexRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
 }
 export interface FileRoutesByTo {
@@ -131,8 +145,10 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
+  '/$accountname/wallet': typeof AccountnameWalletRoute
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
+  '/$accountname': typeof AccountnameIndexRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
 }
 export interface FileRoutesById {
@@ -149,8 +165,10 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
+  '/$accountname/wallet': typeof AccountnameWalletRoute
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
+  '/$accountname/': typeof AccountnameIndexRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
 }
 export interface FileRouteTypes {
@@ -168,8 +186,10 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/users'
+    | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
+    | '/$accountname/'
     | '/post/$author/$permlink'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -185,8 +205,10 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/users'
+    | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
+    | '/$accountname'
     | '/post/$author/$permlink'
   id:
     | '__root__'
@@ -202,8 +224,10 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/users'
+    | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
+    | '/$accountname/'
     | '/post/$author/$permlink'
   fileRoutesById: FileRoutesById
 }
@@ -220,7 +244,9 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   UsersRoute: typeof UsersRoute
+  AccountnameWalletRoute: typeof AccountnameWalletRoute
   ProfileAccountnameRoute: typeof ProfileAccountnameRoute
+  AccountnameIndexRoute: typeof AccountnameIndexRoute
   PostAuthorPermlinkRoute: typeof PostAuthorPermlinkRoute
 }
 
@@ -310,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$accountname/': {
+      id: '/$accountname/'
+      path: '/$accountname'
+      fullPath: '/$accountname/'
+      preLoaderRoute: typeof AccountnameIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile/$accountname': {
       id: '/profile/$accountname'
       path: '/profile/$accountname'
@@ -323,6 +356,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/communities/$communityId'
       preLoaderRoute: typeof CommunitiesCommunityIdRouteImport
       parentRoute: typeof CommunitiesRoute
+    }
+    '/$accountname/wallet': {
+      id: '/$accountname/wallet'
+      path: '/$accountname/wallet'
+      fullPath: '/$accountname/wallet'
+      preLoaderRoute: typeof AccountnameWalletRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/post/$author/$permlink': {
       id: '/post/$author/$permlink'
@@ -359,7 +399,9 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   UsersRoute: UsersRoute,
+  AccountnameWalletRoute: AccountnameWalletRoute,
   ProfileAccountnameRoute: ProfileAccountnameRoute,
+  AccountnameIndexRoute: AccountnameIndexRoute,
   PostAuthorPermlinkRoute: PostAuthorPermlinkRoute,
 }
 export const routeTree = rootRouteImport

@@ -28,6 +28,7 @@ This roadmap documentation is a living system and can be expanded and updated wh
 - Use `spaceX` / `spaceY` for non-flex layout spacing.
 - Prefer Chakra semantic tokens (`bg`, `fg`, `border`, `panel`, `muted`, etc.) and built-in components over custom styles.
 - Minimize bespoke CSS/colors unless there is a clear product requirement.
+- When a surface has a strong theme, set `colorPalette` on the parent container and use descendant tokens such as `colorPalette.fg`, `colorPalette.muted`, `colorPalette.subtle`, `colorPalette.border`, and `colorPalette.solid` before reaching for hardcoded colors or gradients.
 - Use Chakra v3 namespace components for Ark UI-based widgets (example: `Select.Root`, `Select.Trigger`, `Select.Item`, `Avatar.Root`, `Avatar.Image`, `Avatar.Fallback`). Avoid legacy single-component APIs that return objects instead of components.
 
 ## Git Workflow

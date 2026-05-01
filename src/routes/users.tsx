@@ -1,20 +1,24 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import {
   Box,
-  Heading,
+  Button,
+  Card,
   HStack,
+  Heading,
   SimpleGrid,
+  Skeleton,
   Stack,
   Text,
-  Card,
-  Skeleton,
-  Button
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
+import type {HiveAccountSearchResult} from '@/lib/hive/account';
 import { Avatar } from '@/components/ui/avatar'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
-import { searchAccounts, type HiveAccountSearchResult } from '@/lib/hive/account'
+import {
+  
+  searchAccounts
+} from '@/lib/hive/account'
 import DevOnly from '@/components/DevOnly'
 import { m } from '@/paraglide/messages'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
@@ -29,7 +33,7 @@ export const Route = createFileRoute('/users')({
 function Users() {
   const [query, setQuery, queryReady] = useLocalStorageState(
     'hivepen.users.query',
-    ''
+    '',
   )
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const trimmedQuery = query.trim()
@@ -52,7 +56,11 @@ function Users() {
 
   useEffect(() => {
     if (!usersQuery.data || debouncedQuery.length < 2) return
-    discoveryCache.cacheSearchResults('accounts', debouncedQuery, usersQuery.data)
+    discoveryCache.cacheSearchResults(
+      'accounts',
+      debouncedQuery,
+      usersQuery.data,
+    )
     refreshCachedUsers()
   }, [debouncedQuery, refreshCachedUsers, usersQuery.data])
 
@@ -81,9 +89,7 @@ function Users() {
         <Heading size="lg" mb={2}>
           {m.users_heading()}
         </Heading>
-        <Text color="fg.muted">
-          {m.users_subtitle()}
-        </Text>
+        <Text color="fg.muted">{m.users_subtitle()}</Text>
       </Box>
 
       <SearchPanel
@@ -127,8 +133,8 @@ function Users() {
                       />
                       <Stack gap={1} flex="1" minW={0}>
                         <Link
-                          to="/profile/$accountname"
-                          params={{ accountname: user.name }}
+                          to="/$accountname"
+                          params={{ accountname: `@${user.name}` }}
                           onClick={() => handleUserSelect(user)}
                           style={{ textDecoration: 'none' }}
                         >
@@ -140,10 +146,15 @@ function Users() {
                           @{user.name}
                         </Text>
                       </Stack>
-                      <Button asChild size="sm" variant="outline" colorPalette="gray">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        colorPalette="gray"
+                      >
                         <Link
-                          to="/profile/$accountname"
-                          params={{ accountname: user.name }}
+                          to="/$accountname"
+                          params={{ accountname: `@${user.name}` }}
                           onClick={() => handleUserSelect(user)}
                         >
                           {m.users_view_button()}
@@ -161,13 +172,11 @@ function Users() {
             ))}
       </SimpleGrid>
 
-      {!usersQuery.isFetching && debouncedQuery.length > 1 && results.length === 0 && (
-        <Text color="fg.muted">{m.users_empty()}</Text>
-      )}
+      {!usersQuery.isFetching &&
+        debouncedQuery.length > 1 &&
+        results.length === 0 && <Text color="fg.muted">{m.users_empty()}</Text>}
 
-      {usersQuery.isError && (
-        <Text color="fg.error">{m.users_error()}</Text>
-      )}
+      {usersQuery.isError && <Text color="fg.error">{m.users_error()}</Text>}
 
       <DevOnly
         summary="Users debug"
