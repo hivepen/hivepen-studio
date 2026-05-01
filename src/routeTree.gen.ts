@@ -23,6 +23,7 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileAccountnameRouteImport } from './routes/profile.$accountname'
 import { Route as CommunitiesCommunityIdRouteImport } from './routes/communities.$communityId'
+import { Route as AccountnameWalletRouteImport } from './routes/$accountname.wallet'
 import { Route as PostAuthorPermlinkRouteImport } from './routes/post.$author.$permlink'
 
 const UsersRoute = UsersRouteImport.update({
@@ -95,6 +96,11 @@ const CommunitiesCommunityIdRoute = CommunitiesCommunityIdRouteImport.update({
   path: '/$communityId',
   getParentRoute: () => CommunitiesRoute,
 } as any)
+const AccountnameWalletRoute = AccountnameWalletRouteImport.update({
+  id: '/$accountname/wallet',
+  path: '/$accountname/wallet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PostAuthorPermlinkRoute = PostAuthorPermlinkRouteImport.update({
   id: '/post/$author/$permlink',
   path: '/post/$author/$permlink',
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
+  '/$accountname/wallet': typeof AccountnameWalletRoute
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
+  '/$accountname/wallet': typeof AccountnameWalletRoute
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
+  '/$accountname/wallet': typeof AccountnameWalletRoute
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/users'
+    | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
     | '/post/$author/$permlink'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/users'
+    | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
     | '/post/$author/$permlink'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/users'
+    | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
     | '/post/$author/$permlink'
@@ -220,6 +232,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   UsersRoute: typeof UsersRoute
+  AccountnameWalletRoute: typeof AccountnameWalletRoute
   ProfileAccountnameRoute: typeof ProfileAccountnameRoute
   PostAuthorPermlinkRoute: typeof PostAuthorPermlinkRoute
 }
@@ -324,6 +337,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CommunitiesCommunityIdRouteImport
       parentRoute: typeof CommunitiesRoute
     }
+    '/$accountname/wallet': {
+      id: '/$accountname/wallet'
+      path: '/$accountname/wallet'
+      fullPath: '/$accountname/wallet'
+      preLoaderRoute: typeof AccountnameWalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/post/$author/$permlink': {
       id: '/post/$author/$permlink'
       path: '/post/$author/$permlink'
@@ -359,6 +379,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   UsersRoute: UsersRoute,
+  AccountnameWalletRoute: AccountnameWalletRoute,
   ProfileAccountnameRoute: ProfileAccountnameRoute,
   PostAuthorPermlinkRoute: PostAuthorPermlinkRoute,
 }
