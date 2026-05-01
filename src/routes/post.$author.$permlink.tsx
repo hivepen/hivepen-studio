@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { Badge, Box, Button, HStack, Stack, Tabs, Text } from '@chakra-ui/react'
 import { ArrowLeft } from 'lucide-react'
 import usePostQuery from '@/features/posts/usePostQuery'
@@ -101,15 +101,17 @@ function PostDetailPage() {
             </>
           ) : null}
           <Link
-            to="/profile/$accountname"
-            params={{ accountname: post.author }}
+            to="/$accountname"
+            params={{ accountname: `@${post.author}` }}
             style={{ textDecoration: 'none' }}
           >
             <Text as="span" _hover={{ textDecoration: 'underline' }}>
               @{post.author}
             </Text>
           </Link>
-          {post.created ? ` · ${new Date(post.created).toLocaleDateString()}` : ''}
+          {post.created
+            ? ` · ${new Date(post.created).toLocaleDateString()}`
+            : ''}
         </Text>
         <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="600">
           {post.title || m.post_untitled()}
@@ -165,7 +167,9 @@ function PostDetailPage() {
                 {post.app ? (
                   <PostTag tag={`app:${post.app}`} />
                 ) : (
-                  <Text fontSize="sm" color="fg.muted">{m.post_details_unknown()}</Text>
+                  <Text fontSize="sm" color="fg.muted">
+                    {m.post_details_unknown()}
+                  </Text>
                 )}
               </Stack>
 
@@ -187,23 +191,33 @@ function PostDetailPage() {
                   {m.post_details_timing()}
                 </Text>
                 <Text fontSize="sm" color="fg.muted">
-                  {m.post_details_created({ date: new Date(post.created).toLocaleString() })}
+                  {m.post_details_created({
+                    date: new Date(post.created).toLocaleString(),
+                  })}
                 </Text>
                 {post.updated ? (
                   <Text fontSize="sm" color="fg.muted">
-                    {m.post_details_updated({ date: new Date(post.updated).toLocaleString() })}
+                    {m.post_details_updated({
+                      date: new Date(post.updated).toLocaleString(),
+                    })}
                   </Text>
                 ) : null}
                 {post.payoutAt ? (
                   <Text fontSize="sm" color="fg.muted">
-                    {m.post_details_payout({ date: new Date(post.payoutAt).toLocaleString() })}
+                    {m.post_details_payout({
+                      date: new Date(post.payoutAt).toLocaleString(),
+                    })}
                   </Text>
                 ) : null}
               </Stack>
 
               {post.beneficiaries && post.beneficiaries.length > 0 ? (
                 <Stack gap={2}>
-                  <Text fontSize="xs" color="fg.muted" textTransform="uppercase">
+                  <Text
+                    fontSize="xs"
+                    color="fg.muted"
+                    textTransform="uppercase"
+                  >
                     {m.post_details_beneficiaries()}
                   </Text>
                   <Stack gap={1}>
@@ -271,8 +285,8 @@ function PostDetailPage() {
                 >
                   <Text fontSize="sm" color="fg.muted" mb={2}>
                     <Link
-                      to="/profile/$accountname"
-                      params={{ accountname: comment.author }}
+                      to="/$accountname"
+                      params={{ accountname: `@${comment.author}` }}
                       style={{ textDecoration: 'none' }}
                     >
                       <Text as="span" _hover={{ textDecoration: 'underline' }}>

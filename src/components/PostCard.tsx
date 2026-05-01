@@ -1,11 +1,20 @@
-import { Box, BoxProps, Card, HStack, ScrollArea, Stack, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Card,
+  HStack,
+  ScrollArea,
+  Stack,
+  Text,
+} from '@chakra-ui/react'
 import { Link } from '@tanstack/react-router'
-import { ReactNode } from 'react'
+import type {
+  BoxProps} from '@chakra-ui/react';
+import type { ReactNode } from 'react'
+import type { VoteDetail } from '@/lib/posts/votes'
 import useTitleMeta from '@/hooks/useTitleMeta'
 import PostTag from '@/components/PostTag'
 import PostPayoutBadge from '@/components/posts/PostPayoutBadge'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
-import { VoteDetail } from '@/lib/posts/votes'
 import { isCommunityId } from '@/lib/hive/community'
 
 export type PostCardProps = {
@@ -14,7 +23,7 @@ export type PostCardProps = {
   community?: string
   communityId?: string
   summary?: string
-  tags?: string[]
+  tags?: Array<string>
   createdAt?: string
   comments?: number
   votes?: number
@@ -23,7 +32,7 @@ export type PostCardProps = {
     pending: string
     total: string
   }
-  voteDetails?: VoteDetail[]
+  voteDetails?: Array<VoteDetail>
   coverUrl?: string
   permlink?: string
   actions?: ReactNode
@@ -54,8 +63,8 @@ export default function PostCard({
       flexDirection={{ base: 'column', '2xl': 'row' }}
     >
       <PostCardMedia
-      flex="1"
-      overflow="hidden"
+        flex="1"
+        overflow="hidden"
         author={author}
         coverUrl={coverUrl}
         shortTitle={titleMeta.shortTitle}
@@ -75,8 +84,8 @@ export default function PostCard({
               </Link>
             ) : null}
             <Link
-              to="/profile/$accountname"
-              params={{ accountname: author }}
+              to="/$accountname"
+              params={{ accountname: `@${author}` }}
               style={{ textDecoration: 'none' }}
             >
               <Text as="span" _hover={{ textDecoration: 'underline' }}>
@@ -114,7 +123,13 @@ export default function PostCard({
           ) : null}
         </Card.Body>
         <Card.Footer pt={3}>
-          <HStack gap={3} w="full" justify="space-between" align="center" wrap="wrap">
+          <HStack
+            gap={3}
+            w="full"
+            justify="space-between"
+            align="center"
+            wrap="wrap"
+          >
             {hasPayout ? (
               <PostPayoutBadge
                 author={author}
