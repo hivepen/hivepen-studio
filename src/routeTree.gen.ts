@@ -21,6 +21,7 @@ import { Route as CommunitiesRouteImport } from './routes/communities'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountnameIndexRouteImport } from './routes/$accountname.index'
 import { Route as ProfileAccountnameRouteImport } from './routes/profile.$accountname'
 import { Route as CommunitiesCommunityIdRouteImport } from './routes/communities.$communityId'
 import { Route as AccountnameWalletRouteImport } from './routes/$accountname.wallet'
@@ -86,6 +87,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountnameIndexRoute = AccountnameIndexRouteImport.update({
+  id: '/$accountname/',
+  path: '/$accountname/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileAccountnameRoute = ProfileAccountnameRouteImport.update({
   id: '/profile/$accountname',
   path: '/profile/$accountname',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/$accountname/wallet': typeof AccountnameWalletRoute
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
+  '/$accountname/': typeof AccountnameIndexRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
 }
 export interface FileRoutesByTo {
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/$accountname/wallet': typeof AccountnameWalletRoute
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
+  '/$accountname': typeof AccountnameIndexRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
 }
 export interface FileRoutesById {
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/$accountname/wallet': typeof AccountnameWalletRoute
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
+  '/$accountname/': typeof AccountnameIndexRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
 }
 export interface FileRouteTypes {
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
+    | '/$accountname/'
     | '/post/$author/$permlink'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
+    | '/$accountname'
     | '/post/$author/$permlink'
   id:
     | '__root__'
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
+    | '/$accountname/'
     | '/post/$author/$permlink'
   fileRoutesById: FileRoutesById
 }
@@ -234,6 +246,7 @@ export interface RootRouteChildren {
   UsersRoute: typeof UsersRoute
   AccountnameWalletRoute: typeof AccountnameWalletRoute
   ProfileAccountnameRoute: typeof ProfileAccountnameRoute
+  AccountnameIndexRoute: typeof AccountnameIndexRoute
   PostAuthorPermlinkRoute: typeof PostAuthorPermlinkRoute
 }
 
@@ -323,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$accountname/': {
+      id: '/$accountname/'
+      path: '/$accountname'
+      fullPath: '/$accountname/'
+      preLoaderRoute: typeof AccountnameIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile/$accountname': {
       id: '/profile/$accountname'
       path: '/profile/$accountname'
@@ -381,6 +401,7 @@ const rootRouteChildren: RootRouteChildren = {
   UsersRoute: UsersRoute,
   AccountnameWalletRoute: AccountnameWalletRoute,
   ProfileAccountnameRoute: ProfileAccountnameRoute,
+  AccountnameIndexRoute: AccountnameIndexRoute,
   PostAuthorPermlinkRoute: PostAuthorPermlinkRoute,
 }
 export const routeTree = rootRouteImport
