@@ -200,18 +200,134 @@ export default function PostActions({
     <Stack>
       <HStack gap={2} wrap="wrap" justify="end">
         <Group attached borderRadius="full">
-          <Tooltip content={m.post_actions_upvote()}>
-            <IconButton
-              size="md"
-              variant="ghost"
-              rounded="full"
-              onClick={handleVote}
-              loading={vote.isVoting}
-              aria-label={m.post_actions_upvote()}
-            >
-              <ArrowBigUp size={16} />
-            </IconButton>
-          </Tooltip>
+          <Popover.Root
+            open={customVoteOpen}
+            onOpenChange={(details) => {
+              setCustomVoteOpen(details.open)
+              if (!details.open) {
+                preventQuickVoteRef.current = false
+              }
+            }}
+            initialFocusEl={() => voteSliderThumbRef.current}
+            lazyMount
+            unmountOnExit
+            positioning={{ placement: 'top-start', offset: { mainAxis: 8 } }}
+          >
+            <Popover.Anchor asChild>
+              <IconButton
+                size="md"
+                variant="ghost"
+                rounded="full"
+                onPointerDown={handleVotePointerDown}
+                onPointerUp={handleVotePointerEnd}
+                onPointerCancel={handleVotePointerEnd}
+                onClick={handleQuickVote}
+                onContextMenu={(event) => {
+                  event.preventDefault()
+                  openCustomVote()
+                }}
+                loading={voteController.isVoting}
+                aria-label={m.post_actions_upvote()}
+              >
+                <ChevronUp size={16} strokeWidth={3} />
+              </IconButton>
+            </Popover.Anchor>
+            <Portal>
+              <Popover.Positioner>
+                <Popover.Content
+                  bg="bg.panel"
+                  border="1px solid"
+                  borderColor="border"
+                  borderRadius="16px"
+                  boxShadow="lg"
+                  p={3}
+                  width="288px"
+                >
+                  <Stack gap={3} colorPalette="red">
+                    <HStack justify="space-between" align="start" gap={3}>
+                      <Stack gap={0}>
+                        <Text
+                          color="fg.muted"
+                          fontSize="xs"
+                          fontWeight="600"
+                          letterSpacing="0.08em"
+                          textTransform="uppercase"
+                        >
+                          Vote
+                        </Text>
+                        <Text
+                          color="colorPalette.fg"
+                          fontSize="2xl"
+                          fontWeight="700"
+                          lineHeight="1"
+                        >
+                          {customVotePercent}%
+                        </Text>
+                      </Stack>
+                      <Tooltip
+                        content={
+                          customVoteStep === 5
+                            ? 'Switch to 1% steps'
+                            : 'Switch to 5% steps'
+                        }
+                      >
+                        <IconButton
+                          size="sm"
+                          variant="ghost"
+                          rounded="full"
+                          aria-label={
+                            customVoteStep === 5
+                              ? 'Switch to 1% steps'
+                              : 'Switch to 5% steps'
+                          }
+                          onClick={toggleCustomVoteStep}
+                        >
+                          <SlidersHorizontal size={14} />
+                        </IconButton>
+                      </Tooltip>
+                    </HStack>
+
+                    <Slider.Root
+                      aria-label={['Vote percentage']}
+                      colorPalette="red"
+                      min={customVoteStep}
+                      max={100}
+                      step={customVoteStep}
+                      size="sm"
+                      value={[customVotePercent]}
+                      onValueChange={(details) =>
+                        setCustomVotePercent(details.value[0] ?? DEFAULT_VOTE_PERCENT)
+                      }
+                    >
+                      <Slider.Control>
+                        <Slider.Track bg="colorPalette.subtle">
+                          <Slider.Range />
+                        </Slider.Track>
+                        <Slider.Thumb index={0} ref={voteSliderThumbRef}>
+                          <Slider.HiddenInput />
+                        </Slider.Thumb>
+                      </Slider.Control>
+                    </Slider.Root>
+
+                    <HStack justify="space-between" gap={3}>
+                      <Text color="fg.muted" fontSize="xs">
+                        {customVoteStep}% steps
+                      </Text>
+                      <Button
+                        colorPalette="red"
+                        loading={voteController.isVoting}
+                        onClick={handleCustomVote}
+                        size="sm"
+                        variant="subtle"
+                      >
+                        Vote {customVotePercent}%
+                      </Button>
+                    </HStack>
+                  </Stack>
+                </Popover.Content>
+              </Popover.Positioner>
+            </Portal>
+          </Popover.Root>
           <Popover.Root
             open={votesOpen}
             onOpenChange={(details) => setVotesOpen(details.open)}
