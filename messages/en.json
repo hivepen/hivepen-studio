@@ -361,5 +361,6 @@
   "blog_load_more": "Load more posts",
   "blog_loading_more": "Loading more posts...",
   "posts_load_more": "Load more posts",
-  "posts_loading_more": "Loading more posts..."
+  "posts_loading_more": "Loading more posts...",
+  "ui_slider_step": "step"
 }
