@@ -5,6 +5,7 @@ import {
   For,
   Group,
   HStack,
+  Icon,
   IconButton,
   Popover,
   Portal,
@@ -16,7 +17,7 @@ import {
   Wrap,
 } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
-import { ChevronUp, MessageCircle, Send, SlidersHorizontal } from 'lucide-react'
+import { ChevronUp, MessageCircle, Ruler, Send, SlidersHorizontal, ThumbsUp } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import useVotePost from '@/features/posts/useVotePost'
 import useCommentPost from '@/features/posts/useCommentPost'
@@ -243,7 +244,7 @@ export default function PostActions({
                   p={3}
                   width="288px"
                 >
-                  <Stack gap={3} colorPalette="red">
+                  <Stack gap={3} colorPalette="green">
                     <HStack justify="space-between" align="start" gap={3}>
                       <Stack gap={0}>
                         <Text
@@ -253,7 +254,7 @@ export default function PostActions({
                           letterSpacing="0.08em"
                           textTransform="uppercase"
                         >
-                          Vote
+                          {m.post_actions_upvote()}
                         </Text>
                         <Text
                           color="colorPalette.fg"
@@ -273,15 +274,14 @@ export default function PostActions({
                       >
                         <Button
                           size="sm"
-                          variant="subtle"
+                          variant="ghost"
                           colorPalette="gray"
                           onClick={toggleCustomVoteStep}
                           gap={2}
                           px={3}
                         >
-                          <SlidersHorizontal size={12} />
                           <Text fontSize="xs" fontWeight="600">
-                            {customVoteStep}%
+                            {customVoteStep}% {m.ui_slider_step()}
                           </Text>
                         </Button>
                       </Tooltip>
@@ -289,7 +289,7 @@ export default function PostActions({
 
                     <Slider.Root
                       aria-label={['Vote percentage']}
-                      colorPalette="red"
+                      colorPalette="green"
                       min={customVoteStep}
                       max={100}
                       step={customVoteStep}
@@ -310,14 +310,13 @@ export default function PostActions({
                     </Slider.Root>
 
                     <Button
-                      colorPalette="red"
                       loading={voteController.isVoting}
                       onClick={handleCustomVote}
-                      size="sm"
-                      variant="subtle"
                       width="full"
-                    >
-                      Vote {customVotePercent}%
+                      colorPalette="gray"
+                    > 
+                    <Icon as={ThumbsUp} />
+                      {m.post_actions_upvote()} {customVotePercent}%
                     </Button>
                   </Stack>
                 </Popover.Content>
