@@ -90,12 +90,72 @@ export default function PostActions({
     }
   }
 
-  const handleVote = async () => {
-    const response = await vote.vote(100)
+  const submitVote = async (weightPercent: number) => {
+    const response = await voteController.vote(weightPercent)
     if (response.success) {
+      setCustomVoteOpen(false)
       onVoteSuccess?.()
     }
   }
+
+  const clearHoldTimer = () => {
+    if (holdTimerRef.current !== null) {
+      window.clearTimeout(holdTimerRef.current)
+      holdTimerRef.current = null
+    }
+  }
+
+  const openCustomVote = () => {
+    clearHoldTimer()
+    preventQuickVoteRef.current = true
+    setCustomVoteOpen(true)
+  }
+
+  const handleVotePointerDown = () => {
+    if (voteController.isVoting || customVoteOpen) return
+    clearHoldTimer()
+    preventQuickVoteRef.current = false
+    holdTimerRef.current = window.setTimeout(() => {
+      openCustomVote()
+    }, HOLD_TO_OPEN_DELAY_MS)
+  }
+
+  const handleVotePointerEnd = () => {
+    clearHoldTimer()
+  }
+
+  const handleQuickVote = async () => {
+    if (customVoteOpen) {
+      setCustomVoteOpen(false)
+      preventQuickVoteRef.current = false
+      return
+    }
+
+    if (preventQuickVoteRef.current) {
+      preventQuickVoteRef.current = false
+      return
+    }
+
+    await submitVote(DEFAULT_VOTE_PERCENT)
+  }
+
+  const handleCustomVote = async () => {
+    await submitVote(customVotePercent)
+  }
+
+  const toggleCustomVoteStep = () => {
+    setCustomVoteStep((currentStep) => {
+      if (currentStep === 5) return 1
+      setCustomVotePercent((currentPercent) =>
+        Math.max(DEFAULT_VOTE_STEP, Math.round(currentPercent / 5) * 5),
+      )
+      return 5
+    })
+  }
+
+  useEffect(() => {
+    return () => clearHoldTimer()
+  }, [])
 
   const commentForm = (
     <Stack gap={3}>
