@@ -181,14 +181,14 @@ export default function PostActions({
           </IconButton>
         </Tooltip>
       </HStack>
-      {isCard && (vote.error || comment.error) && (
+      {isCard && (voteController.error || comment.error) && (
         <Text fontSize="xs" color="fg.error">
-          {vote.error ?? comment.error}
+          {voteController.error ?? comment.error}
         </Text>
       )}
-      {isCard && (vote.success || comment.success) && (
+      {isCard && (voteController.success || comment.success) && (
         <Text fontSize="xs" color="fg.muted">
-          {vote.success
+          {voteController.success
             ? m.post_actions_vote_sent()
             : m.post_actions_comment_published()}
         </Text>
@@ -386,15 +386,15 @@ export default function PostActions({
                               (voteEntry) => voteEntry.percent >= 1,
                             )}
                           >
-                            {(vote) => (
+                            {(voteEntry) => (
                               <HStack
                                 h={1}
                                 bg="colorPalette.subtle"
                                 gap="0.5"
                                 colorPalette={'gray'}
-                                key={vote.account}
+                                key={voteEntry.account}
                                 rounded="xs"
-                                width={formatVotePercent(vote.percent)}
+                                width={formatVotePercent(voteEntry.percent)}
                               ></HStack>
                             )}
                           </For>
@@ -406,21 +406,21 @@ export default function PostActions({
                             (voteEntry) => voteEntry.percent >= 0.1,
                           )}
                         >
-                          {(vote) => (
+                          {(voteEntry) => (
                             <HStack
-                              key={vote.account}
+                              key={voteEntry.account}
                               justify="space-between"
                               gap={4}
                             >
                               <HStack asChild gap={2} minW={0}>
                                 <Link
                                   to="/$accountname"
-                                  params={{ accountname: `@${vote.account}` }}
+                                  params={{ accountname: `@${voteEntry.account}` }}
                                 >
                                   <AccountAvatar
                                     size="xs"
                                     boxSize={6}
-                                    username={vote.account}
+                                    username={voteEntry.account}
                                   />
 
                                   <HStack gap="0.5">
@@ -438,7 +438,7 @@ export default function PostActions({
                                       fontWeight="semibold"
                                       lineClamp={1}
                                     >
-                                      {vote.account}
+                                      {voteEntry.account}
                                     </Text>
                                   </HStack>
                                 </Link>
@@ -449,14 +449,14 @@ export default function PostActions({
                                   color="fg.muted"
                                   fontWeight="600"
                                 >
-                                  {formatVotePercent(vote.percent)}
+                                  {formatVotePercent(voteEntry.percent)}
                                 </Text>
                                 <Box
                                   rounded="full"
                                   me="1"
                                   bg="colorPalette.muted"
                                   h="1"
-                                  w={formatVotePercent(vote.percent)}
+                                  w={formatVotePercent(voteEntry.percent)}
                                 ></Box>
                               </Stack>
                             </HStack>
@@ -474,15 +474,15 @@ export default function PostActions({
                               (voteEntry) => voteEntry.percent <= 0.1,
                             )}
                           >
-                            {(vote) => (
+                            {(voteEntry) => (
                               <Link
                                 to="/$accountname"
-                                params={{ accountname: `@${vote.account}` }}
+                                params={{ accountname: `@${voteEntry.account}` }}
                               >
                                 <AccountAvatar
                                   size="xs"
                                   boxSize={6}
-                                  username={vote.account}
+                                  username={voteEntry.account}
                                 />
                               </Link>
                             )}
@@ -561,14 +561,14 @@ export default function PostActions({
 
       {!isCard && (
         <>
-          {(vote.error || comment.error) && (
+          {(voteController.error || comment.error) && (
             <Text fontSize="xs" color="fg.error" mt={2}>
-              {vote.error ?? comment.error}
+              {voteController.error ?? comment.error}
             </Text>
           )}
-          {(vote.success || comment.success) && (
+          {(voteController.success || comment.success) && (
             <Text fontSize="xs" color="fg.muted" mt={2}>
-              {vote.success
+              {voteController.success
                 ? m.post_actions_vote_sent()
                 : m.post_actions_comment_published()}
             </Text>
