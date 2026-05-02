@@ -43,12 +43,21 @@ export default function PostActions({
   onCommentSuccess?: () => void
   variant?: 'detail' | 'card'
 }) {
+  const DEFAULT_VOTE_PERCENT = 10
+  const DEFAULT_VOTE_STEP = 5
+  const HOLD_TO_OPEN_DELAY_MS = 280
   const isCard = variant === 'card'
   const [commentBody, setCommentBody] = useState('')
   const [commentOpen, setCommentOpen] = useState(false)
   const [votesOpen, setVotesOpen] = useState(false)
+  const [customVoteOpen, setCustomVoteOpen] = useState(false)
+  const [customVotePercent, setCustomVotePercent] = useState(DEFAULT_VOTE_PERCENT)
+  const [customVoteStep, setCustomVoteStep] = useState<1 | 5>(DEFAULT_VOTE_STEP)
   const [shouldFetchVotes, setShouldFetchVotes] = useState(false)
-  const vote = useVotePost({ author, permlink })
+  const holdTimerRef = useRef<number | null>(null)
+  const preventQuickVoteRef = useRef(false)
+  const voteSliderThumbRef = useRef<HTMLDivElement | null>(null)
+  const voteController = useVotePost({ author, permlink })
   const comment = useCommentPost({
     parentAuthor: author,
     parentPermlink: permlink,
