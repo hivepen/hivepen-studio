@@ -17,35 +17,9 @@ const fonts = defineTokens.fonts({
   },
 })
 
-const buttonRecipe = defineRecipe({
-  variants: {
-    size: {
-      sm: {
-        h: '8',
-        minW: '8',
-        px: '3',
-        textStyle: 'sm',
-        gap: '2',
-        _icon: {
-          width: '4',
-          height: '4',
-        },
-      },
-      md: {
-        h: '9',
-        minW: '9',
-        px: '3.5',
-        textStyle: 'sm',
-        gap: '2',
-        _icon: {
-          width: '4.5',
-          height: '4.5',
-        },
-      },
-    },
-  },
-  defaultVariants: {
-    size: 'sm',
+const commonBaseRecipe = defineRecipe({
+  base: {
+    borderRadius: "lg",
   },
 })
 
@@ -71,9 +45,11 @@ const config = {
     },
     textStyles,
     recipes: {
-      button: buttonRecipe,
+      button: commonBaseRecipe,
+      card: commonBaseRecipe,
     },
   },
 }
 
-export const system = createSystem(defaultConfig, config)
+export const chakraSystem = createSystem(defaultConfig, config)
+export default chakraSystem
