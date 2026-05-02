@@ -9,20 +9,19 @@ import {
   Popover,
   Portal,
   Skeleton,
+  Slider,
   Stack,
   Text,
   Textarea,
   Wrap,
 } from '@chakra-ui/react'
-import { useState } from 'react'
-import { ArrowBigUp, MessageCircle, Send } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ChevronUp, MessageCircle, Send, SlidersHorizontal } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import useVotePost from '@/features/posts/useVotePost'
 import useCommentPost from '@/features/posts/useCommentPost'
 import usePostVoteDetails from '@/hooks/usePostVoteDetails'
-import { Avatar } from '@/components/ui/avatar'
 import { Tooltip } from '@/components/ui/tooltip'
-import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { formatVotePercent, sortVoteDetailsByPercent } from '@/lib/posts/votes'
 import { m } from '@/paraglide/messages'
 import AccountAvatar from '@/components/AccountAvatar'
