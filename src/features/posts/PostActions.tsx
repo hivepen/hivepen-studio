@@ -271,19 +271,19 @@ export default function PostActions({
                             : 'Switch to 5% steps'
                         }
                       >
-                        <IconButton
+                        <Button
                           size="sm"
-                          variant="ghost"
-                          rounded="full"
-                          aria-label={
-                            customVoteStep === 5
-                              ? 'Switch to 1% steps'
-                              : 'Switch to 5% steps'
-                          }
+                          variant="subtle"
+                          colorPalette="gray"
                           onClick={toggleCustomVoteStep}
+                          gap={2}
+                          px={3}
                         >
-                          <SlidersHorizontal size={14} />
-                        </IconButton>
+                          <SlidersHorizontal size={12} />
+                          <Text fontSize="xs" fontWeight="600">
+                            {customVoteStep}%
+                          </Text>
+                        </Button>
                       </Tooltip>
                     </HStack>
 
@@ -309,20 +309,16 @@ export default function PostActions({
                       </Slider.Control>
                     </Slider.Root>
 
-                    <HStack justify="space-between" gap={3}>
-                      <Text color="fg.muted" fontSize="xs">
-                        {customVoteStep}% steps
-                      </Text>
-                      <Button
-                        colorPalette="red"
-                        loading={voteController.isVoting}
-                        onClick={handleCustomVote}
-                        size="sm"
-                        variant="subtle"
-                      >
-                        Vote {customVotePercent}%
-                      </Button>
-                    </HStack>
+                    <Button
+                      colorPalette="red"
+                      loading={voteController.isVoting}
+                      onClick={handleCustomVote}
+                      size="sm"
+                      variant="subtle"
+                      width="full"
+                    >
+                      Vote {customVotePercent}%
+                    </Button>
                   </Stack>
                 </Popover.Content>
               </Popover.Positioner>
