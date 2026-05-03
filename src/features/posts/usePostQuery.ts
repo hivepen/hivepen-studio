@@ -27,6 +27,7 @@ type PostViewModel = {
   payoutAt?: string
   beneficiaries?: Entry['beneficiaries']
   payout: PostPayoutSummary
+  coverUrl?: string
 }
 
 const resolveTags = (metadata: Entry['json_metadata']) => {
@@ -38,6 +39,12 @@ const resolveApp = (metadata: Entry['json_metadata']) => {
   if (!metadata || typeof metadata.app !== 'string') return undefined
   const [app] = metadata.app.split('/')
   return app?.trim() || undefined
+}
+
+const resolveCoverUrl = (metadata: Entry['json_metadata']) => {
+  if (!metadata) return undefined
+  const imageList = Array.isArray(metadata.image) ? metadata.image : []
+  return typeof imageList[0] === 'string' ? imageList[0] : undefined
 }
 
 const buildPayoutSummary = (entry: Entry): PostPayoutSummary => {
@@ -77,10 +84,11 @@ const mapEntryToPost = (entry: Entry): PostViewModel => {
     payoutAt: entry.payout_at,
     beneficiaries: entry.beneficiaries,
     payout: buildPayoutSummary(entry),
+    coverUrl: resolveCoverUrl(entry.json_metadata),
   }
 }
 
-export { mapEntryToPost, buildPayoutSummary, resolveTags, resolveApp }
+export { mapEntryToPost, buildPayoutSummary, resolveTags, resolveApp, resolveCoverUrl }
 
 export default function usePostQuery({
   author,
