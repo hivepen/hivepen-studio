@@ -13,20 +13,22 @@ export type HiveKeychain = {
     message: string,
     keyType: 'Posting' | 'Active' | 'Memo',
     callback: (response: HiveKeychainResponse) => void,
-    rpc?: string
+    rpc?: string,
   ) => void
   requestBroadcast: (
     username: string,
-    operations: unknown[],
+    operations: Array<unknown>,
     keyType: 'Posting' | 'Active',
     callback: (response: HiveKeychainResponse) => void,
-    rpc?: string
+    rpc?: string,
   ) => void
 }
 
 export const getHiveKeychain = () => {
   if (typeof window === 'undefined') return null
-  return (window as Window & { hive_keychain?: HiveKeychain }).hive_keychain ?? null
+  return (
+    (window as Window & { hive_keychain?: HiveKeychain }).hive_keychain ?? null
+  )
 }
 
 export const signLogin = (username: string, message: string) => {
@@ -44,8 +46,8 @@ export const signLogin = (username: string, message: string) => {
 
 export const broadcastOperations = (
   username: string,
-  operations: unknown[],
-  keyType: 'Posting' | 'Active'
+  operations: Array<unknown>,
+  keyType: 'Posting' | 'Active',
 ) => {
   return new Promise<HiveKeychainResponse>((resolve) => {
     const keychain = getHiveKeychain()

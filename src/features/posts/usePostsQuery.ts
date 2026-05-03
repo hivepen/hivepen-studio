@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import {
+  
   getAccountPostsQueryOptions,
-  getPostsRankedQueryOptions,
-  type Entry,
+  getPostsRankedQueryOptions
 } from '@ecency/sdk'
-import { type RankedSort, type SearchResult } from '@/lib/hive/search'
+import type {Entry} from '@ecency/sdk';
+import type {RankedSort, SearchResult} from '@/lib/hive/search';
 import { mapEntryToSearchResult } from '@/features/posts/postMapping'
 
 export type PostsQueryParams = {
@@ -17,7 +18,7 @@ export type PostsQueryParams = {
   limit?: number
 }
 
-const filterPosts = (posts: SearchResult[], params: PostsQueryParams) => {
+const filterPosts = (posts: Array<SearchResult>, params: PostsQueryParams) => {
   const author = params.author?.trim()
   const dateFrom = params.dateFrom ? new Date(params.dateFrom) : null
   const dateTo = params.dateTo ? new Date(params.dateTo) : null
@@ -38,7 +39,16 @@ export default function usePostsQuery(params: PostsQueryParams) {
   const enabled = source === 'account' ? Boolean(author) : tag.length > 0
 
   return useQuery({
-    queryKey: ['posts', source, params.sort, tag, author, params.dateFrom, params.dateTo, params.limit],
+    queryKey: [
+      'posts',
+      source,
+      params.sort,
+      tag,
+      author,
+      params.dateFrom,
+      params.dateTo,
+      params.limit,
+    ],
     ...(source === 'account'
       ? (getAccountPostsQueryOptions(
           author,
@@ -47,7 +57,7 @@ export default function usePostsQuery(params: PostsQueryParams) {
           undefined,
           pageSize,
           undefined,
-          enabled
+          enabled,
         ) as object)
       : (getPostsRankedQueryOptions(
           params.sort,
@@ -56,10 +66,10 @@ export default function usePostsQuery(params: PostsQueryParams) {
           pageSize,
           tag,
           undefined,
-          enabled
+          enabled,
         ) as object)),
     enabled,
-    select: (data: Entry[]) =>
+    select: (data: Array<Entry>) =>
       filterPosts(data.map(mapEntryToSearchResult), params),
     staleTime: 2 * 60 * 1000,
     gcTime: 30 * 60 * 1000,

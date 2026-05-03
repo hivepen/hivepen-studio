@@ -4,8 +4,8 @@ export default function EditorCollaborationUsers({
   users,
   fallback,
 }: {
-  users: Array<{ name: string }>,
-  fallback?: React.ReactNode,
+  users: Array<{ name: string }>
+  fallback?: React.ReactNode
 }) {
   if (users.length === 0) {
     if (fallback) return fallback

@@ -1,17 +1,21 @@
-import { HeadContent, Scripts, createRootRouteWithContext } from '@tanstack/react-router'
+import {
+  HeadContent,
+  Scripts,
+  createRootRouteWithContext,
+} from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { ChakraProvider } from '@chakra-ui/react'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
-import { getLocale, shouldRedirect } from '@/paraglide/runtime'
 
 import appCss from '../styles.css?url'
 
-import type { QueryClient } from '@tanstack/react-query'
 import { chakraSystem } from '../theme'
 import AppShell from '../components/AppShell'
+import type { QueryClient } from '@tanstack/react-query'
+import { getLocale, shouldRedirect } from '@/paraglide/runtime'
 
 interface MyRouterContext {
   queryClient: QueryClient

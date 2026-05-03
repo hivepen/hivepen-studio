@@ -6,7 +6,7 @@ type RawComment = {
   body?: string
   created: string
   depth?: number
-  json_metadata?: string | { tags?: string[] }
+  json_metadata?: string | { tags?: Array<string> }
 }
 
 export type HiveComment = {
@@ -22,11 +22,11 @@ export async function fetchPostComments({
 }: {
   author: string
   permlink: string
-}): Promise<HiveComment[]> {
+}): Promise<Array<HiveComment>> {
   const result = (await hiveClient.database.call('get_content_replies', [
     author,
     permlink,
-  ])) as RawComment[]
+  ])) as Array<RawComment>
 
   return (result ?? []).map((comment) => ({
     author: comment.author,

@@ -12,15 +12,15 @@ export default function PostCardSkeleton() {
       display="flex"
     >
       <Stack flex="1" minW={0} p={{ base: 3, md: 4 }} gap={3}>
-      <Skeleton
-      height={{ base: 'clamp(4rem,10vh,5.5rem)' }}
-      aspectRatio={4 / 3}
-      bg="bg.subtle"
-      position="relative"
-      overflow="hidden"
-      flexShrink={0}
-      borderRadius="md"
-      />
+        <Skeleton
+          height={{ base: 'clamp(4rem,10vh,5.5rem)' }}
+          aspectRatio={4 / 3}
+          bg="bg.subtle"
+          position="relative"
+          overflow="hidden"
+          flexShrink={0}
+          borderRadius="md"
+        />
         <HStack justify="space-between" align="start" gap={3}>
           <HStack gap={3} align="start">
             <Skeleton boxSize={10} borderRadius="full" />

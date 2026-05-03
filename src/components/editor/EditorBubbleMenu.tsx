@@ -1,20 +1,24 @@
 import { useEffect, useState } from 'react'
 import { BubbleMenu } from '@tiptap/react/menus'
-import type { Editor } from '@tiptap/react'
 import { Box, HStack, Icon, IconButton, Input } from '@chakra-ui/react'
 import {
   Bold,
-  Italic,
-  Underline,
-  Strikethrough,
-  Code,
-  Link2,
   Check,
+  Code,
+  Italic,
+  Link2,
+  Strikethrough,
+  Underline,
   X,
 } from 'lucide-react'
+import type { Editor } from '@tiptap/react'
 import { m } from '@/paraglide/messages'
 
-export default function EditorBubbleMenu({ editor }: { editor: Editor | null }) {
+export default function EditorBubbleMenu({
+  editor,
+}: {
+  editor: Editor | null
+}) {
   const [isEditingLink, setIsEditingLink] = useState(false)
   const [linkValue, setLinkValue] = useState('')
 
@@ -140,7 +144,9 @@ export default function EditorBubbleMenu({ editor }: { editor: Editor | null }) 
               label={m.editor_tool_link()}
               active={editor.isActive('link')}
               onClick={() => {
-                const existing = editor.getAttributes('link').href as string | undefined
+                const existing = editor.getAttributes('link').href as
+                  | string
+                  | undefined
                 setLinkValue(existing ?? '')
                 setIsEditingLink(true)
               }}

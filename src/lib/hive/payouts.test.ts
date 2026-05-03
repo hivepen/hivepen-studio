@@ -3,7 +3,10 @@ import { formatAssetAmount, parseAssetAmount, sumAssetStrings } from './payouts'
 
 describe('payout parsing helpers', () => {
   it('parses asset amounts', () => {
-    expect(parseAssetAmount('1.234 HBD')).toEqual({ amount: 1.234, symbol: 'HBD' })
+    expect(parseAssetAmount('1.234 HBD')).toEqual({
+      amount: 1.234,
+      symbol: 'HBD',
+    })
   })
 
   it('returns null for invalid input', () => {

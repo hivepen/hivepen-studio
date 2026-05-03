@@ -4,8 +4,8 @@ import {
   Box,
   Button,
   Card,
-  Heading,
   HStack,
+  Heading,
   SimpleGrid,
   Skeleton,
   Stack,
@@ -34,7 +34,10 @@ export const Route = createFileRoute('/analytics')({
 })
 
 function Analytics() {
-  const [account, , accountReady] = useLocalStorageState<string | null>('hivepen.account', null)
+  const [account, , accountReady] = useLocalStorageState<string | null>(
+    'hivepen.account',
+    null,
+  )
   const profileQuery = useProfileQuery(account)
   const analyticsQuery = useAccountRewardTimeline(accountReady ? account : null)
 
@@ -54,14 +57,14 @@ function Analytics() {
         label: m.analytics_summary_total_rewards(),
         value: formatRewardValue(
           analyticsQuery.summary?.totalRewardAmount ?? 0,
-          analyticsQuery.summary?.symbol ?? 'HBD'
+          analyticsQuery.summary?.symbol ?? 'HBD',
         ),
       },
       {
         label: m.analytics_summary_average_reward(),
         value: formatRewardValue(
           analyticsQuery.summary?.averageRewardAmount ?? 0,
-          analyticsQuery.summary?.symbol ?? 'HBD'
+          analyticsQuery.summary?.symbol ?? 'HBD',
         ),
       },
       {
@@ -69,7 +72,7 @@ function Analytics() {
         value: String(analyticsQuery.summary?.trackedPostCount ?? 0),
       },
     ],
-    [analyticsQuery.summary]
+    [analyticsQuery.summary],
   )
 
   if (!accountReady) {
@@ -83,7 +86,11 @@ function Analytics() {
         </Box>
         <SimpleGrid columns={{ base: 1, md: 3 }} gap={4}>
           {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={`analytics-skeleton-${index}`} height="120px" borderRadius="16px" />
+            <Skeleton
+              key={`analytics-skeleton-${index}`}
+              height="120px"
+              borderRadius="16px"
+            />
           ))}
         </SimpleGrid>
         <Skeleton height="360px" borderRadius="24px" />
@@ -140,8 +147,14 @@ function Analytics() {
         coverUrl={profileQuery.data?.coverImage}
         meta={
           <HStack gap={4} wrap="wrap" color="fg.muted" fontSize="sm">
-            <Text>{m.analytics_summary_last_updated({ date: formatUpdatedAt(analyticsQuery.lastUpdatedAt) })}</Text>
-            {analyticsQuery.isRefreshing ? <Text>{m.analytics_refreshing()}</Text> : null}
+            <Text>
+              {m.analytics_summary_last_updated({
+                date: formatUpdatedAt(analyticsQuery.lastUpdatedAt),
+              })}
+            </Text>
+            {analyticsQuery.isRefreshing ? (
+              <Text>{m.analytics_refreshing()}</Text>
+            ) : null}
           </HStack>
         }
       />
@@ -178,7 +191,10 @@ function Analytics() {
             ) : analyticsQuery.timeline.some((point) => point.postCount > 0) ? (
               <Chart.Root height="20rem" chart={chart}>
                 <RechartsLineChart data={chart.data} responsive>
-                  <CartesianGrid stroke={chart.color('border.muted')} vertical={false} />
+                  <CartesianGrid
+                    stroke={chart.color('border.muted')}
+                    vertical={false}
+                  />
                   <XAxis
                     axisLine={false}
                     tickLine={false}
@@ -193,7 +209,7 @@ function Analytics() {
                     tickFormatter={(value) =>
                       formatRewardValue(
                         typeof value === 'number' ? value : Number(value),
-                        analyticsQuery.summary?.symbol ?? 'HBD'
+                        analyticsQuery.summary?.symbol ?? 'HBD',
                       )
                     }
                   />
@@ -205,7 +221,7 @@ function Analytics() {
                         formatter={(value) =>
                           formatRewardValue(
                             typeof value === 'number' ? value : Number(value),
-                            analyticsQuery.summary?.symbol ?? 'HBD'
+                            analyticsQuery.summary?.symbol ?? 'HBD',
                           )
                         }
                       />

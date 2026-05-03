@@ -1,6 +1,6 @@
-import { type Entry } from '@ecency/sdk'
+import type {Entry} from '@ecency/sdk';
+import type {SearchResult} from '@/lib/hive/search';
 import { sumAssetStrings } from '@/lib/hive/payouts'
-import { type SearchResult } from '@/lib/hive/search'
 
 const resolveMetadata = (metadata: Entry['json_metadata']) => {
   if (!metadata) return {}

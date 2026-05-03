@@ -5,8 +5,8 @@ import {
   Button,
   Container,
   Flex,
-  Heading,
   HStack,
+  Heading,
   Input,
   SimpleGrid,
   Spinner,
@@ -18,7 +18,11 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { fetchAccount } from '@/lib/hive/client'
-import { broadcastOperations, getHiveKeychain, signLogin } from '@/lib/hive/keychain'
+import {
+  broadcastOperations,
+  getHiveKeychain,
+  signLogin,
+} from '@/lib/hive/keychain'
 import {
   buildCommentOperations,
   buildPostOperations,
@@ -42,10 +46,9 @@ type AccountProfile = {
 }
 
 function StudioHome() {
-  const [account, setAccount, accountReady] = useLocalStorageState<string | null>(
-    'hivepen.account',
-    null
-  )
+  const [account, setAccount, accountReady] = useLocalStorageState<
+    string | null
+  >('hivepen.account', null)
   const [loginName, setLoginName] = useState('')
   const [status, setStatus] = useState<StatusState | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
@@ -67,15 +70,18 @@ function StudioHome() {
   const [isPublishing, setIsPublishing] = useState(false)
   const [isCommenting, setIsCommenting] = useState(false)
 
-  const tagPreview = useMemo(() => parseTags(postPayload.tags), [postPayload.tags])
+  const tagPreview = useMemo(
+    () => parseTags(postPayload.tags),
+    [postPayload.tags],
+  )
   const statusPalette =
     status?.type === 'error'
       ? 'red'
       : status?.type === 'success'
-      ? 'green'
-      : status?.type === 'info'
-      ? 'blue'
-      : 'gray'
+        ? 'green'
+        : status?.type === 'info'
+          ? 'blue'
+          : 'gray'
 
   useEffect(() => {
     setKeychainDetected(Boolean(getHiveKeychain()))
@@ -147,7 +153,10 @@ function StudioHome() {
     }
 
     if (!postPayload.title.trim() || !postPayload.body.trim()) {
-      setStatus({ type: 'error', message: m.editor_status_title_body_required() })
+      setStatus({
+        type: 'error',
+        message: m.editor_status_title_body_required(),
+      })
       return
     }
 
@@ -186,7 +195,10 @@ function StudioHome() {
       return
     }
 
-    if (!commentPayload.parentAuthor.trim() || !commentPayload.parentPermlink.trim()) {
+    if (
+      !commentPayload.parentAuthor.trim() ||
+      !commentPayload.parentPermlink.trim()
+    ) {
       setStatus({
         type: 'error',
         message: m.prototype_comment_parent_required(),
@@ -263,11 +275,7 @@ function StudioHome() {
           </Stack>
 
           {!keychainDetected && (
-            <Alert
-              status="warning"
-              variant="subtle"
-              colorPalette="orange"
-            >
+            <Alert status="warning" variant="subtle" colorPalette="orange">
               {m.prototype_keychain_missing()}
             </Alert>
           )}
@@ -280,8 +288,7 @@ function StudioHome() {
               bg="bg.subtle"
               colorPalette={statusPalette}
             >
-
-{status.message}
+              {status.message}
             </Alert>
           )}
 
@@ -329,11 +336,17 @@ function StudioHome() {
                           {profileLoading
                             ? m.prototype_profile_loading()
                             : profile
-                            ? m.prototype_profile_posts({ count: profile.post_count ?? 0 })
-                            : m.prototype_profile_unavailable()}
+                              ? m.prototype_profile_posts({
+                                  count: profile.post_count ?? 0,
+                                })
+                              : m.prototype_profile_unavailable()}
                         </Text>
                       </Stack>
-                      <Button size="sm" variant="outline" onClick={handleLogout}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleLogout}
+                      >
                         {m.prototype_sign_out()}
                       </Button>
                     </Flex>
@@ -430,7 +443,7 @@ function StudioHome() {
                     disabled={!keychainDetected}
                   >
                     {m.prototype_publish_button()}
-                </Button>
+                  </Button>
                 </Stack>
               </Stack>
             </Box>
@@ -504,7 +517,9 @@ function StudioHome() {
               p={6}
             >
               <Stack gap={3}>
-                <Heading size="md">{m.prototype_keychain_status_heading()}</Heading>
+                <Heading size="md">
+                  {m.prototype_keychain_status_heading()}
+                </Heading>
                 <Text fontSize="sm" color="fg.muted">
                   {m.prototype_keychain_status_description()}
                 </Text>

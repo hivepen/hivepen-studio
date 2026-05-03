@@ -4,14 +4,14 @@ import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import Mention from '@tiptap/extension-mention'
+import type { SlashCommandItem } from '@/lib/tiptap/slashCommand'
 import GlobalDragHandle from '@/lib/tiptap/globalDragHandle'
 import SlashCommand from '@/lib/tiptap/slashCommand'
-import type { SlashCommandItem } from '@/lib/tiptap/slashCommand'
 import { m } from '@/paraglide/messages'
 
 type EditorExtensionsOptions = {
   mentionSuggestion: Parameters<typeof Mention.configure>[0]['suggestion']
-  slashCommandItems?: SlashCommandItem[]
+  slashCommandItems?: Array<SlashCommandItem>
 }
 
 export const getEditorExtensions = ({

@@ -1,16 +1,23 @@
 import { Box } from '@chakra-ui/react'
 import { renderHiveMarkdown } from '@/lib/posts/markdown'
-import { commentContentStyles, postContentStyles } from '@/lib/posts/contentStyles'
+import {
+  commentContentStyles,
+  postContentStyles,
+} from '@/lib/posts/contentStyles'
 
 type PostContentProps = {
   body: string
   variant?: 'post' | 'comment'
 }
 
-export default function PostContent({ body, variant = 'post' }: PostContentProps) {
+export default function PostContent({
+  body,
+  variant = 'post',
+}: PostContentProps) {
   const html = renderHiveMarkdown(body)
   const textStyle = variant === 'comment' ? 'commentBody' : 'postBody'
-  const styles = variant === 'comment' ? commentContentStyles : postContentStyles
+  const styles =
+    variant === 'comment' ? commentContentStyles : postContentStyles
   return (
     <Box
       color="fg"

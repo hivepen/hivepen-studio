@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { getPostQueryOptions, type Entry } from '@ecency/sdk'
+import {  getPostQueryOptions } from '@ecency/sdk'
+import type {Entry} from '@ecency/sdk';
 import { sumAssetStrings } from '@/lib/hive/payouts'
 
 type PostPayoutSummary = {
@@ -18,7 +19,7 @@ type PostViewModel = {
   created: string
   updated?: string
   community?: string
-  tags: string[]
+  tags: Array<string>
   votes?: number
   comments?: number
   category?: string
@@ -42,7 +43,7 @@ const resolveApp = (metadata: Entry['json_metadata']) => {
 const buildPayoutSummary = (entry: Entry): PostPayoutSummary => {
   const totalFromPayouts = sumAssetStrings(
     entry.author_payout_value,
-    entry.curator_payout_value
+    entry.curator_payout_value,
   )
 
   return {
@@ -78,6 +79,8 @@ const mapEntryToPost = (entry: Entry): PostViewModel => {
     payout: buildPayoutSummary(entry),
   }
 }
+
+export { mapEntryToPost, buildPayoutSummary, resolveTags, resolveApp }
 
 export default function usePostQuery({
   author,

@@ -1,9 +1,4 @@
-import {
-  Box,
-  Flex,
-  Slider,
-  Text,
-} from '@chakra-ui/react'
+import { Box, Flex, Slider, Text } from '@chakra-ui/react'
 import { m } from '@/paraglide/messages'
 
 const clamp = (value: number, min: number, max: number) =>

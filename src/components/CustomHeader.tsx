@@ -1,5 +1,13 @@
-import { Box, Center, Flex, HStack, JsxStyleProps, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Center,
+  Flex,
+  HStack,
+  Text,
+} from '@chakra-ui/react'
 import { Edit2Icon, EditIcon, SparkleIcon } from 'lucide-react'
+import type {
+  JsxStyleProps} from '@chakra-ui/react';
 
 export default function AppHeader({
   title,
@@ -10,8 +18,8 @@ export default function AppHeader({
 }: {
   title?: React.ReactNode
   subtitle?: React.ReactNode
-  children?: React.ReactNode,
-  leading?: React.ReactNode,
+  children?: React.ReactNode
+  leading?: React.ReactNode
 } & JsxStyleProps) {
   return (
     <Box
@@ -25,20 +33,20 @@ export default function AppHeader({
     >
       <Flex align="center" justify="space-between" wrap="wrap" gap={3}>
         <HStack gap={3} minW={0}>
-          {leading ?? 
-          <Center
-          h="36px"
-          w="36px"
-          color="whiteAlpha.900"
-          p={2}
-          borderRadius="xl"
-          bgGradient="to-tr"
-          gradientFrom="blackAlpha.100"
-          gradientTo="transparent"
-          >
-            <SparkleIcon/>
-          </Center>
-          }
+          {leading ?? (
+            <Center
+              h="36px"
+              w="36px"
+              color="whiteAlpha.900"
+              p={2}
+              borderRadius="xl"
+              bgGradient="to-tr"
+              gradientFrom="blackAlpha.100"
+              gradientTo="transparent"
+            >
+              <SparkleIcon />
+            </Center>
+          )}
           <Box minW={0}>
             {subtitle && (
               <Text

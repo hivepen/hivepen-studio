@@ -12,9 +12,7 @@ function Drafts() {
       <Heading size="lg" mb={2}>
         {m.drafts_heading()}
       </Heading>
-      <Text color="fg.muted">
-        {m.drafts_description()}
-      </Text>
+      <Text color="fg.muted">{m.drafts_description()}</Text>
     </Box>
   )
 }

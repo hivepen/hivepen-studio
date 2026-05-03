@@ -1,6 +1,6 @@
 import { Collapsible, Flex, Text } from '@chakra-ui/react'
 import { ChevronRight } from 'lucide-react'
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 export default function CustomCollapsible({
   title,

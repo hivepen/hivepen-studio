@@ -1,25 +1,25 @@
 import { Box, HStack, Icon, IconButton, Menu } from '@chakra-ui/react'
 import { useEditorState } from '@tiptap/react'
-import type { Editor } from '@tiptap/react'
 import {
   AtSign,
   Bold,
   Code,
   Code2,
+  Heading2,
   Image as ImageIcon,
   Italic,
   Link2,
   List,
   ListOrdered,
   Minus,
+  MoreHorizontal,
   Quote,
   Redo2,
   Strikethrough,
   Underline,
   Undo2,
-  Heading2,
-  MoreHorizontal,
 } from 'lucide-react'
+import type { Editor } from '@tiptap/react'
 import { m } from '@/paraglide/messages'
 
 export default function EditorToolbar({
@@ -129,7 +129,9 @@ export default function EditorToolbar({
         <ToolbarButton
           label={m.editor_tool_heading2()}
           active={toolbarState.isHeading2}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
           icon={<Icon as={Heading2} boxSize={4} />}
         />
         <ToolbarButton

@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Box, Heading, HStack, Stack, Switch, Text } from '@chakra-ui/react'
+import { Box, HStack, Heading, Stack, Switch, Text } from '@chakra-ui/react'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import DevOnly from '@/components/DevOnly'
 import PostTag from '@/components/PostTag'
@@ -15,7 +15,7 @@ export const Route = createFileRoute('/settings')({
 function Settings() {
   const [showBlockHandles, setShowBlockHandles] = useLocalStorageState(
     'hivepen.editor.showBlockHandles',
-    true
+    true,
   )
 
   return (
@@ -23,9 +23,7 @@ function Settings() {
       <Heading size="lg" mb={2}>
         {m.settings_heading()}
       </Heading>
-      <Text color="fg.muted">
-        {m.settings_description()}
-      </Text>
+      <Text color="fg.muted">{m.settings_description()}</Text>
       <Box mt={8}>
         <Heading size="sm" mb={2}>
           {m.settings_language_heading()}
@@ -33,7 +31,7 @@ function Settings() {
         <Text color="fg.muted" fontSize="sm" mb={4}>
           {m.settings_language_description()}
         </Text>
-        <Field 
+        <Field
           label={m.settings_language_label()}
           helperText={m.settings_language_description()}
         >

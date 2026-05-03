@@ -15,7 +15,7 @@ export type RewardSummary = {
 }
 
 export type AccountRewardTimelineData = {
-  timeline: RewardTimelinePoint[]
+  timeline: Array<RewardTimelinePoint>
   summary: RewardSummary
   cachedAt: number
 }

@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
-import { createDiscoveryCacheStore, SEARCH_BUCKET_LIMIT } from './index'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { SEARCH_BUCKET_LIMIT, createDiscoveryCacheStore } from './index'
 import type { DiscoveryStorageLike } from './types'
 
 const createMemoryStorage = (): DiscoveryStorageLike => {
@@ -56,15 +56,29 @@ describe('discovery cache store', () => {
     }
 
     const state = store.getState()
-    expect(Object.keys(state.accounts.buckets)).toHaveLength(SEARCH_BUCKET_LIMIT)
+    expect(Object.keys(state.accounts.buckets)).toHaveLength(
+      SEARCH_BUCKET_LIMIT,
+    )
     expect(state.accounts.buckets['query-0']).toBeUndefined()
-    expect(state.accounts.buckets[`query-${SEARCH_BUCKET_LIMIT + 4}`]).toBeDefined()
+    expect(
+      state.accounts.buckets[`query-${SEARCH_BUCKET_LIMIT + 4}`],
+    ).toBeDefined()
   })
 
   it('ranks frequent entities ahead of less-used matches', () => {
     const store = createDiscoveryCacheStore(createMemoryStorage())
-    const alice = { name: 'alice', full_name: 'Alice', about: '', reputation: 10 }
-    const alina = { name: 'alina', full_name: 'Alina', about: '', reputation: 12 }
+    const alice = {
+      name: 'alice',
+      full_name: 'Alice',
+      about: '',
+      reputation: 10,
+    }
+    const alina = {
+      name: 'alina',
+      full_name: 'Alina',
+      about: '',
+      reputation: 12,
+    }
 
     store.cacheSearchResults('accounts', 'ali', [alice, alina])
     store.recordSelection('accounts', alina)
@@ -72,14 +86,27 @@ describe('discovery cache store', () => {
     store.recordSelection('accounts', alice)
 
     const snapshot = store.getSnapshot('accounts', 'ali')
-    expect(snapshot.results.map((entry) => entry.name)).toEqual(['alina', 'alice'])
+    expect(snapshot.results.map((entry) => entry.name)).toEqual([
+      'alina',
+      'alice',
+    ])
   })
 
   it('merges recents and frequents for empty-query suggestions', () => {
     const store = createDiscoveryCacheStore(createMemoryStorage())
-    const alpha = { name: 'alpha', full_name: 'Alpha', about: '', reputation: 10 }
+    const alpha = {
+      name: 'alpha',
+      full_name: 'Alpha',
+      about: '',
+      reputation: 10,
+    }
     const beta = { name: 'beta', full_name: 'Beta', about: '', reputation: 11 }
-    const gamma = { name: 'gamma', full_name: 'Gamma', about: '', reputation: 12 }
+    const gamma = {
+      name: 'gamma',
+      full_name: 'Gamma',
+      about: '',
+      reputation: 12,
+    }
 
     store.cacheEntity('accounts', alpha)
     store.cacheEntity('accounts', beta)
@@ -92,7 +119,11 @@ describe('discovery cache store', () => {
     store.recordSelection('accounts', gamma)
 
     const snapshot = store.getSnapshot('accounts', '', 3)
-    expect(snapshot.results.map((entry) => entry.name)).toEqual(['alpha', 'gamma', 'beta'])
+    expect(snapshot.results.map((entry) => entry.name)).toEqual([
+      'alpha',
+      'gamma',
+      'beta',
+    ])
   })
 
   it('handles numeric community ids without crashing', () => {
@@ -105,7 +136,7 @@ describe('discovery cache store', () => {
     }
 
     expect(() =>
-      store.cacheSearchResults('communities', 'numeric', [community])
+      store.cacheSearchResults('communities', 'numeric', [community]),
     ).not.toThrow()
 
     const snapshot = store.getSnapshot('communities', '1337')

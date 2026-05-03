@@ -1,7 +1,7 @@
 export type TitleMeta = {
   raw: string
   cleaned: string
-  words: string[]
+  words: Array<string>
   shortTitle: string
   maxLength: number
 }
@@ -11,8 +11,7 @@ const DEFAULT_MAX_LENGTH = 32
 const stripBrackets = (value: string) =>
   value.replace(/\[[^\]]*]/g, '').replace(/\([^)]*\)/g, '')
 
-const collapseWhitespace = (value: string) =>
-  value.replace(/\s+/g, ' ').trim()
+const collapseWhitespace = (value: string) => value.replace(/\s+/g, ' ').trim()
 
 const getFirstSeparatorIndex = (value: string) => {
   const match = value.match(/[|/]/)
@@ -31,8 +30,8 @@ const sliceBeforeFirstMeaningfulSeparator = (value: string) => {
   return value
 }
 
-const buildShortTitle = (words: string[], maxLength: number) => {
-  const result: string[] = []
+const buildShortTitle = (words: Array<string>, maxLength: number) => {
+  const result: Array<string> = []
   let length = 0
 
   for (const word of words) {
@@ -45,7 +44,10 @@ const buildShortTitle = (words: string[], maxLength: number) => {
   return result.join(' ')
 }
 
-export const getTitleMeta = (rawTitle: string, maxLength = DEFAULT_MAX_LENGTH): TitleMeta => {
+export const getTitleMeta = (
+  rawTitle: string,
+  maxLength = DEFAULT_MAX_LENGTH,
+): TitleMeta => {
   const raw = rawTitle ?? ''
   const cleaned = collapseWhitespace(stripBrackets(raw))
   const trimmed = cleaned.trim()

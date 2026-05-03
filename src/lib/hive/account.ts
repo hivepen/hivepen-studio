@@ -29,15 +29,15 @@ const parseSearchResult = (account: any): HiveAccountSearchResult => {
 
 export const searchAccounts = async (
   query: string,
-  limit = 20
-): Promise<HiveAccountSearchResult[]> => {
+  limit = 20,
+): Promise<Array<HiveAccountSearchResult>> => {
   if (!query) return []
   const lookupFromCondenser = async () => {
     try {
       const names = (await hiveClient.call('condenser_api', 'lookup_accounts', [
         query,
         limit,
-      ])) as string[]
+      ])) as Array<string>
       if (!Array.isArray(names) || names.length === 0) return []
       const accounts = await hiveClient.database.getAccounts(names)
       return accounts.map(parseSearchResult)

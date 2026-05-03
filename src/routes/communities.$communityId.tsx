@@ -1,15 +1,15 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { Box, Button, Heading, HStack, Stack, Text } from '@chakra-ui/react'
+import { Link, createFileRoute } from '@tanstack/react-router'
+import { Box, Button, HStack, Heading, Stack, Text } from '@chakra-ui/react'
 import { ArrowLeft } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { SearchResult } from '@/lib/hive/search'
 import useCommunityQuery from '@/features/communities/useCommunityQuery'
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
-import { useEffect, useMemo, useRef, useState } from 'react'
 import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import { m } from '@/paraglide/messages'
-import type { SearchResult } from '@/lib/hive/search'
 
 export const Route = createFileRoute('/communities/$communityId')({
   component: CommunityPage,
@@ -42,7 +42,7 @@ function CommunityPage() {
           postsQuery.fetchNextPage()
         }
       },
-      { rootMargin: '200px' }
+      { rootMargin: '200px' },
     )
     observer.observe(node)
     return () => observer.disconnect()
@@ -52,40 +52,37 @@ function CommunityPage() {
     postsQuery.isFetchingNextPage,
   ])
 
-  const posts = useMemo(
-    () => {
-      const pages = (postsQuery.data?.pages ?? []) as SearchResult[][]
-      const flattened = pages.flat()
-      const unique = new Map<string, SearchResult>()
-      flattened.forEach((post) => {
-        const key = `${post.author}/${post.permlink}`
-        if (!unique.has(key)) {
-          unique.set(key, post)
-        }
-      })
+  const posts = useMemo(() => {
+    const pages = (postsQuery.data?.pages ?? []) as Array<Array<SearchResult>>
+    const flattened = pages.flat()
+    const unique = new Map<string, SearchResult>()
+    flattened.forEach((post) => {
+      const key = `${post.author}/${post.permlink}`
+      if (!unique.has(key)) {
+        unique.set(key, post)
+      }
+    })
 
-      return Array.from(unique.values()).map((post) => {
-        const key = `${post.author}/${post.permlink}`
-        const overrides = localStats[key] ?? {}
-        return {
-          title: post.title || m.post_untitled(),
-          author: post.author,
-          community: post.communityTitle ?? post.community,
-          communityId: post.community,
-          tags: post.tags,
-          summary: post.summary,
-          coverUrl: post.coverUrl,
-          app: post.app,
-          createdAt: new Date(post.created).toLocaleDateString(),
-          permlink: post.permlink,
-          votes: overrides.votes ?? post.votes,
-          comments: overrides.comments ?? post.comments,
-          payout: post.payout,
-        }
-      })
-    },
-    [postsQuery.data, localStats]
-  )
+    return Array.from(unique.values()).map((post) => {
+      const key = `${post.author}/${post.permlink}`
+      const overrides = localStats[key] ?? {}
+      return {
+        title: post.title || m.post_untitled(),
+        author: post.author,
+        community: post.communityTitle ?? post.community,
+        communityId: post.community,
+        tags: post.tags,
+        summary: post.summary,
+        coverUrl: post.coverUrl,
+        app: post.app,
+        createdAt: new Date(post.created).toLocaleDateString(),
+        permlink: post.permlink,
+        votes: overrides.votes ?? post.votes,
+        comments: overrides.comments ?? post.comments,
+        payout: post.payout,
+      }
+    })
+  }, [postsQuery.data, localStats])
 
   return (
     <Stack gap={6} p={6}>
@@ -119,9 +116,15 @@ function CommunityPage() {
               <Text>#{communityQuery.data.name}</Text>
             ) : null}
             {communityQuery.data?.subscribers !== undefined ? (
-              <Text>{m.community_members({ count: communityQuery.data.subscribers })}</Text>
+              <Text>
+                {m.community_members({
+                  count: communityQuery.data.subscribers,
+                })}
+              </Text>
             ) : null}
-            {communityQuery.data?.lang ? <Text>{communityQuery.data.lang}</Text> : null}
+            {communityQuery.data?.lang ? (
+              <Text>{communityQuery.data.lang}</Text>
+            ) : null}
             {communityQuery.data?.is_nsfw ? (
               <Text>{m.community_nsfw()}</Text>
             ) : null}
@@ -159,7 +162,10 @@ function CommunityPage() {
                 setLocalStats((prev) => {
                   const key = `${post.author}/${post.permlink}`
                   const current = prev[key]?.votes ?? post.votes ?? 0
-                  return { ...prev, [key]: { ...prev[key], votes: current + 1 } }
+                  return {
+                    ...prev,
+                    [key]: { ...prev[key], votes: current + 1 },
+                  }
                 })
               }
               onCommentSuccess={() =>

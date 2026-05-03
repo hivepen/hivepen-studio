@@ -1,10 +1,4 @@
 import type { HiveAccountSearchResult } from '@/lib/hive/account'
-import {
-  getCommunityIdentifier,
-  getCommunityLabel,
-  toHiveText,
-  type HiveCommunity,
-} from '@/lib/hive/client'
 import type {
   CachedEntity,
   CachedSearchBucket,
@@ -17,6 +11,13 @@ import type {
   DiscoverySnapshot,
   DiscoveryStorageLike,
 } from './types'
+import type {HiveCommunity} from '@/lib/hive/client';
+import {
+  
+  getCommunityIdentifier,
+  getCommunityLabel,
+  toHiveText
+} from '@/lib/hive/client'
 
 const STORAGE_KEY = 'hivepen.discovery-cache.v1'
 const ENTITY_TTL_MS = 7 * 24 * 60 * 60 * 1000
@@ -44,24 +45,30 @@ const getStorage = (storage?: DiscoveryStorageLike) => {
   return window.localStorage
 }
 
-const normalizeKey = (value: unknown) => toHiveText(value).toLowerCase().replace(/^@/, '')
+const normalizeKey = (value: unknown) =>
+  toHiveText(value).toLowerCase().replace(/^@/, '')
 
-const normalizeQuery = (value: string) => value.trim().toLowerCase().replace(/^@/, '')
+const normalizeQuery = (value: string) =>
+  value.trim().toLowerCase().replace(/^@/, '')
 
-const uniqueStrings = (values: unknown[]) => {
+const uniqueStrings = (values: Array<unknown>) => {
   const unique = new Set<string>()
-  values.map(normalizeKey).filter(Boolean).forEach((value) => unique.add(value))
+  values
+    .map(normalizeKey)
+    .filter(Boolean)
+    .forEach((value) => unique.add(value))
   return Array.from(unique)
 }
 
-const resolveAccountKey = (account: HiveAccountSearchResult) => normalizeKey(account.name)
+const resolveAccountKey = (account: HiveAccountSearchResult) =>
+  normalizeKey(account.name)
 
 const resolveCommunityKey = (community: HiveCommunity) =>
   normalizeKey(getCommunityIdentifier(community))
 
 const resolveEntityKey = <T extends DiscoveryEntityType>(
   type: T,
-  value: DiscoveryEntityMap[T]
+  value: DiscoveryEntityMap[T],
 ) => {
   if (type === 'accounts') {
     return resolveAccountKey(value as HiveAccountSearchResult)
@@ -71,7 +78,7 @@ const resolveEntityKey = <T extends DiscoveryEntityType>(
 
 const resolveAliases = <T extends DiscoveryEntityType>(
   type: T,
-  value: DiscoveryEntityMap[T]
+  value: DiscoveryEntityMap[T],
 ) => {
   if (type === 'accounts') {
     const account = value as HiveAccountSearchResult
@@ -86,7 +93,8 @@ const resolveAliases = <T extends DiscoveryEntityType>(
   ])
 }
 
-const pruneRecent = (recent: DiscoveryRecentEntry[]) => recent.slice(0, RECENT_LIMIT)
+const pruneRecent = (recent: Array<DiscoveryRecentEntry>) =>
+  recent.slice(0, RECENT_LIMIT)
 
 const pruneFrequency = (frequency: Record<string, DiscoveryFrequencyEntry>) => {
   const entries = Object.values(frequency)
@@ -96,27 +104,36 @@ const pruneFrequency = (frequency: Record<string, DiscoveryFrequencyEntry>) => {
     })
     .slice(0, FREQUENT_LIMIT)
 
-  return entries.reduce<Record<string, DiscoveryFrequencyEntry>>((accumulator, entry) => {
-    accumulator[entry.key] = entry
-    return accumulator
-  }, {})
+  return entries.reduce<Record<string, DiscoveryFrequencyEntry>>(
+    (accumulator, entry) => {
+      accumulator[entry.key] = entry
+      return accumulator
+    },
+    {},
+  )
 }
 
-const pruneBuckets = (buckets: Record<string, CachedSearchBucket>, now: number) => {
+const pruneBuckets = (
+  buckets: Record<string, CachedSearchBucket>,
+  now: number,
+) => {
   const freshEntries = Object.entries(buckets)
     .filter(([, bucket]) => bucket.expiresAt > now)
     .sort((left, right) => right[1].cachedAt - left[1].cachedAt)
     .slice(0, SEARCH_BUCKET_LIMIT)
 
-  return freshEntries.reduce<Record<string, CachedSearchBucket>>((accumulator, [key, bucket]) => {
-    accumulator[key] = bucket
-    return accumulator
-  }, {})
+  return freshEntries.reduce<Record<string, CachedSearchBucket>>(
+    (accumulator, [key, bucket]) => {
+      accumulator[key] = bucket
+      return accumulator
+    },
+    {},
+  )
 }
 
 const pruneEntities = <T>(
   entities: Record<string, CachedEntity<T>>,
-  now: number
+  now: number,
 ) => {
   return Object.entries(entities).reduce<Record<string, CachedEntity<T>>>(
     (accumulator, [key, entity]) => {
@@ -125,28 +142,29 @@ const pruneEntities = <T>(
       }
       return accumulator
     },
-    {}
+    {},
   )
 }
 
 const pruneCollection = <T>(
   collection: DiscoveryCacheCollection<T>,
-  now: number
+  now: number,
 ): DiscoveryCacheCollection<T> => {
   const entities = pruneEntities(collection.entities, now)
   const entityKeys = new Set(Object.keys(entities))
   const buckets = pruneBuckets(collection.buckets, now)
-  const recent = pruneRecent(collection.recent.filter((entry) => entityKeys.has(entry.key)))
+  const recent = pruneRecent(
+    collection.recent.filter((entry) => entityKeys.has(entry.key)),
+  )
   const frequency = pruneFrequency(
-    Object.values(collection.frequency).reduce<Record<string, DiscoveryFrequencyEntry>>(
-      (accumulator, entry) => {
-        if (entityKeys.has(entry.key)) {
-          accumulator[entry.key] = entry
-        }
-        return accumulator
-      },
-      {}
-    )
+    Object.values(collection.frequency).reduce<
+      Record<string, DiscoveryFrequencyEntry>
+    >((accumulator, entry) => {
+      if (entityKeys.has(entry.key)) {
+        accumulator[entry.key] = entry
+      }
+      return accumulator
+    }, {}),
   )
 
   return {
@@ -157,7 +175,10 @@ const pruneCollection = <T>(
   }
 }
 
-const pruneState = (state: DiscoveryCacheState, now = Date.now()): DiscoveryCacheState => ({
+const pruneState = (
+  state: DiscoveryCacheState,
+  now = Date.now(),
+): DiscoveryCacheState => ({
   version: 1,
   accounts: pruneCollection(state.accounts, now),
   communities: pruneCollection(state.communities, now),
@@ -178,7 +199,10 @@ const readState = (storage?: DiscoveryStorageLike) => {
   }
 }
 
-const writeState = (state: DiscoveryCacheState, storage?: DiscoveryStorageLike) => {
+const writeState = (
+  state: DiscoveryCacheState,
+  storage?: DiscoveryStorageLike,
+) => {
   const target = getStorage(storage)
   if (!target) return
   target.setItem(STORAGE_KEY, JSON.stringify(pruneState(state)))
@@ -186,7 +210,7 @@ const writeState = (state: DiscoveryCacheState, storage?: DiscoveryStorageLike) 
 
 const updateState = (
   updater: (state: DiscoveryCacheState) => DiscoveryCacheState,
-  storage?: DiscoveryStorageLike
+  storage?: DiscoveryStorageLike,
 ) => {
   const nextState = pruneState(updater(readState(storage)))
   writeState(nextState, storage)
@@ -195,25 +219,26 @@ const updateState = (
 
 const getCollection = <T extends DiscoveryEntityType>(
   state: DiscoveryCacheState,
-  type: T
+  type: T,
 ) => state[type] as DiscoveryCacheCollection<DiscoveryEntityMap[T]>
 
 const setCollection = <T extends DiscoveryEntityType>(
   state: DiscoveryCacheState,
   type: T,
-  collection: DiscoveryCacheCollection<DiscoveryEntityMap[T]>
-) => ({
-  ...state,
-  [type]: collection,
-}) as DiscoveryCacheState
+  collection: DiscoveryCacheCollection<DiscoveryEntityMap[T]>,
+) =>
+  ({
+    ...state,
+    [type]: collection,
+  }) as DiscoveryCacheState
 
 const scoreKey = (
   key: string,
-  aliases: string[],
+  aliases: Array<string>,
   query: string,
   bucketKeys: Set<string>,
   recentIndexByKey: Map<string, number>,
-  frequencyByKey: Record<string, DiscoveryFrequencyEntry>
+  frequencyByKey: Record<string, DiscoveryFrequencyEntry>,
 ) => {
   const exactMatch = aliases.some((alias) => alias === query)
   const prefixMatch = aliases.some((alias) => alias.startsWith(query))
@@ -227,13 +252,20 @@ const scoreKey = (
   const prefixBoost = prefixMatch ? 250 : 0
   const includesBoost = includesMatch ? 75 : 0
 
-  return exactBoost + bucketBoost + prefixBoost + includesBoost + recentBoost + frequencyBoost
+  return (
+    exactBoost +
+    bucketBoost +
+    prefixBoost +
+    includesBoost +
+    recentBoost +
+    frequencyBoost
+  )
 }
 
 const rankKeys = <T>(
   collection: DiscoveryCacheCollection<T>,
   query: string,
-  limit: number
+  limit: number,
 ) => {
   const normalizedQuery = normalizeQuery(query)
   const recentIndexByKey = new Map<string, number>()
@@ -244,7 +276,10 @@ const rankKeys = <T>(
   if (!normalizedQuery) {
     const scored = new Map<string, number>()
     collection.recent.forEach((entry, index) => {
-      scored.set(entry.key, (scored.get(entry.key) ?? 0) + (RECENT_LIMIT - index) * 10)
+      scored.set(
+        entry.key,
+        (scored.get(entry.key) ?? 0) + (RECENT_LIMIT - index) * 10,
+      )
     })
     Object.values(collection.frequency).forEach((entry) => {
       scored.set(entry.key, (scored.get(entry.key) ?? 0) + entry.count * 25)
@@ -259,7 +294,9 @@ const rankKeys = <T>(
   const bucket = collection.buckets[normalizedQuery]
   const bucketKeys = new Set(bucket?.keys ?? [])
   const matchingKeys = Object.values(collection.entities)
-    .filter((entity) => entity.aliases.some((alias) => alias.includes(normalizedQuery)))
+    .filter((entity) =>
+      entity.aliases.some((alias) => alias.includes(normalizedQuery)),
+    )
     .map((entity) => entity.key)
 
   const candidates = new Set<string>([...bucketKeys, ...matchingKeys])
@@ -275,7 +312,7 @@ const rankKeys = <T>(
           normalizedQuery,
           bucketKeys,
           recentIndexByKey,
-          collection.frequency
+          collection.frequency,
         ),
       }
     })
@@ -288,11 +325,11 @@ const rankKeys = <T>(
 const upsertEntityCollection = <T extends DiscoveryEntityType>(
   collection: DiscoveryCacheCollection<DiscoveryEntityMap[T]>,
   type: T,
-  values: DiscoveryEntityMap[T][],
-  now: number
+  values: Array<DiscoveryEntityMap[T]>,
+  now: number,
 ) => {
   const entities = { ...collection.entities }
-  const keys: string[] = []
+  const keys: Array<string> = []
 
   values.forEach((value) => {
     const key = resolveEntityKey(type, value)
@@ -330,7 +367,7 @@ export const createDiscoveryCacheStore = (storage?: DiscoveryStorageLike) => {
     cacheSearchResults<T extends DiscoveryEntityType>(
       type: T,
       query: string,
-      values: DiscoveryEntityMap[T][]
+      values: Array<DiscoveryEntityMap[T]>,
     ) {
       const normalizedQuery = normalizeQuery(query)
       const now = Date.now()
@@ -358,7 +395,10 @@ export const createDiscoveryCacheStore = (storage?: DiscoveryStorageLike) => {
 
       return getCollection(nextState, type)
     },
-    cacheEntity<T extends DiscoveryEntityType>(type: T, value: DiscoveryEntityMap[T]) {
+    cacheEntity<T extends DiscoveryEntityType>(
+      type: T,
+      value: DiscoveryEntityMap[T],
+    ) {
       const now = Date.now()
       const nextState = updateState((state) => {
         const collection = getCollection(state, type)
@@ -368,7 +408,10 @@ export const createDiscoveryCacheStore = (storage?: DiscoveryStorageLike) => {
 
       return getCollection(nextState, type)
     },
-    recordSelection<T extends DiscoveryEntityType>(type: T, value: DiscoveryEntityMap[T]) {
+    recordSelection<T extends DiscoveryEntityType>(
+      type: T,
+      value: DiscoveryEntityMap[T],
+    ) {
       const now = Date.now()
       const key = resolveEntityKey(type, value)
       if (!key) return null
@@ -402,7 +445,7 @@ export const createDiscoveryCacheStore = (storage?: DiscoveryStorageLike) => {
     getSnapshot<T extends DiscoveryEntityType>(
       type: T,
       query: string,
-      limit = 20
+      limit = 20,
     ): DiscoverySnapshot<DiscoveryEntityMap[T]> {
       const state = readState(storage)
       const collection = getCollection(state, type)
@@ -410,12 +453,11 @@ export const createDiscoveryCacheStore = (storage?: DiscoveryStorageLike) => {
       const rankedKeys = rankKeys(collection, normalizedQuery, limit)
       const results = rankedKeys
         .map((key) => collection.entities[key]?.value)
-        .filter(
-          (value): value is DiscoveryEntityMap[T] =>
-            value !== undefined
-        )
+        .filter((value): value is DiscoveryEntityMap[T] => value !== undefined)
 
-      const bucket = normalizedQuery ? collection.buckets[normalizedQuery] : null
+      const bucket = normalizedQuery
+        ? collection.buckets[normalizedQuery]
+        : null
       return {
         query: normalizedQuery,
         results,

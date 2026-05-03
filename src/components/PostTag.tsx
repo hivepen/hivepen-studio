@@ -1,12 +1,13 @@
 import { Badge, Icon, Text } from '@chakra-ui/react'
+import { Avatar } from './ui/avatar'
+import type {
+  TagStyle} from '@/lib/posts/tagColorConfig';
 import {
-  simpleicon,
   TAG_PALETTES,
   TAG_REGEX_OVERRIDES,
   TAG_STYLE_MAP,
-  TagStyle,
+  simpleicon
 } from '@/lib/posts/tagColorConfig'
-import { Avatar } from './ui/avatar'
 
 function hashStringToIndex(value: string, modulo: number) {
   let hash = 5381
@@ -24,15 +25,15 @@ export default function PostTag({ tag }: { tag: string }) {
     pattern.test(normalizedTag),
   )?.style
   const resolvedStyle: TagStyle | undefined = mappedStyle ?? regexStyle
-  if(resolvedStyle) resolvedStyle.avatar ||= simpleicon(normalizedKey)
+  if (resolvedStyle) resolvedStyle.avatar ||= simpleicon(normalizedKey)
   const colorPalette =
     resolvedStyle?.colorPalette ??
     TAG_PALETTES[hashStringToIndex(normalizedTag, TAG_PALETTES.length)]
-  const usesCustomColors = !Boolean(resolvedStyle?.avatar) && 
-      Boolean(resolvedStyle?.bg) ||
-      Boolean(resolvedStyle?.fg) ||
-      Boolean(resolvedStyle?.border)
-const TagIcon = resolvedStyle?.icon
+  const usesCustomColors =
+    (!resolvedStyle?.avatar && Boolean(resolvedStyle?.bg)) ||
+    Boolean(resolvedStyle?.fg) ||
+    Boolean(resolvedStyle?.border)
+  const TagIcon = resolvedStyle?.icon
   return (
     <Badge
       variant="subtle"
@@ -42,13 +43,26 @@ const TagIcon = resolvedStyle?.icon
       borderColor={resolvedStyle?.border}
       borderWidth={resolvedStyle?.border ? '1px' : undefined}
       textTransform="uppercase"
-
     >
       {/* <img width="16" height="16" src={simpleicon(normalizedTag)} /> */}
-      {TagIcon ? <Icon size="xs"><TagIcon/></Icon> : resolvedStyle?.avatar ? (
-        <Avatar shape="square" bg="none" src={resolvedStyle?.avatar??simpleicon(normalizedTag)} size="xs" w={3} h={3} fallback={<Text color={resolvedStyle?.fg} opacity={0.4}>
-          #
-        </Text>} />
+      {TagIcon ? (
+        <Icon size="xs">
+          <TagIcon />
+        </Icon>
+      ) : resolvedStyle?.avatar ? (
+        <Avatar
+          shape="square"
+          bg="none"
+          src={resolvedStyle?.avatar ?? simpleicon(normalizedTag)}
+          size="xs"
+          w={3}
+          h={3}
+          fallback={
+            <Text color={resolvedStyle?.fg} opacity={0.4}>
+              #
+            </Text>
+          }
+        />
       ) : (
         <Text color={resolvedStyle?.fg} opacity={0.4}>
           #

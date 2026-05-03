@@ -1,7 +1,9 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { Badge, Box, Button, HStack, Stack, Tabs, Text } from '@chakra-ui/react'
 import { ArrowLeft } from 'lucide-react'
-import usePostQuery from '@/features/posts/usePostQuery'
+import usePostQuery, {
+  getPostQueryOptions,
+  mapEntryToPost} from '@/features/posts/usePostQuery'
 import PostActions from '@/features/posts/PostActions'
 import usePostCommentsQuery from '@/features/posts/usePostCommentsQuery'
 import PostContent from '@/components/posts/PostContent'
@@ -13,26 +15,58 @@ import { renderHiveMarkdown } from '@/lib/posts/markdown'
 import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/post/$author/$permlink')({
-    component: PostDetailPage,
-    loader: async ({ params }) => {
+  component: PostDetailPage,
+  loader: async ({ params, context }) => {
+    const { author, permlink } = params
+    const { queryClient } = context
 
-    },
-    head: ({ loaderData }) => ({
-        meta: [
-          // { title: loaderData.post.title },
-          // { name: 'description', content: loaderData.post.summary },
-          // // Open Graph
-          // { property: 'og:title', content: loaderData.post.title },
-          // { property: 'og:description', content: loaderData.post.excerpt },
-          // { property: 'og:image', content: loaderData.post.coverImage },
-          // { property: 'og:type', content: 'article' },
-          // // Twitter Card
-          // { name: 'twitter:card', content: 'summary_large_image' },
-          // { name: 'twitter:title', content: loaderData.post.title },
-          // { name: 'twitter:description', content: loaderData.post.excerpt },
-          // { name: 'twitter:image', content: loaderData.post.coverImage },
-        ],
-      }),
+    if (!author || !permlink) {
+      throw new Error('Author and permlink are required')
+    }
+
+    const postQueryOptions = getPostQueryOptions(author, permlink)
+    const entry = await queryClient.fetchQuery(postQueryOptions)
+
+    if (!entry) {
+      throw new Error('Post not found')
+    }
+
+    const post = mapEntryToPost(entry)
+
+    return {
+      post,
+    }
+  },
+  head: ({ loaderData }) => ({
+    meta: [
+      { title: loaderData.post.title || 'Untitled Post' },
+      {
+        name: 'description',
+        content: loaderData.post.body.slice(0, 160) || '',
+      },
+      // Open Graph
+      {
+        property: 'og:title',
+        content: loaderData.post.title || 'Untitled Post',
+      },
+      {
+        property: 'og:description',
+        content: loaderData.post.body.slice(0, 160) || '',
+      },
+      { property: 'og:type', content: 'article' },
+      { property: 'og:site_name', content: 'Hivepen Studio' },
+      // Twitter Card
+      { name: 'twitter:card', content: 'summary' },
+      {
+        name: 'twitter:title',
+        content: loaderData.post.title || 'Untitled Post',
+      },
+      {
+        name: 'twitter:description',
+        content: loaderData.post.body.slice(0, 160) || '',
+      },
+    ],
+  }),
 })
 
 function PostDetailPage() {

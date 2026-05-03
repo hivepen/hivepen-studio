@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
+import type { VoteDetail } from '@/lib/posts/votes'
 import { fetchPostVoteDetails } from '@/lib/hive/votes'
-import { VoteDetail } from '@/lib/posts/votes'
 import { m } from '@/paraglide/messages'
 
 type UsePostVoteDetailsArgs = {
   author?: string
   permlink?: string
   enabled?: boolean
-  initialVoteDetails?: VoteDetail[]
+  initialVoteDetails?: Array<VoteDetail>
 }
 
 type UsePostVoteDetailsResult = {
-  voteDetails: VoteDetail[]
+  voteDetails: Array<VoteDetail>
   loading: boolean
   error: Error | null
 }
@@ -22,7 +22,7 @@ export default function usePostVoteDetails({
   enabled = false,
   initialVoteDetails,
 }: UsePostVoteDetailsArgs): UsePostVoteDetailsResult {
-  const [voteDetails, setVoteDetails] = useState<VoteDetail[]>(
+  const [voteDetails, setVoteDetails] = useState<Array<VoteDetail>>(
     () => initialVoteDetails ?? [],
   )
   const [loading, setLoading] = useState(false)
@@ -58,7 +58,7 @@ export default function usePostVoteDetails({
         setError(
           err instanceof Error
             ? err
-            : new Error(m.post_actions_votes_load_failed())
+            : new Error(m.post_actions_votes_load_failed()),
         )
       })
       .finally(() => {

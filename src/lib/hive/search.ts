@@ -3,7 +3,7 @@ export type SearchResult = {
   permlink: string
   title: string
   created: string
-  tags: string[]
+  tags: Array<string>
   community?: string
   communityTitle?: string
   summary?: string

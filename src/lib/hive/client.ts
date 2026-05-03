@@ -23,11 +23,11 @@ export type HiveCommunity = {
 }
 
 export const getCommunityIdentifier = (
-  community: Pick<HiveCommunity, 'id' | 'name'>
+  community: Pick<HiveCommunity, 'id' | 'name'>,
 ) => toHiveText(community.name) || toHiveText(community.id)
 
 export const getCommunityLabel = (
-  community: Pick<HiveCommunity, 'id' | 'name' | 'title'>
+  community: Pick<HiveCommunity, 'id' | 'name' | 'title'>,
 ) => toHiveText(community.title) || getCommunityIdentifier(community)
 
 export const listCommunities = async (query: string) => {
@@ -35,5 +35,5 @@ export const listCommunities = async (query: string) => {
     limit: 20,
     query,
   })
-  return (result ?? []) as HiveCommunity[]
+  return (result ?? []) as Array<HiveCommunity>
 }

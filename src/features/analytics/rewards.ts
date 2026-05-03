@@ -1,6 +1,4 @@
 import { getAccountPosts } from '@ecency/sdk'
-import { parseAssetAmount } from '@/lib/hive/payouts'
-import { mapEntryToSearchResult } from '@/features/posts/postMapping'
 import type { SearchResult } from '@/lib/hive/search'
 import type {
   AccountRewardTimelineData,
@@ -8,6 +6,8 @@ import type {
   RewardSummary,
   RewardTimelinePoint,
 } from './types'
+import { parseAssetAmount } from '@/lib/hive/payouts'
+import { mapEntryToSearchResult } from '@/features/posts/postMapping'
 
 const ANALYTICS_STORAGE_KEY = 'hivepen.analytics.reward-timeline.v1'
 export const ANALYTICS_TTL_MS = 24 * 60 * 60 * 1000
@@ -21,18 +21,27 @@ const getStorage = () => {
   return window.localStorage
 }
 
-const normalizeUsername = (value: string) => value.trim().replace(/^@/, '').toLowerCase()
+const normalizeUsername = (value: string) =>
+  value.trim().replace(/^@/, '').toLowerCase()
 
 const toMonthKey = (date: Date) =>
   `${date.getUTCFullYear()}-${`${date.getUTCMonth() + 1}`.padStart(2, '0')}`
 
 const startOfTrackedWindow = (now = new Date()) =>
-  new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (MONTHS_TO_TRACK - 1), 1))
+  new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth() - (MONTHS_TO_TRACK - 1),
+      1,
+    ),
+  )
 
 const buildTimelineSeed = (symbol: string, now = new Date()) => {
-  const points: RewardTimelinePoint[] = []
+  const points: Array<RewardTimelinePoint> = []
   for (let offset = MONTHS_TO_TRACK - 1; offset >= 0; offset -= 1) {
-    const current = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - offset, 1))
+    const current = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - offset, 1),
+    )
     points.push({
       month: toMonthKey(current),
       shortLabel: current.toLocaleDateString(undefined, { month: 'short' }),
@@ -61,7 +70,9 @@ const readSnapshots = () => {
   }
 }
 
-const writeSnapshots = (snapshots: Record<string, AccountRewardTimelineSnapshot>) => {
+const writeSnapshots = (
+  snapshots: Record<string, AccountRewardTimelineSnapshot>,
+) => {
   const storage = getStorage()
   if (!storage) return
   storage.setItem(ANALYTICS_STORAGE_KEY, JSON.stringify(snapshots))
@@ -78,7 +89,7 @@ export const readRewardTimelineSnapshot = (username: string) => {
 
 export const writeRewardTimelineSnapshot = (
   username: string,
-  data: AccountRewardTimelineData
+  data: AccountRewardTimelineData,
 ) => {
   const normalized = normalizeUsername(username)
   if (!normalized) return
@@ -97,8 +108,8 @@ const resolveRewardAsset = (post: SearchResult) => {
 }
 
 export const aggregateMonthlyPostRewards = (
-  posts: SearchResult[],
-  now = new Date()
+  posts: Array<SearchResult>,
+  now = new Date(),
 ): AccountRewardTimelineData => {
   const trackedStart = startOfTrackedWindow(now)
   const firstReward = posts
@@ -124,11 +135,18 @@ export const aggregateMonthlyPostRewards = (
     point.postCount += 1
   })
 
-  const trackedPostCount = timeline.reduce((total, point) => total + point.postCount, 0)
-  const totalRewardAmount = timeline.reduce((total, point) => total + point.totalAmount, 0)
+  const trackedPostCount = timeline.reduce(
+    (total, point) => total + point.postCount,
+    0,
+  )
+  const totalRewardAmount = timeline.reduce(
+    (total, point) => total + point.totalAmount,
+    0,
+  )
   const summary: RewardSummary = {
     totalRewardAmount,
-    averageRewardAmount: trackedPostCount > 0 ? totalRewardAmount / trackedPostCount : 0,
+    averageRewardAmount:
+      trackedPostCount > 0 ? totalRewardAmount / trackedPostCount : 0,
     trackedPostCount,
     symbol,
   }
@@ -141,7 +159,7 @@ export const aggregateMonthlyPostRewards = (
 }
 
 export const fetchAccountRewardTimeline = async (
-  username: string
+  username: string,
 ): Promise<AccountRewardTimelineData> => {
   const normalized = normalizeUsername(username)
   const trackedStart = startOfTrackedWindow()
@@ -155,7 +173,7 @@ export const fetchAccountRewardTimeline = async (
       normalized,
       startAuthor,
       startPermlink,
-      PAGE_SIZE
+      PAGE_SIZE,
     )
 
     if (!entries || entries.length === 0) break

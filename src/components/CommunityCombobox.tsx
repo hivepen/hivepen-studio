@@ -1,22 +1,22 @@
 import {
   Box,
   Combobox,
+  HStack,
+  InputGroup,
   Portal,
   Spinner,
   Text,
   useListCollection,
-  HStack,
-  InputGroup,
 } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
 
+import type { HiveCommunity } from '@/lib/hive/client'
 import {
   getCommunityIdentifier,
   getCommunityLabel,
   listCommunities,
 } from '@/lib/hive/client'
 import { fetchCommunity } from '@/lib/hive/community'
-import type { HiveCommunity } from '@/lib/hive/client'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { Avatar } from '@/components/ui/avatar'
 import { m } from '@/paraglide/messages'

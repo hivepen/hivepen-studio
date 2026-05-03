@@ -4,17 +4,18 @@ import { z } from 'zod'
 import {
   Box,
   Button,
+  HStack,
   Heading,
   Input,
-  HStack,
+  Select,
   SimpleGrid,
   Stack,
   Text,
-  Select,
   createListCollection,
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo, useState, useEffect, useCallback, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { SearchResult } from '@/lib/hive/search'
 import { searchAccounts } from '@/lib/hive/account'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
@@ -28,7 +29,6 @@ import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import { Field } from '@/components/ui/field'
 import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
-import type { SearchResult } from '@/lib/hive/search'
 import { discoveryCache } from '@/features/discovery-cache'
 import useDiscoverySnapshot from '@/features/discovery-cache/useDiscoverySnapshot'
 
@@ -109,13 +109,13 @@ function Search() {
   const [filters, setFilters] = useState<SearchFilters>(() => {
     const fromQuery: SearchFilters = {
       sort:
-        (searchParams.sort as SearchFilters['sort'] | undefined) ??
+        (searchParams.sort) ??
         defaultFilters.sort,
-      tag: (searchParams.tag as string | undefined) ?? '',
-      community: (searchParams.community as string | undefined) ?? '',
-      author: (searchParams.author as string | undefined) ?? '',
-      dateFrom: (searchParams.dateFrom as string | undefined) ?? '',
-      dateTo: (searchParams.dateTo as string | undefined) ?? '',
+      tag: (searchParams.tag) ?? '',
+      community: (searchParams.community) ?? '',
+      author: (searchParams.author) ?? '',
+      dateFrom: (searchParams.dateFrom) ?? '',
+      dateTo: (searchParams.dateTo) ?? '',
     }
     if (hasQueryParams) {
       return { ...defaultFilters, ...fromQuery }
@@ -136,7 +136,7 @@ function Search() {
         searchParams.author &&
         username !== searchParams.author
       ) {
-        setUsername(searchParams.author as string)
+        setUsername(searchParams.author)
       }
       return
     }
@@ -195,12 +195,12 @@ function Search() {
     if (!hasQueryParams) return
     const nextFilters: SearchFilters = {
       sort:
-        (searchParams.sort as SearchFilters['sort'] | undefined) ?? 'trending',
-      tag: (searchParams.tag as string | undefined) ?? '',
-      community: (searchParams.community as string | undefined) ?? '',
-      author: (searchParams.author as string | undefined) ?? '',
-      dateFrom: (searchParams.dateFrom as string | undefined) ?? '',
-      dateTo: (searchParams.dateTo as string | undefined) ?? '',
+        (searchParams.sort) ?? 'trending',
+      tag: (searchParams.tag) ?? '',
+      community: (searchParams.community) ?? '',
+      author: (searchParams.author) ?? '',
+      dateFrom: (searchParams.dateFrom) ?? '',
+      dateTo: (searchParams.dateTo) ?? '',
     }
     setFilters((prev) =>
       JSON.stringify(prev) === JSON.stringify(nextFilters) ? prev : nextFilters,
@@ -358,7 +358,7 @@ function Search() {
   )
 
   const cardResults = useMemo(() => {
-    const pages = (postsQuery.data?.pages ?? []) as SearchResult[][]
+    const pages = (postsQuery.data?.pages ?? []) as Array<Array<SearchResult>>
     const flattened = pages.flat()
     const unique = new Map<string, SearchResult>()
     flattened.forEach((post) => {

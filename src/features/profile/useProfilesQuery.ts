@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getProfilesQueryOptions, type Profile } from '@ecency/sdk'
+import {  getProfilesQueryOptions } from '@ecency/sdk'
+import type {Profile} from '@ecency/sdk';
+import type {AccountProfile} from '@/features/profile/profileTypes';
 import { mapProfile } from '@/features/profile/profileMapping'
-import { type AccountProfile } from '@/features/profile/profileTypes'
 
-export default function useProfilesQuery(accounts: string[]) {
+export default function useProfilesQuery(accounts: Array<string>) {
   const normalized = useMemo(() => {
     const unique = new Set<string>()
     accounts
@@ -20,7 +21,7 @@ export default function useProfilesQuery(accounts: string[]) {
   return useQuery({
     ...(baseOptions as object),
     enabled,
-    select: (data: Profile[]): AccountProfile[] => data.map(mapProfile),
+    select: (data: Array<Profile>): Array<AccountProfile> => data.map(mapProfile),
     staleTime: 10 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
   })

@@ -1,18 +1,18 @@
 # get-started > Migration to v3
-  
-  URL: docs/get-started/migration
-  Source: https://raw.githubusercontent.com/chakra-ui/chakra-ui/refs/heads/main/apps/www/content/docs/get-started/migration.mdx
-  
-  How to migrate to Chakra UI v3.x from v2.x
-          
-  ***
-  
-  title: Migration to v3
-  description: How to migrate to Chakra UI v3.x from v2.x
-  links: 
 
-  ------------------------------------------------------------------------------------------------
-  
+URL: docs/get-started/migration
+Source: https://raw.githubusercontent.com/chakra-ui/chakra-ui/refs/heads/main/apps/www/content/docs/get-started/migration.mdx
+
+How to migrate to Chakra UI v3.x from v2.x
+
+---
+
+title: Migration to v3
+description: How to migrate to Chakra UI v3.x from v2.x
+links:
+
+---
+
   <FeaturedVideo />
 
 :::warning
@@ -72,7 +72,7 @@ Move your custom theme to a dedicated `theme.js` or `theme.ts` file. Use
 **Before**
 
 ```ts
-import { extendTheme } from "@chakra-ui/react"
+import { extendTheme } from '@chakra-ui/react'
 
 export const theme = extendTheme({
   fonts: {
@@ -85,7 +85,7 @@ export const theme = extendTheme({
 **After**
 
 ```ts {3}
-import { createSystem, defaultConfig } from "@chakra-ui/react"
+import { createSystem, defaultConfig } from '@chakra-ui/react'
 
 export const system = createSystem(defaultConfig, {
   theme: {
@@ -111,7 +111,7 @@ theming approach.
 **Before**
 
 ```tsx
-import { ChakraProvider } from "@chakra-ui/react"
+import { ChakraProvider } from '@chakra-ui/react'
 
 export const App = ({ Component }) => (
   <ChakraProvider theme={theme}>
@@ -123,8 +123,8 @@ export const App = ({ Component }) => (
 **After**
 
 ```tsx {1,3}
-import { Provider } from "@/components/ui/provider"
-import { defaultSystem } from "@chakra-ui/react"
+import { Provider } from '@/components/ui/provider'
+import { defaultSystem } from '@chakra-ui/react'
 
 export const App = ({ Component }) => (
   <Provider>
@@ -134,8 +134,8 @@ export const App = ({ Component }) => (
 ```
 
 ```tsx {1,3}
-import { ColorModeProvider } from "@/components/ui/color-mode"
-import { ChakraProvider, defaultSystem } from "@chakra-ui/react"
+import { ColorModeProvider } from '@/components/ui/color-mode'
+import { ChakraProvider, defaultSystem } from '@chakra-ui/react'
 
 export function Provider(props) {
   return (
@@ -162,7 +162,7 @@ The Provider component compose the `ChakraProvider` from Chakra and
   concise imports
 
   ```tsx
-  import { Accordion } from "@chakra-ui/react"
+  import { Accordion } from '@chakra-ui/react'
 
   const Demo = () => {
     return (
@@ -245,7 +245,7 @@ We used JS to resolve the colors and then apply the transparency
 
 ```jsx
 defineStyle({
-  bg: transparentize("blue.200", 0.16)(theme),
+  bg: transparentize('blue.200', 0.16)(theme),
   // -> rgba(0, 0, 255, 0.16)
 })
 ```
@@ -256,7 +256,7 @@ We now use CSS color-mix
 
 ```jsx
 defineStyle({
-  bg: "blue.200/16",
+  bg: 'blue.200/16',
   // -> color-mix(in srgb, var(--chakra-colors-200), transparent 16%)
 })
 ```
@@ -269,9 +269,9 @@ Due to the simplification of the `as` prop, we no longer provide a custom
 Before:
 
 ```tsx {3}
-import { Button as ChakraButton, forwardRef } from "@chakra-ui/react"
+import { Button as ChakraButton, forwardRef } from '@chakra-ui/react'
 
-const Button = forwardRef<ButtonProps, "button">(function Button(props, ref) {
+const Button = forwardRef<ButtonProps, 'button'>(function Button(props, ref) {
   return <ChakraButton ref={ref} {...props} />
 })
 ```
@@ -279,8 +279,8 @@ const Button = forwardRef<ButtonProps, "button">(function Button(props, ref) {
 After:
 
 ```tsx {2, 4}
-import { Button as ChakraButton } from "@chakra-ui/react"
-import { forwardRef } from "react"
+import { Button as ChakraButton } from '@chakra-ui/react'
+import { forwardRef } from 'react'
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   function Button(props, ref) {
@@ -329,17 +329,17 @@ We're removed the storybook addon in favor of using `@storybook/addon-themes`
 and `withThemeByClassName` helper.
 
 ```tsx
-import { ChakraProvider, defaultSystem } from "@chakra-ui/react"
-import { withThemeByClassName } from "@storybook/addon-themes"
-import type { Preview, ReactRenderer } from "@storybook/react"
+import { ChakraProvider, defaultSystem } from '@chakra-ui/react'
+import { withThemeByClassName } from '@storybook/addon-themes'
+import type { Preview, ReactRenderer } from '@storybook/react'
 
 const preview: Preview = {
   decorators: [
     withThemeByClassName<ReactRenderer>({
-      defaultTheme: "light",
+      defaultTheme: 'light',
       themes: {
-        light: "",
-        dark: "dark",
+        light: '',
+        dark: 'dark',
       },
     }),
     (Story) => (
@@ -385,7 +385,7 @@ After:
 
 ```tsx
 <ProgressCircle.Root value={75}>
-  <ProgressCircle.Circle css={{ "--thickness": "4px" }}>
+  <ProgressCircle.Circle css={{ '--thickness': '4px' }}>
     <ProgressCircle.Track />
     <ProgressCircle.Range stroke="blue.500" />
   </ProgressCircle.Circle>
@@ -480,32 +480,32 @@ If you are using custom colors, you must define two things to make
   `emphasized`, and `focusRing` color keys
 
 ```tsx title="theme.ts" /brand: {/ /tokens: {/ /semanticTokens: {/
-import { createSystem, defaultConfig } from "@chakra-ui/react"
+import { createSystem, defaultConfig } from '@chakra-ui/react'
 
 export const system = createSystem(defaultConfig, {
   theme: {
     tokens: {
       colors: {
         brand: {
-          50: { value: "#e6f2ff" },
-          100: { value: "#e6f2ff" },
-          200: { value: "#bfdeff" },
-          300: { value: "#99caff" },
+          50: { value: '#e6f2ff' },
+          100: { value: '#e6f2ff' },
+          200: { value: '#bfdeff' },
+          300: { value: '#99caff' },
           // ...
-          950: { value: "#001a33" },
+          950: { value: '#001a33' },
         },
       },
     },
     semanticTokens: {
       colors: {
         brand: {
-          solid: { value: "{colors.brand.500}" },
-          contrast: { value: "{colors.brand.100}" },
-          fg: { value: "{colors.brand.700}" },
-          muted: { value: "{colors.brand.100}" },
-          subtle: { value: "{colors.brand.200}" },
-          emphasized: { value: "{colors.brand.300}" },
-          focusRing: { value: "{colors.brand.500}" },
+          solid: { value: '{colors.brand.500}' },
+          contrast: { value: '{colors.brand.100}' },
+          fg: { value: '{colors.brand.700}' },
+          muted: { value: '{colors.brand.100}' },
+          subtle: { value: '{colors.brand.200}' },
+          emphasized: { value: '{colors.brand.300}' },
+          focusRing: { value: '{colors.brand.500}' },
         },
       },
     },
@@ -547,16 +547,16 @@ and allows for better type inference.
   const colors = {
     // ...
     gray: {
-      50: "#F7FAFC",
-      100: "#EDF2F7",
-      200: "#E2E8F0",
-      300: "#CBD5E0",
-      400: "#A0AEC0",
-      500: "#718096",
-      600: "#4A5568",
-      700: "#2D3748",
-      800: "#1A202C",
-      900: "#171923",
+      50: '#F7FAFC',
+      100: '#EDF2F7',
+      200: '#E2E8F0',
+      300: '#CBD5E0',
+      400: '#A0AEC0',
+      500: '#718096',
+      600: '#4A5568',
+      700: '#2D3748',
+      800: '#1A202C',
+      900: '#171923',
     },
   }
   ```
@@ -567,17 +567,17 @@ and allows for better type inference.
   const colors = {
     // ...
     gray: {
-      50: { value: "#fafafa" },
-      100: { value: "#f4f4f5" },
-      200: { value: "#e4e4e7" },
-      300: { value: "#d4d4d8" },
-      400: { value: "#a1a1aa" },
-      500: { value: "#71717a" },
-      600: { value: "#52525b" },
-      700: { value: "#3f3f46" },
-      800: { value: "#27272a" },
-      900: { value: "#18181b" },
-      950: { value: "#09090b" },
+      50: { value: '#fafafa' },
+      100: { value: '#f4f4f5' },
+      200: { value: '#e4e4e7' },
+      300: { value: '#d4d4d8' },
+      400: { value: '#a1a1aa' },
+      500: { value: '#71717a' },
+      600: { value: '#52525b' },
+      700: { value: '#3f3f46' },
+      800: { value: '#27272a' },
+      900: { value: '#18181b' },
+      950: { value: '#09090b' },
     },
   }
   ```
@@ -629,7 +629,7 @@ auto-completion for nested styles.
 ```tsx
 <Box
   sx={{
-    svg: { color: "red.500" },
+    svg: { color: 'red.500' },
   }}
 />
 ```
@@ -642,7 +642,7 @@ use of the ampersand `&` prefix
 ```tsx
 <Box
   css={{
-    "& svg": { color: "red.500" },
+    '& svg': { color: 'red.500' },
   }}
 />
 ```
@@ -750,7 +750,7 @@ Now uses a declarative composition pattern with separate `Avatar.Image` and
 Before:
 
 ```tsx
-import { Avatar, AvatarBadge, AvatarGroup } from "@chakra-ui/react"
+import { Avatar, AvatarBadge, AvatarGroup } from '@chakra-ui/react'
 
 const Demo = () => (
   <>
@@ -768,7 +768,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Avatar, AvatarGroup, Circle, Float } from "@chakra-ui/react"
+import { Avatar, AvatarGroup, Circle, Float } from '@chakra-ui/react'
 
 const Demo = () => (
   <>
@@ -823,7 +823,7 @@ required `Breadcrumb.List` wrapper.
 Before:
 
 ```tsx
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@chakra-ui/react"
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from '@chakra-ui/react'
 
 const Demo = () => (
   <Breadcrumb separator="-" spacing="8px">
@@ -840,7 +840,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Breadcrumb } from "@chakra-ui/react"
+import { Breadcrumb } from '@chakra-ui/react'
 
 const Demo = () => (
   <Breadcrumb.Root>
@@ -971,7 +971,7 @@ consolidated into `Image`.
 Before:
 
 ```tsx
-import { Img } from "@chakra-ui/react"
+import { Img } from '@chakra-ui/react'
 
 const Demo = () => (
   <Img
@@ -986,7 +986,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Image } from "@chakra-ui/react"
+import { Image } from '@chakra-ui/react'
 
 const Demo = () => (
   <Image src="photo.jpg" objectFit="cover" objectPosition="center" />
@@ -1017,7 +1017,7 @@ wrapped in `PinInput.Control`.
 Before:
 
 ```tsx
-import { PinInput, PinInputField } from "@chakra-ui/react"
+import { PinInput, PinInputField } from '@chakra-ui/react'
 
 const Demo = () => (
   <PinInput defaultValue="23" onChange={setValue} onComplete={handleComplete}>
@@ -1031,11 +1031,11 @@ const Demo = () => (
 After:
 
 ```tsx
-import { PinInput } from "@chakra-ui/react"
+import { PinInput } from '@chakra-ui/react'
 
 const Demo = () => (
   <PinInput.Root
-    defaultValue={["2", "3"]}
+    defaultValue={['2', '3']}
     onValueChange={(e) => setValue(e.value)}
     onValueComplete={(e) => handleComplete(e.value)}
   >
@@ -1095,7 +1095,7 @@ import {
   PopoverContent,
   PopoverHeader,
   PopoverTrigger,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
 const Demo = () => (
   <Popover placement="bottom" closeOnBlur={false} isLazy>
@@ -1115,11 +1115,11 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Popover } from "@chakra-ui/react"
+import { Popover } from '@chakra-ui/react'
 
 const Demo = () => (
   <Popover.Root
-    positioning={{ placement: "bottom" }}
+    positioning={{ placement: 'bottom' }}
     closeOnInteractOutside={false}
     lazyMount
   >
@@ -1158,7 +1158,7 @@ Before:
 After:
 
 ```tsx
-import { HoverCard } from "@chakra-ui/react"
+import { HoverCard } from '@chakra-ui/react'
 
 const Demo = () => (
   <HoverCard.Root openDelay={500}>
@@ -1207,7 +1207,7 @@ import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
 const Demo = () => (
   <NumberInput
@@ -1227,7 +1227,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { NumberInput } from "@chakra-ui/react"
+import { NumberInput } from '@chakra-ui/react'
 
 const Demo = () => (
   <NumberInput.Root disabled onValueChange={(e) => {}} allowOverflow>
@@ -1253,7 +1253,7 @@ The component now uses a `div` element for better layout control.
 Before:
 
 ```tsx
-import { Divider } from "@chakra-ui/react"
+import { Divider } from '@chakra-ui/react'
 
 const Demo = () => (
   <>
@@ -1266,7 +1266,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Separator } from "@chakra-ui/react"
+import { Separator } from '@chakra-ui/react'
 
 const Demo = () => (
   <>
@@ -1302,7 +1302,7 @@ import {
   CardHeader,
   Heading,
   Text,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
 const Demo = () => (
   <Card maxW="sm">
@@ -1327,7 +1327,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Button, Card, Heading, Text } from "@chakra-ui/react"
+import { Button, Card, Heading, Text } from '@chakra-ui/react'
 
 const Demo = () => (
   <Card.Root maxW="sm">
@@ -1412,8 +1412,8 @@ Now uses compound components with dot notation. `OrderedList` and
 Before:
 
 ```tsx
-import { ListIcon, ListItem, UnorderedList } from "@chakra-ui/react"
-import { MdCheckCircle } from "react-icons/md"
+import { ListIcon, ListItem, UnorderedList } from '@chakra-ui/react'
+import { MdCheckCircle } from 'react-icons/md'
 
 const Demo = () => (
   <UnorderedList spacing={3}>
@@ -1432,8 +1432,8 @@ const Demo = () => (
 After:
 
 ```tsx
-import { List } from "@chakra-ui/react"
-import { MdCheckCircle } from "react-icons/md"
+import { List } from '@chakra-ui/react'
+import { MdCheckCircle } from 'react-icons/md'
 
 const Demo = () => (
   <List.Root as="ul" gap={3}>
@@ -1454,7 +1454,7 @@ For ordered lists:
 Before:
 
 ```tsx
-import { ListItem, OrderedList } from "@chakra-ui/react"
+import { ListItem, OrderedList } from '@chakra-ui/react'
 
 const Demo = () => (
   <OrderedList styleType="lower-roman" stylePosition="inside">
@@ -1467,7 +1467,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { List } from "@chakra-ui/react"
+import { List } from '@chakra-ui/react'
 
 const Demo = () => (
   <List.Root as="ol" listStyleType="lower-roman" listStylePosition="inside">
@@ -1593,7 +1593,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
 const Demo = () => (
   <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnEsc={false}>
@@ -1613,7 +1613,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Dialog, Portal } from "@chakra-ui/react"
+import { Dialog, Portal } from '@chakra-ui/react'
 
 const Demo = () => (
   <Dialog.Root
@@ -1652,7 +1652,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
 const Demo = () => (
   <Drawer isOpen={isOpen} placement="right" onClose={onClose} isFullHeight>
@@ -1672,7 +1672,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Drawer, Portal } from "@chakra-ui/react"
+import { Drawer, Portal } from '@chakra-ui/react'
 
 const Demo = () => (
   <Drawer.Root
@@ -1726,7 +1726,7 @@ trigger components instead of the `useEditableControls` prop-getter pattern.
 Before:
 
 ```tsx
-import { Editable, EditableInput, EditablePreview } from "@chakra-ui/react"
+import { Editable, EditableInput, EditablePreview } from '@chakra-ui/react'
 
 const Demo = () => (
   <Editable
@@ -1746,7 +1746,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Editable } from "@chakra-ui/react"
+import { Editable } from '@chakra-ui/react'
 
 const Demo = () => (
   <Editable.Root
@@ -1840,7 +1840,7 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
 const Demo = () => (
   <FormControl isInvalid={isError}>
@@ -1854,7 +1854,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Field } from "@chakra-ui/react"
+import { Field } from '@chakra-ui/react'
 
 const Demo = () => (
   <Field.Root invalid={isError}>
@@ -1873,7 +1873,7 @@ const Demo = () => (
 Before:
 
 ```tsx
-import { FormControl, FormHelperText, FormLabel } from "@chakra-ui/react"
+import { FormControl, FormHelperText, FormLabel } from '@chakra-ui/react'
 
 const Demo = () => (
   <FormControl as="fieldset">
@@ -1886,7 +1886,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Fieldset } from "@chakra-ui/react"
+import { Fieldset } from '@chakra-ui/react'
 
 const Demo = () => (
   <Fieldset.Root>
@@ -1942,7 +1942,7 @@ that uses CSS-based animations instead of JavaScript-based transitions.
 Before:
 
 ```tsx
-import { Fade, Slide } from "@chakra-ui/react"
+import { Fade, Slide } from '@chakra-ui/react'
 
 const Demo = () => (
   <>
@@ -1960,13 +1960,13 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Presence } from "@chakra-ui/react"
+import { Presence } from '@chakra-ui/react'
 
 const Demo = () => (
   <>
     <Presence
       present={isOpen}
-      animationName={{ _open: "fade-in", _closed: "fade-out" }}
+      animationName={{ _open: 'fade-in', _closed: 'fade-out' }}
       animationDuration="moderate"
     >
       <Box>Fading content</Box>
@@ -1978,8 +1978,8 @@ const Demo = () => (
       bottom="0"
       insetX="0"
       animationName={{
-        _open: "slide-from-bottom-full",
-        _closed: "slide-to-bottom-full",
+        _open: 'slide-from-bottom-full',
+        _closed: 'slide-to-bottom-full',
       }}
       animationDuration="moderate"
     >
@@ -2028,7 +2028,7 @@ import {
   RangeSliderFilledTrack,
   RangeSliderThumb,
   RangeSliderTrack,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
 const Demo = () => (
   <RangeSlider defaultValue={[10, 30]} onChange={(val) => console.log(val)}>
@@ -2044,7 +2044,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Slider } from "@chakra-ui/react"
+import { Slider } from '@chakra-ui/react'
 
 const Demo = () => (
   <Slider.Root
@@ -2199,7 +2199,7 @@ import {
   AlertDescription,
   AlertIcon,
   AlertTitle,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
 const Demo = () => (
   <Alert status="error">
@@ -2213,7 +2213,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Alert } from "@chakra-ui/react"
+import { Alert } from '@chakra-ui/react'
 
 const Demo = () => (
   <Alert.Root status="error">
@@ -2278,8 +2278,8 @@ After:
 ```tsx
 <Skeleton
   css={{
-    "--start-color": "colors.pink.500",
-    "--end-color": "colors.orange.500",
+    '--start-color': 'colors.pink.500',
+    '--end-color': 'colors.orange.500',
   }}
 />
 ```
@@ -2340,7 +2340,7 @@ import {
   StepStatus,
   StepTitle,
   Stepper,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
 const Demo = () => (
   <Stepper index={1}>
@@ -2360,7 +2360,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Steps } from "@chakra-ui/react"
+import { Steps } from '@chakra-ui/react'
 
 const Demo = () => (
   <Steps.Root step={1}>
@@ -2402,7 +2402,7 @@ import {
   StatHelpText,
   StatLabel,
   StatNumber,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
 const Demo = () => (
   <Stat>
@@ -2419,7 +2419,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Stat } from "@chakra-ui/react"
+import { Stat } from '@chakra-ui/react'
 
 const Demo = () => (
   <Stat.Root>
@@ -2481,11 +2481,11 @@ Before:
   {({ isOpen }) => (
     <>
       <MenuButton isActive={isOpen} as={Button} rightIcon={<ChevronDownIcon />}>
-        {isOpen ? "Close" : "Open"}
+        {isOpen ? 'Close' : 'Open'}
       </MenuButton>
       <MenuList>
         <MenuItem>Download</MenuItem>
-        <MenuItem onClick={() => alert("Kagebunshin")}>Create a Copy</MenuItem>
+        <MenuItem onClick={() => alert('Kagebunshin')}>Create a Copy</MenuItem>
       </MenuList>
     </>
   )}
@@ -2500,7 +2500,7 @@ After:
     {(menu) => (
       <Menu.Trigger asChild>
         <Button>
-          {menu.open ? "Close" : "Open"}
+          {menu.open ? 'Close' : 'Open'}
           <ChevronDownIcon />
         </Button>
       </Menu.Trigger>
@@ -2510,7 +2510,7 @@ After:
     <Menu.Positioner>
       <Menu.Content>
         <Menu.Item value="download">Download</Menu.Item>
-        <Menu.Item value="copy" onSelect={() => alert("Kagebunshin")}>
+        <Menu.Item value="copy" onSelect={() => alert('Kagebunshin')}>
           Create a Copy
         </Menu.Item>
       </Menu.Content>
@@ -2559,7 +2559,7 @@ After:
           <Menu.RadioItem value="asc">Ascending</Menu.RadioItem>
           <Menu.RadioItem value="desc">Descending</Menu.RadioItem>
         </Menu.RadioItemGroup>
-        <Menu.CheckboxItemGroup defaultValue={["email"]}>
+        <Menu.CheckboxItemGroup defaultValue={['email']}>
           <Menu.CheckboxItem value="email">Email</Menu.CheckboxItem>
           <Menu.CheckboxItem value="phone">Phone</Menu.CheckboxItem>
           <Menu.CheckboxItem value="country">Country</Menu.CheckboxItem>
@@ -2592,8 +2592,7 @@ Now a **snippet** component imported from `@/components/ui/tooltip` instead of
 Before:
 
 ```tsx
-import { Tooltip } from "@chakra-ui/react"
-
+import { Tooltip } from '@chakra-ui/react'
 ;<Tooltip label="Info" hasArrow placement="top" closeOnEsc={false}>
   <button>Hover</button>
 </Tooltip>
@@ -2602,12 +2601,11 @@ import { Tooltip } from "@chakra-ui/react"
 After:
 
 ```tsx
-import { Tooltip } from "@/components/ui/tooltip"
-
+import { Tooltip } from '@/components/ui/tooltip'
 ;<Tooltip
   content="Info"
   showArrow
-  positioning={{ placement: "top" }}
+  positioning={{ placement: 'top' }}
   closeOnEscape={false}
 >
   <button>Hover</button>
@@ -2645,7 +2643,7 @@ import {
   AccordionItem,
   AccordionPanel,
   Box,
-} from "@chakra-ui/react"
+} from '@chakra-ui/react'
 
 const Demo = () => (
   <Accordion allowToggle>
@@ -2667,7 +2665,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Accordion, Box } from "@chakra-ui/react"
+import { Accordion, Box } from '@chakra-ui/react'
 
 const Demo = () => (
   <Accordion.Root collapsible>
@@ -2859,7 +2857,7 @@ explicit parts for full control over structure and styling.
 Before:
 
 ```tsx
-import { Checkbox } from "@chakra-ui/react"
+import { Checkbox } from '@chakra-ui/react'
 
 const Demo = () => (
   <Checkbox
@@ -2876,11 +2874,11 @@ const Demo = () => (
 After:
 
 ```tsx
-import { Checkbox } from "@chakra-ui/react"
+import { Checkbox } from '@chakra-ui/react'
 
 const Demo = () => (
   <Checkbox.Root
-    checked={indeterminate ? "indeterminate" : checked}
+    checked={indeterminate ? 'indeterminate' : checked}
     onCheckedChange={(e) => setChecked(!!e.checked)}
     colorPalette="blue"
   >
@@ -2918,7 +2916,7 @@ explicit sub-components: `ItemHiddenInput`, `ItemIndicator`, `ItemText`.
 Before:
 
 ```tsx
-import { Radio, RadioGroup } from "@chakra-ui/react"
+import { Radio, RadioGroup } from '@chakra-ui/react'
 
 const Demo = () => (
   <RadioGroup defaultValue="2" onChange={(val) => setValue(val)}>
@@ -2931,7 +2929,7 @@ const Demo = () => (
 After:
 
 ```tsx
-import { RadioGroup } from "@chakra-ui/react"
+import { RadioGroup } from '@chakra-ui/react'
 
 const Demo = () => (
   <RadioGroup.Root defaultValue="2" onValueChange={(e) => setValue(e.value)}>

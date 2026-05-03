@@ -39,13 +39,12 @@ function Dashboard() {
           <Box
             key={item.label}
             bg="colorPalette.subtle"
-            colorPalette="purple"   
+            colorPalette="purple"
             color="colorPalette.fg"
             border="1px solid"
             borderColor="colorPalette.border"
             borderRadius="2xl"
             p={5}
-
           >
             <Text fontSize="sm" color="colorPalette.fg">
               {item.label}

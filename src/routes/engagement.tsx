@@ -12,9 +12,7 @@ function Engagement() {
       <Heading size="lg" mb={2}>
         {m.engagement_heading()}
       </Heading>
-      <Text color="fg.muted">
-        {m.engagement_description()}
-      </Text>
+      <Text color="fg.muted">{m.engagement_description()}</Text>
     </Box>
   )
 }

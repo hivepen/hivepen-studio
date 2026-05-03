@@ -16,12 +16,10 @@ import {
 import { useState } from 'react'
 import { Alert } from './ui/alert'
 import { Avatar } from './ui/avatar'
-import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { Tooltip } from './ui/tooltip'
 import HiveKeychainIcon from './hive/HiveKeychainIcon'
+import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { m } from '@/paraglide/messages'
-
-
 
 export default function AccountConnectDialog({
   open,
@@ -39,13 +37,16 @@ export default function AccountConnectDialog({
   const [username, setUsername] = useState('')
 
   return (
-    <Dialog.Root open={open} onOpenChange={(details) => !details.open && onClose()}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(details) => !details.open && onClose()}
+    >
       <Dialog.Backdrop />
       <Dialog.Positioner>
         <Dialog.Content bg="bg.panel" borderColor="border">
           <Dialog.Header>
             <Dialog.Title>{m.account_connect_title()}</Dialog.Title>
-            <Spacer/>
+            <Spacer />
             <CloseButton onClick={onClose} disabled={isConnecting} />
           </Dialog.Header>
           <Dialog.Body>
@@ -56,18 +57,29 @@ export default function AccountConnectDialog({
               <Field.Root>
                 <Field.Label>{m.account_connect_username_label()}</Field.Label>
 
-                <InputGroup startAddon={username && <Box> <Avatar size="xs" fallback="?" src={getHiveAvatarUrl(username)} /></Box>}>
+                <InputGroup
+                  startAddon={
+                    username && (
+                      <Box>
+                        {' '}
+                        <Avatar
+                          size="xs"
+                          fallback="?"
+                          src={getHiveAvatarUrl(username)}
+                        />
+                      </Box>
+                    )
+                  }
+                >
                   <Input
                     placeholder={m.account_connect_username_placeholder()}
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
-
                   />
                 </InputGroup>
-
               </Field.Root>
               {!keychainAvailable && (
-                <Alert status="warning" colorPalette={"yellow"}>
+                <Alert status="warning" colorPalette={'yellow'}>
                   {m.account_connect_keychain_missing()}
                 </Alert>
               )}
@@ -83,7 +95,8 @@ export default function AccountConnectDialog({
                 <Tooltip
                   content={
                     <Text>
-                      {m.account_connect_tooltip()} <HiveKeychainIcon size="xs" />
+                      {m.account_connect_tooltip()}{' '}
+                      <HiveKeychainIcon size="xs" />
                     </Text>
                   }
                 >
@@ -100,24 +113,34 @@ export default function AccountConnectDialog({
                       {m.account_connect_button()}
                     </Button>
                   </Show>
-              </Tooltip>
+                </Tooltip>
               </HStack>
 
-            <Show when={!keychainAvailable}>
-              <Alert title={<Text>
-                {m.account_connect_missing_title()}
-              </Text>} status="warning" colorPalette={"yellow"}>
-                {m.account_connect_missing_prefix()}{' '}
-                <Link textDecoration="underline" target='_blank' href="https://hive-keychain.com/#download">
-                  {m.account_connect_missing_install_link()}
-                </Link>{' '}
-                {m.account_connect_missing_middle()}{' '}
-                <Link textDecoration="underline" target='_blank' href='https://hive-keychain.com/#download'>
-                  {m.account_connect_missing_mobile_link()}
-                </Link>{' '}
-                {m.account_connect_missing_suffix()}
-              </Alert>
-            </Show>
+              <Show when={!keychainAvailable}>
+                <Alert
+                  title={<Text>{m.account_connect_missing_title()}</Text>}
+                  status="warning"
+                  colorPalette={'yellow'}
+                >
+                  {m.account_connect_missing_prefix()}{' '}
+                  <Link
+                    textDecoration="underline"
+                    target="_blank"
+                    href="https://hive-keychain.com/#download"
+                  >
+                    {m.account_connect_missing_install_link()}
+                  </Link>{' '}
+                  {m.account_connect_missing_middle()}{' '}
+                  <Link
+                    textDecoration="underline"
+                    target="_blank"
+                    href="https://hive-keychain.com/#download"
+                  >
+                    {m.account_connect_missing_mobile_link()}
+                  </Link>{' '}
+                  {m.account_connect_missing_suffix()}
+                </Alert>
+              </Show>
             </Stack>
           </Dialog.Footer>
           <Dialog.CloseTrigger />

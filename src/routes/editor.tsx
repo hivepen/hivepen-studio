@@ -1,8 +1,19 @@
 import { ClientOnly, createFileRoute } from '@tanstack/react-router'
-import { Box, Button, HStack, Icon, Input, Show, Stack, Tabs, Text } from '@chakra-ui/react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useEditor, type Editor as TiptapEditor } from '@tiptap/react'
 import {
+  Box,
+  Button,
+  HStack,
+  Icon,
+  Input,
+  Show,
+  Stack,
+  Tabs,
+  Text,
+} from '@chakra-ui/react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {  useEditor } from '@tiptap/react'
+import {
+  Code,
   Heading1,
   Heading2,
   Heading3,
@@ -15,8 +26,8 @@ import {
   Settings2,
   SquarePen,
   Text as TextIcon,
-  Code,
 } from 'lucide-react'
+import type {Editor as TiptapEditor} from '@tiptap/react';
 
 import CustomHeader from '@/components/CustomHeader'
 import EditorBubbleMenu from '@/components/editor/EditorBubbleMenu'
@@ -56,12 +67,14 @@ function Editor() {
   const [isPublishing, setIsPublishing] = useState(false)
   const [keychainDetected, setKeychainDetected] = useState(false)
   const [collaborationReady] = useState(true)
-  const [hiveSignerAuth, setHiveSignerAuth] = useState(() => getHiveSignerAuth())
+  const [hiveSignerAuth, setHiveSignerAuth] = useState(() =>
+    getHiveSignerAuth(),
+  )
   const [hiveSignerLoginUrl] = useState(() => getHiveSignerLoginUrl())
   const hiveSignerAuthRef = useRef(hiveSignerAuth)
   const [showBlockHandles, setShowBlockHandles] = useLocalStorageState(
     'hivepen.editor.showBlockHandles',
-    true
+    true,
   )
 
   const [postPayload, setPostPayload] = useState({
@@ -73,14 +86,17 @@ function Editor() {
     thumbnail: '',
   })
 
-  const [beneficiaries, setBeneficiaries] = useState<BeneficiaryEntry[]>([
+  const [beneficiaries, setBeneficiaries] = useState<Array<BeneficiaryEntry>>([
     { account: 'hivepen', weight: '400' },
   ])
 
-  const tagPreview = useMemo(() => parseTags(postPayload.tags), [postPayload.tags])
+  const tagPreview = useMemo(
+    () => parseTags(postPayload.tags),
+    [postPayload.tags],
+  )
   const mentionItems = useMemo(
     () => ['hivepen', 'hiveio', 'ecency', 'peakd', 'inleo', 'vibes'],
-    []
+    [],
   )
 
   const mentionSuggestion = useMemo(
@@ -93,7 +109,7 @@ function Editor() {
         let popup: HTMLDivElement | null = null
 
         const renderItems = (props: {
-          items: string[]
+          items: Array<string>
           command: (args: { id: string }) => void
           clientRect?: () => DOMRect | null
         }) => {
@@ -139,46 +155,57 @@ function Editor() {
         }
       },
     }),
-    [mentionItems]
+    [mentionItems],
   )
 
-  const handleInsertImage = useCallback(async (targetEditor: TiptapEditor | null) => {
-    if (!targetEditor) return
-    const fileInput = document.createElement('input')
-    fileInput.type = 'file'
-    fileInput.accept = 'image/*'
-    fileInput.onchange = async () => {
-      const file = fileInput.files?.[0]
-      if (!file) return
+  const handleInsertImage = useCallback(
+    async (targetEditor: TiptapEditor | null) => {
+      if (!targetEditor) return
+      const fileInput = document.createElement('input')
+      fileInput.type = 'file'
+      fileInput.accept = 'image/*'
+      fileInput.onchange = async () => {
+        const file = fileInput.files?.[0]
+        if (!file) return
 
-      const auth = hiveSignerAuthRef.current
-      if (!auth?.accessToken) {
-        setStatus({
-          type: 'error',
-          message: m.editor_status_connect_hivesigner(),
-        })
-        return
-      }
+        const auth = hiveSignerAuthRef.current
+        if (!auth?.accessToken) {
+          setStatus({
+            type: 'error',
+            message: m.editor_status_connect_hivesigner(),
+          })
+          return
+        }
 
-      try {
-        setStatus({ type: 'info', message: m.editor_status_uploading_image() })
-        const url = await uploadImageToHive({
-          file,
-          accessToken: auth.accessToken,
-        })
-        targetEditor.chain().focus().setImage({ src: url }).run()
-        setStatus({ type: 'success', message: m.editor_status_image_uploaded() })
-      } catch (error) {
-        console.error('[editor] Image upload failed', error)
-        setStatus({
-          type: 'error',
-          message:
-            error instanceof Error ? error.message : m.editor_status_image_upload_failed(),
-        })
+        try {
+          setStatus({
+            type: 'info',
+            message: m.editor_status_uploading_image(),
+          })
+          const url = await uploadImageToHive({
+            file,
+            accessToken: auth.accessToken,
+          })
+          targetEditor.chain().focus().setImage({ src: url }).run()
+          setStatus({
+            type: 'success',
+            message: m.editor_status_image_uploaded(),
+          })
+        } catch (error) {
+          console.error('[editor] Image upload failed', error)
+          setStatus({
+            type: 'error',
+            message:
+              error instanceof Error
+                ? error.message
+                : m.editor_status_image_upload_failed(),
+          })
+        }
       }
-    }
-    fileInput.click()
-  }, [])
+      fileInput.click()
+    },
+    [],
+  )
 
   const slashCommandItems = useMemo(
     () => [
@@ -197,7 +224,12 @@ function Editor() {
         description: m.editor_slash_heading1_description(),
         icon: <Heading1 size={18} />,
         command: ({ editor, range }) =>
-          editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run(),
+          editor
+            .chain()
+            .focus()
+            .deleteRange(range)
+            .setHeading({ level: 1 })
+            .run(),
       },
       {
         title: m.editor_slash_heading2_title(),
@@ -205,7 +237,12 @@ function Editor() {
         description: m.editor_slash_heading2_description(),
         icon: <Heading2 size={18} />,
         command: ({ editor, range }) =>
-          editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run(),
+          editor
+            .chain()
+            .focus()
+            .deleteRange(range)
+            .setHeading({ level: 2 })
+            .run(),
       },
       {
         title: m.editor_slash_heading3_title(),
@@ -213,7 +250,12 @@ function Editor() {
         description: m.editor_slash_heading3_description(),
         icon: <Heading3 size={18} />,
         command: ({ editor, range }) =>
-          editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run(),
+          editor
+            .chain()
+            .focus()
+            .deleteRange(range)
+            .setHeading({ level: 3 })
+            .run(),
       },
       {
         title: m.editor_slash_bullet_list_title(),
@@ -266,7 +308,7 @@ function Editor() {
         },
       },
     ],
-    [handleInsertImage]
+    [handleInsertImage],
   )
 
   const editor = useEditor({
@@ -300,7 +342,10 @@ function Editor() {
     }
 
     if (!postPayload.title.trim() || !postPayload.body.trim()) {
-      setStatus({ type: 'error', message: m.editor_status_title_body_required() })
+      setStatus({
+        type: 'error',
+        message: m.editor_status_title_body_required(),
+      })
       return
     }
 
@@ -313,7 +358,7 @@ function Editor() {
         (entry) =>
           entry.account.length > 0 &&
           Number.isFinite(entry.weight) &&
-          entry.weight > 0
+          entry.weight > 0,
       )
 
     setIsPublishing(true)
@@ -359,8 +404,9 @@ function Editor() {
     setPostPayload((prev) => ({ ...prev, community: value }))
   }
 
-  const publishReady = Boolean(postPayload.title.trim() && postPayload.body.trim())
-
+  const publishReady = Boolean(
+    postPayload.title.trim() && postPayload.body.trim(),
+  )
 
   return (
     <Box h="100%" overflow="hidden">
@@ -377,7 +423,6 @@ function Editor() {
               }
               variant="flushed"
               placeholder={m.editor_untitled_placeholder()}
-
               // border="none"
               fontSize="lg"
               fontWeight="600"
@@ -394,7 +439,7 @@ function Editor() {
                 <SendIcon size={16} />
               </Button>
             </Show>
-          </HStack >
+          </HStack>
 
           {status && (
             <Box
@@ -407,13 +452,10 @@ function Editor() {
             >
               <Text>{status.message}</Text>
               {status.type === 'error' && hiveSignerLoginUrl && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  mt={3}
-                  asChild
-                >
-                  <a href={hiveSignerLoginUrl}>{m.editor_connect_hivesigner_button()}</a>
+                <Button size="sm" variant="outline" mt={3} asChild>
+                  <a href={hiveSignerLoginUrl}>
+                    {m.editor_connect_hivesigner_button()}
+                  </a>
                 </Button>
               )}
             </Box>
@@ -431,7 +473,6 @@ function Editor() {
             >
               <Tabs.Root
                 defaultValue="editor"
-
                 mt={0}
                 display="flex"
                 flexDirection="column"
@@ -439,7 +480,11 @@ function Editor() {
                 minH={0}
               >
                 <Tabs.List>
-                  <Box borderBottomWidth={0.5} borderColor="colorPalette.border" w="2"></Box>
+                  <Box
+                    borderBottomWidth={0.5}
+                    borderColor="colorPalette.border"
+                    w="2"
+                  ></Box>
                   <Tabs.Trigger value="editor">
                     <Icon as={SquarePen} boxSize={4} />
                     {m.editor_tab_content()}
@@ -449,7 +494,13 @@ function Editor() {
                     {m.editor_tab_configuration()}
                   </Tabs.Trigger>
                 </Tabs.List>
-                <Box px="4" flex="1" minH={0} display="flex" flexDirection="column">
+                <Box
+                  px="4"
+                  flex="1"
+                  minH={0}
+                  display="flex"
+                  flexDirection="column"
+                >
                   <Tabs.Content
                     value="editor"
                     mt={4}
@@ -465,11 +516,20 @@ function Editor() {
                       />
                       <EditorBubbleMenu editor={editor} />
                       <Box flex="1" minH={0} overflowY="auto" pr={2}>
-                        <EditorBody editor={editor} showBlockHandles={showBlockHandles} />
+                        <EditorBody
+                          editor={editor}
+                          showBlockHandles={showBlockHandles}
+                        />
                       </Box>
                     </Stack>
                   </Tabs.Content>
-                  <Tabs.Content value="config" mt={4} flex="1" minH={0} overflowY="auto">
+                  <Tabs.Content
+                    value="config"
+                    mt={4}
+                    flex="1"
+                    minH={0}
+                    overflowY="auto"
+                  >
                     <EditorSettingsPanel
                       publishForm={postPayload}
                       publishTags={tagPreview}
@@ -484,8 +544,10 @@ function Editor() {
                       onBeneficiaryChange={(index, field, value) =>
                         setBeneficiaries((prev) =>
                           prev.map((entry, idx) =>
-                            idx === index ? { ...entry, [field]: value } : entry
-                          )
+                            idx === index
+                              ? { ...entry, [field]: value }
+                              : entry,
+                          ),
                         )
                       }
                       onAddBeneficiary={() =>

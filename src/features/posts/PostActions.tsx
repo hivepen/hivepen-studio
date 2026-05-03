@@ -524,7 +524,7 @@ export default function PostActions({
                   rounded="full"
                   aria-label={m.post_actions_comment()}
                   gap={2}
-                  disabled //TODO: Disabled until a quick popup comment feature is implemented
+                  disabled // TODO: Disabled until a quick popup comment feature is implemented
                 >
                   <Icon as={MessageCircle} strokeWidth="3" />
                   <Text fontSize="xs" fontWeight="600" color="fg.muted">

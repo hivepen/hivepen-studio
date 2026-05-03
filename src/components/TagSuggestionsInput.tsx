@@ -50,12 +50,12 @@ const normalizeTag = (value: unknown) => {
 }
 
 type TagSuggestionsInputProps = {
-  value: string[]
-  onChange: (next: string[]) => void
+  value: Array<string>
+  onChange: (next: Array<string>) => void
   max?: number
   label?: string
   helperText?: string
-  suggestions?: string[]
+  suggestions?: Array<string>
 }
 
 export default function TagSuggestionsInput({
@@ -73,7 +73,7 @@ export default function TagSuggestionsInput({
     filter: contains,
   })
 
-  const applyTags = (nextTags: string[]) => {
+  const applyTags = (nextTags: Array<string>) => {
     const seen = new Set<string>()
     const cleaned = nextTags
       .map((tag) => normalizeTag(tag))

@@ -11,10 +11,11 @@ import {
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
+  
   getDynamicPropsQueryOptions,
-  getPostQueryOptions,
-  type Entry,
+  getPostQueryOptions
 } from '@ecency/sdk'
+import type {Entry} from '@ecency/sdk';
 import { parseAssetAmount, sumAssetStrings } from '@/lib/hive/payouts'
 import { m } from '@/paraglide/messages'
 
@@ -64,7 +65,9 @@ const resolvePayoutString = (entry: Entry | undefined, fallback?: string) => {
 
 const formatPercent = (weight: number) => {
   const percent = weight / 100
-  return Number.isInteger(percent) ? `${percent.toFixed(0)}%` : `${percent.toFixed(2)}%`
+  return Number.isInteger(percent)
+    ? `${percent.toFixed(0)}%`
+    : `${percent.toFixed(2)}%`
 }
 
 export default function PostPayoutBadge({
@@ -100,16 +103,19 @@ export default function PostPayoutBadge({
   const totalParsed = totalValue ? parseAssetAmount(totalValue) : null
   const pendingAmount = pendingParsed?.amount ?? 0
   const isPaidOut = entry?.is_paidout ?? false
-  const pendingLabel = pendingParsed && pendingAmount > 0
-    ? `$ ${pendingParsed.amount.toFixed(3)}`
-    : totalParsed
-      ? `$ ${totalParsed.amount.toFixed(3)}`
-      : payout?.pending ?? m.payout_badge_rewards()
+  const pendingLabel =
+    pendingParsed && pendingAmount > 0
+      ? `$ ${pendingParsed.amount.toFixed(3)}`
+      : totalParsed
+        ? `$ ${totalParsed.amount.toFixed(3)}`
+        : (payout?.pending ?? m.payout_badge_rewards())
 
   const priceBase = dynamicPropsQuery.data?.base
   const priceQuote = dynamicPropsQuery.data?.quote
   const price =
-    typeof priceBase === 'number' && typeof priceQuote === 'number' && priceBase > 0
+    typeof priceBase === 'number' &&
+    typeof priceQuote === 'number' &&
+    priceBase > 0
       ? priceQuote / priceBase
       : null
   const breakdownSource =

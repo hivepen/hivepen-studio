@@ -1,5 +1,5 @@
-import { type Profile } from '@ecency/sdk'
-import { type AccountProfile } from '@/features/profile/profileTypes'
+import type {Profile} from '@ecency/sdk';
+import type {AccountProfile} from '@/features/profile/profileTypes';
 
 export const mapProfile = (profile: Profile): AccountProfile => {
   const metadata = profile.metadata?.profile ?? {}

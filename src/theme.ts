@@ -2,8 +2,8 @@ import {
   createSystem,
   defaultConfig,
   defineRecipe,
-  defineTokens,
   defineTextStyles,
+  defineTokens,
 } from '@chakra-ui/react'
 
 const fonts = defineTokens.fonts({
@@ -12,14 +12,13 @@ const fonts = defineTokens.fonts({
     value: 'Poppins, "Segoe UI", "Helvetica Neue", sans-serif',
   },
   mono: {
-    value:
-      'Menlo, Consolas, "Liberation Mono", "Courier New", monospace',
+    value: 'Menlo, Consolas, "Liberation Mono", "Courier New", monospace',
   },
 })
 
 const commonBaseRecipe = defineRecipe({
   base: {
-    borderRadius: "lg",
+    borderRadius: 'lg',
   },
 })
 

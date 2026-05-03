@@ -65,12 +65,12 @@ client-side discovery cache that supports fast everyday curation workflows.
 ### Phase 3 — Analytics v1
 
 - [ ] Build connected-account analytics route states: connected, loading, empty,
-  and ready.
+      and ready.
 - [ ] Add summary cards for total tracked rewards, average reward per post, and
-  tracked post count.
+      tracked post count.
 - [ ] Add monthly post rewards trend for the last 12 months.
 - [ ] Cache account-level analytics aggregates for 24 hours and refresh in the
-  background.
+      background.
 
 ### Phase 4 — Roadmap Backlog
 

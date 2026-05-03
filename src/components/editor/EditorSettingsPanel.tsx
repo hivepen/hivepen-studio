@@ -1,10 +1,18 @@
-import { Box, Button, Heading, Input, SimpleGrid, Stack, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Button,
+  Heading,
+  Input,
+  SimpleGrid,
+  Stack,
+  Text,
+} from '@chakra-ui/react'
+import { ClientOnly } from '@tanstack/react-router'
 import CommunityCombobox from '@/components/CommunityCombobox'
 import CustomCollapsible from '@/components/CustomCollapsible'
 import DevOnly from '@/components/DevOnly'
 import TagSuggestionsInput from '@/components/TagSuggestionsInput'
 import WeightSlider from '@/components/WeightSlider'
-import { ClientOnly } from '@tanstack/react-router'
 import { m } from '@/paraglide/messages'
 
 type BeneficiaryEntry = {
@@ -35,18 +43,22 @@ export default function EditorSettingsPanel({
   onPublish,
 }: {
   publishForm: PublishForm
-  publishTags: string[]
+  publishTags: Array<string>
   publishStatus: { type: 'success' | 'error' | 'info'; message: string } | null
   keychainAvailable: boolean
   publishReady: boolean
-  beneficiaries: BeneficiaryEntry[]
+  beneficiaries: Array<BeneficiaryEntry>
   onSelectCommunity: (value: string) => void
   onChange: (field: keyof PublishForm, value: string) => void
-  onBeneficiaryChange: (index: number, field: keyof BeneficiaryEntry, value: string) => void
+  onBeneficiaryChange: (
+    index: number,
+    field: keyof BeneficiaryEntry,
+    value: string,
+  ) => void
   onAddBeneficiary: () => void
   onPublish: () => void
 }) {
-  const handleTagsChange = (nextTags: string[]) => {
+  const handleTagsChange = (nextTags: Array<string>) => {
     onChange('tags', nextTags.join(', '))
   }
 
@@ -96,7 +108,11 @@ export default function EditorSettingsPanel({
             </Box>
           }
         >
-          <TagSuggestionsInput value={publishTags} onChange={handleTagsChange} max={8} />
+          <TagSuggestionsInput
+            value={publishTags}
+            onChange={handleTagsChange}
+            max={8}
+          />
         </ClientOnly>
       </SimpleGrid>
 
@@ -121,7 +137,11 @@ export default function EditorSettingsPanel({
         <Box>
           <Stack gap={3}>
             {beneficiaries.map((entry, index) => (
-              <SimpleGrid key={`beneficiary-${index}`} columns={{ base: 1, md: 2 }} gap={3}>
+              <SimpleGrid
+                key={`beneficiary-${index}`}
+                columns={{ base: 1, md: 2 }}
+                gap={3}
+              >
                 <Input
                   placeholder={m.editor_beneficiary_account_placeholder()}
                   value={entry.account}
@@ -148,13 +168,14 @@ export default function EditorSettingsPanel({
         </Box>
       </CustomCollapsible>
 
-      <DevOnly json={{
-        publishForm,
-        publishTags,
-        beneficiaries,
-        publishReady,
-      }} />
-
+      <DevOnly
+        json={{
+          publishForm,
+          publishTags,
+          beneficiaries,
+          publishReady,
+        }}
+      />
     </Stack>
   )
 }

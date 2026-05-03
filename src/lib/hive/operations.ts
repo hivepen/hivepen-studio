@@ -41,7 +41,8 @@ export const buildPostOperations = (payload: PostPayload) => {
   const tags = normalizeTags(payload.tags)
   const primaryTag = tags[0] ?? 'blog'
   const community = payload.community?.trim()
-  const parentPermlink = community && community.length > 0 ? community : primaryTag
+  const parentPermlink =
+    community && community.length > 0 ? community : primaryTag
 
   const permlink = createPermlink(payload.title)
 
@@ -53,7 +54,7 @@ export const buildPostOperations = (payload: PostPayload) => {
     ...(payload.summary ? { description: payload.summary } : {}),
   }
 
-  const operations: unknown[] = [
+  const operations: Array<unknown> = [
     [
       'comment',
       {
@@ -98,7 +99,7 @@ export const buildPostOperations = (payload: PostPayload) => {
 
 export const buildCommentOperations = (payload: CommentPayload) => {
   const permlink = createPermlink(
-    `${payload.parentAuthor}-${payload.parentPermlink}`
+    `${payload.parentAuthor}-${payload.parentPermlink}`,
   )
 
   const metadata = {

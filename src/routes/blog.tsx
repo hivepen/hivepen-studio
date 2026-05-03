@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Box, Button, Heading, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import type { SearchResult } from '@/lib/hive/search'
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
@@ -11,7 +12,6 @@ import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import ProfileBanner from '@/components/ProfileBanner'
 import { openConnectAccountDialog } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
-import type { SearchResult } from '@/lib/hive/search'
 import { hiveAvatarUrl } from '@/lib/posts/tagColorConfig'
 import useProfileQuery from '@/features/profile/useProfileQuery'
 
@@ -47,7 +47,7 @@ function MyBlogPage() {
           postsQuery.fetchNextPage()
         }
       },
-      { rootMargin: '200px' }
+      { rootMargin: '200px' },
     )
     observer.observe(node)
     return () => observer.disconnect()
@@ -57,40 +57,37 @@ function MyBlogPage() {
     postsQuery.isFetchingNextPage,
   ])
 
-  const posts = useMemo(
-    () => {
-      const pages = (postsQuery.data?.pages ?? []) as SearchResult[][]
-      const flattened = pages.flat()
-      const unique = new Map<string, SearchResult>()
-      flattened.forEach((post) => {
-        const key = `${post.author}/${post.permlink}`
-        if (!unique.has(key)) {
-          unique.set(key, post)
-        }
-      })
+  const posts = useMemo(() => {
+    const pages = (postsQuery.data?.pages ?? []) as Array<Array<SearchResult>>
+    const flattened = pages.flat()
+    const unique = new Map<string, SearchResult>()
+    flattened.forEach((post) => {
+      const key = `${post.author}/${post.permlink}`
+      if (!unique.has(key)) {
+        unique.set(key, post)
+      }
+    })
 
-      return Array.from(unique.values()).map((post) => {
-        const key = `${post.author}/${post.permlink}`
-        const overrides = localStats[key] ?? {}
-        return {
-          title: post.title || m.post_untitled(),
-          author: post.author,
-          community: post.communityTitle ?? post.community,
-          communityId: post.community,
-          tags: post.tags,
-          summary: post.summary,
-          coverUrl: post.coverUrl,
-          app: post.app,
-          createdAt: new Date(post.created).toLocaleDateString(),
-          permlink: post.permlink,
-          votes: overrides.votes ?? post.votes,
-          comments: overrides.comments ?? post.comments,
-          payout: post.payout,
-        }
-      })
-    },
-    [postsQuery.data?.pages, localStats]
-  )
+    return Array.from(unique.values()).map((post) => {
+      const key = `${post.author}/${post.permlink}`
+      const overrides = localStats[key] ?? {}
+      return {
+        title: post.title || m.post_untitled(),
+        author: post.author,
+        community: post.communityTitle ?? post.community,
+        communityId: post.community,
+        tags: post.tags,
+        summary: post.summary,
+        coverUrl: post.coverUrl,
+        app: post.app,
+        createdAt: new Date(post.created).toLocaleDateString(),
+        permlink: post.permlink,
+        votes: overrides.votes ?? post.votes,
+        comments: overrides.comments ?? post.comments,
+        payout: post.payout,
+      }
+    })
+  }, [postsQuery.data?.pages, localStats])
 
   if (!account) {
     return (
@@ -126,9 +123,7 @@ function MyBlogPage() {
         subtitle={profileQuery.data?.displayName ? `@${account}` : undefined}
         description={profileQuery.data?.about}
         avatarName={account ?? undefined}
-        avatarUrl={
-          profileQuery.data?.profileImage || hiveAvatarUrl(account)
-        }
+        avatarUrl={profileQuery.data?.profileImage || hiveAvatarUrl(account)}
         coverUrl={profileQuery.data?.coverImage}
         size="compact"
       />
@@ -163,7 +158,10 @@ function MyBlogPage() {
                 setLocalStats((prev) => {
                   const key = `${post.author}/${post.permlink}`
                   const current = prev[key]?.votes ?? post.votes ?? 0
-                  return { ...prev, [key]: { ...prev[key], votes: current + 1 } }
+                  return {
+                    ...prev,
+                    [key]: { ...prev[key], votes: current + 1 },
+                  }
                 })
               }
               onCommentSuccess={() =>
@@ -193,9 +191,7 @@ function MyBlogPage() {
           {m.posts_load_more()}
         </Button>
       ) : null}
-      {postsQuery.isError && (
-        <Text color="fg.error">{m.blog_error()}</Text>
-      )}
+      {postsQuery.isError && <Text color="fg.error">{m.blog_error()}</Text>}
 
       <DevOnly
         summary="Blog debug"

@@ -12,13 +12,10 @@ import {
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
-import type {HiveAccountSearchResult} from '@/lib/hive/account';
+import type { HiveAccountSearchResult } from '@/lib/hive/account'
 import { Avatar } from '@/components/ui/avatar'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
-import {
-  
-  searchAccounts
-} from '@/lib/hive/account'
+import { searchAccounts } from '@/lib/hive/account'
 import DevOnly from '@/components/DevOnly'
 import { m } from '@/paraglide/messages'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'

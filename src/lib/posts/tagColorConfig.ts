@@ -1,4 +1,5 @@
-import { BitcoinIcon, CameraIcon, LucideIcon } from "lucide-react"
+import { BitcoinIcon, CameraIcon } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react';
 
 export const TAG_PALETTES = [
   'gray',
@@ -12,14 +13,22 @@ export const TAG_PALETTES = [
   'purple',
   'pink',
 ] as const
-export const simpleicon = (slug:string,options?:{color?:string,dark?:string}) => `https://cdn.simpleicons.org/${slug}` + (options?.color ? `/${options.color}` : '') + (options?.dark ? `${!options.color ? '/_' : ''}/${options.dark}` : '')// TODO: add options support
-export const flagicon = (countrycode:string) => `https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.5.0/flags/4x3/${countrycode.toLowerCase()}.svg`
-export const hiveAvatarUrl = (username:string) => `https://images.hive.blog/u/${username}/avatar`
+export const simpleicon = (
+  slug: string,
+  options?: { color?: string; dark?: string },
+) =>
+  `https://cdn.simpleicons.org/${slug}` +
+  (options?.color ? `/${options.color}` : '') +
+  (options?.dark ? `${!options.color ? '/_' : ''}/${options.dark}` : '') // TODO: add options support
+export const flagicon = (countrycode: string) =>
+  `https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.5.0/flags/4x3/${countrycode.toLowerCase()}.svg`
+export const hiveAvatarUrl = (username: string) =>
+  `https://images.hive.blog/u/${username}/avatar`
 export const colorTokens = {
-  HIVE: ['#E31337','#fff'],
-  HBD:['#00960E','white'],
-  INLEO: ['#F4401F','#000'],
-  PEAKD:['#333','#FF97AA','#808285']
+  HIVE: ['#E31337', '#fff'],
+  HBD: ['#00960E', 'white'],
+  INLEO: ['#F4401F', '#000'],
+  PEAKD: ['#333', '#FF97AA', '#808285'],
 }
 export const HIVE_RED = colorTokens.HIVE[0]
 export const INLEO_PRIMARY = colorTokens.INLEO[0]
@@ -34,85 +43,118 @@ export type TagStyle = {
   icon?: LucideIcon
   colorPalette?: TagPalette
 }
-const hiveStyle = { bg: HIVE_RED, fg: colorTokens.HIVE[1], avatar: 'https://cdn.simpleicons.org/hive_blockchain/white' }
-const bitcoin =  {
-    fg: '#F8931A',
-    bg: '#fff',
-  }
+const hiveStyle = {
+  bg: HIVE_RED,
+  fg: colorTokens.HIVE[1],
+  avatar: 'https://cdn.simpleicons.org/hive_blockchain/white',
+}
+const bitcoin = {
+  fg: '#F8931A',
+  bg: '#fff',
+}
 export const TAG_STYLE_MAP: Record<string, TagStyle> = {
   // Hive ecosystem / projects
   hive: hiveStyle,
   hiveio: hiveStyle,
-  hbd: { bg: colorTokens.HBD[0], fg: colorTokens.HBD[1], avatar: simpleicon('hive_blockchain',{color:'white'}) },
-  hivepen:{colorPalette:'gray', bg:'#fff', fg:'#722', avatar:'favicon.svg'},
+  hbd: {
+    bg: colorTokens.HBD[0],
+    fg: colorTokens.HBD[1],
+    avatar: simpleicon('hive_blockchain', { color: 'white' }),
+  },
+  hivepen: {
+    colorPalette: 'gray',
+    bg: '#fff',
+    fg: '#722',
+    avatar: 'favicon.svg',
+  },
   inleo: { bg: INLEO_PRIMARY, fg: '#fff', avatar: hiveAvatarUrl('leofinance') },
-  leofinance: { bg: INLEO_PRIMARY, fg: '#ffffff', avatar:hiveAvatarUrl('leofinance') },
-  leodex: { bg:'#222', fg:'cyan', avatar:'https://leodex.io/favicon.ico' },
-  leodao: { bg: INLEO_PRIMARY, fg: '#ffffff', avatar:hiveAvatarUrl('leodao') },
-  ecency: { colorPalette:'blue', avatar: hiveAvatarUrl('ecency') },
-  peakd: { bg: colorTokens.PEAKD[0], fg: colorTokens.PEAKD[1], avatar: hiveAvatarUrl('peakd') },
-  '3speak': { colorPalette: 'purple',avatar:hiveAvatarUrl('threespeak') },
-  dbuzz: { colorPalette: 'blue',avatar:hiveAvatarUrl('dbuzz') },
-  dcity: { colorPalette: 'green',avatar:hiveAvatarUrl('dcity') },
-  splinterlands: { colorPalette: 'purple', avatar: hiveAvatarUrl('splinterlands') },
-  risingstar: { colorPalette: 'pink',avatar:hiveAvatarUrl('risingstar') },
-  hiveengine: { colorPalette: 'red',avatar:'https://hive-engine.com/images/favicon.svg' },
-  tribaldex: { colorPalette: 'red',avatar:hiveAvatarUrl('tribaldex') },
-  hiveblog: { colorPalette: 'gray',avatar:hiveAvatarUrl('hiveblog') },
-  hivemind: { colorPalette: 'gray',avatar:hiveAvatarUrl('hivemind') },
-  hivebuzz: { colorPalette: 'yellow',avatar:hiveAvatarUrl('hivebuzz') },
-  hivesigner: { colorPalette: 'red',avatar:hiveAvatarUrl('hivesigner') },
-  hiveauth: { colorPalette: 'red',avatar:hiveAvatarUrl('hiveauth') },
-  leothreads: { colorPalette: 'orange',avatar:hiveAvatarUrl('leothreads') },
-  peakmonsters: { colorPalette: 'purple',avatar:hiveAvatarUrl('peakmonsters') },
-  dhedge: { colorPalette: 'blue',avatar:hiveAvatarUrl('dhedge') },
-  dtube: { colorPalette: 'red',avatar:hiveAvatarUrl('dtube') },
-  dblog: { colorPalette: 'gray',avatar:hiveAvatarUrl('dblog') },
-  dmania: { colorPalette: 'cyan',avatar:hiveAvatarUrl('dmania') },
-  dtravel: { colorPalette: 'green',avatar:hiveAvatarUrl('dtravel') },
-  ditto: { colorPalette: 'blue',avatar:hiveAvatarUrl('ditto') },
-  dlife: { colorPalette: 'purple',avatar:hiveAvatarUrl('dlife') },
-  dclick: { colorPalette: 'teal',avatar:hiveAvatarUrl('dclick') },
-  dapp: { colorPalette: 'blue',avatar:hiveAvatarUrl('dapp') },
-  hivegaming: { colorPalette: 'purple',avatar:hiveAvatarUrl('hivegaming') },
-  hivemusic: { colorPalette: 'pink',avatar:hiveAvatarUrl('hivemusic') },
-  hivephotography: { colorPalette: 'cyan',avatar:hiveAvatarUrl('hivephotography') },
-  hiveart: { colorPalette: 'orange',avatar:hiveAvatarUrl('hiveart') },
-  hivedev: { colorPalette: 'green',avatar:hiveAvatarUrl('hivedev') },
-  hivesocial: { colorPalette: 'blue',avatar:hiveAvatarUrl('hivesocial') },
-  hivescience: { colorPalette: 'teal',avatar:hiveAvatarUrl('hivescience') },
-  liketu:{
-    colorPalette: 'blue',
-    avatar:hiveAvatarUrl('liketu')
+  leofinance: {
+    bg: INLEO_PRIMARY,
+    fg: '#ffffff',
+    avatar: hiveAvatarUrl('leofinance'),
   },
-  actifit:{
+  leodex: { bg: '#222', fg: 'cyan', avatar: 'https://leodex.io/favicon.ico' },
+  leodao: { bg: INLEO_PRIMARY, fg: '#ffffff', avatar: hiveAvatarUrl('leodao') },
+  ecency: { colorPalette: 'blue', avatar: hiveAvatarUrl('ecency') },
+  peakd: {
+    bg: colorTokens.PEAKD[0],
+    fg: colorTokens.PEAKD[1],
+    avatar: hiveAvatarUrl('peakd'),
+  },
+  '3speak': { colorPalette: 'purple', avatar: hiveAvatarUrl('threespeak') },
+  dbuzz: { colorPalette: 'blue', avatar: hiveAvatarUrl('dbuzz') },
+  dcity: { colorPalette: 'green', avatar: hiveAvatarUrl('dcity') },
+  splinterlands: {
+    colorPalette: 'purple',
+    avatar: hiveAvatarUrl('splinterlands'),
+  },
+  risingstar: { colorPalette: 'pink', avatar: hiveAvatarUrl('risingstar') },
+  hiveengine: {
     colorPalette: 'red',
-    bg:'white',
-    fg:HIVE_RED,
-    border:HIVE_RED,
-    avatar:hiveAvatarUrl('actifit')
+    avatar: 'https://hive-engine.com/images/favicon.svg',
   },
-  //Hive communities and popular accounts
-  worldmappin:{avatar:hiveAvatarUrl('worldmappin')},
+  tribaldex: { colorPalette: 'red', avatar: hiveAvatarUrl('tribaldex') },
+  hiveblog: { colorPalette: 'gray', avatar: hiveAvatarUrl('hiveblog') },
+  hivemind: { colorPalette: 'gray', avatar: hiveAvatarUrl('hivemind') },
+  hivebuzz: { colorPalette: 'yellow', avatar: hiveAvatarUrl('hivebuzz') },
+  hivesigner: { colorPalette: 'red', avatar: hiveAvatarUrl('hivesigner') },
+  hiveauth: { colorPalette: 'red', avatar: hiveAvatarUrl('hiveauth') },
+  leothreads: { colorPalette: 'orange', avatar: hiveAvatarUrl('leothreads') },
+  peakmonsters: {
+    colorPalette: 'purple',
+    avatar: hiveAvatarUrl('peakmonsters'),
+  },
+  dhedge: { colorPalette: 'blue', avatar: hiveAvatarUrl('dhedge') },
+  dtube: { colorPalette: 'red', avatar: hiveAvatarUrl('dtube') },
+  dblog: { colorPalette: 'gray', avatar: hiveAvatarUrl('dblog') },
+  dmania: { colorPalette: 'cyan', avatar: hiveAvatarUrl('dmania') },
+  dtravel: { colorPalette: 'green', avatar: hiveAvatarUrl('dtravel') },
+  ditto: { colorPalette: 'blue', avatar: hiveAvatarUrl('ditto') },
+  dlife: { colorPalette: 'purple', avatar: hiveAvatarUrl('dlife') },
+  dclick: { colorPalette: 'teal', avatar: hiveAvatarUrl('dclick') },
+  dapp: { colorPalette: 'blue', avatar: hiveAvatarUrl('dapp') },
+  hivegaming: { colorPalette: 'purple', avatar: hiveAvatarUrl('hivegaming') },
+  hivemusic: { colorPalette: 'pink', avatar: hiveAvatarUrl('hivemusic') },
+  hivephotography: {
+    colorPalette: 'cyan',
+    avatar: hiveAvatarUrl('hivephotography'),
+  },
+  hiveart: { colorPalette: 'orange', avatar: hiveAvatarUrl('hiveart') },
+  hivedev: { colorPalette: 'green', avatar: hiveAvatarUrl('hivedev') },
+  hivesocial: { colorPalette: 'blue', avatar: hiveAvatarUrl('hivesocial') },
+  hivescience: { colorPalette: 'teal', avatar: hiveAvatarUrl('hivescience') },
+  liketu: {
+    colorPalette: 'blue',
+    avatar: hiveAvatarUrl('liketu'),
+  },
+  actifit: {
+    colorPalette: 'red',
+    bg: 'white',
+    fg: HIVE_RED,
+    border: HIVE_RED,
+    avatar: hiveAvatarUrl('actifit'),
+  },
+  // Hive communities and popular accounts
+  worldmappin: { avatar: hiveAvatarUrl('worldmappin') },
 
-  //Platforms
+  // Platforms
 
-  //General icons
-  photography:{icon:CameraIcon},
+  // General icons
+  photography: { icon: CameraIcon },
 
   // Software / tools
   vercel: {
     bg: '#000000',
     fg: '#FFFFFF',
-    avatar: simpleicon('vercel',{color:'white'}),
+    avatar: simpleicon('vercel', { color: 'white' }),
   },
   github: {
     bg: '#181717',
     fg: '#FFFFFF',
-    avatar: simpleicon('github',{color:'white'}),
+    avatar: simpleicon('github', { color: 'white' }),
   },
   netlify: {
-    colorPalette:'teal'
+    colorPalette: 'teal',
   },
   gitlab: {
     bg: '#FC6D26',
@@ -124,7 +166,7 @@ export const TAG_STYLE_MAP: Record<string, TagStyle> = {
   trello: { colorPalette: 'teal' },
   slack: {},
   discord: {
-    colorPalette:'blue'
+    colorPalette: 'blue',
   },
   notion: { bg: '#ffffff', fg: '#111111', border: '#111111' },
   figma: { colorPalette: 'orange' },
@@ -137,7 +179,10 @@ export const TAG_STYLE_MAP: Record<string, TagStyle> = {
   blender: { colorPalette: 'orange' },
   godotengine: { colorPalette: 'blue', avatar: simpleicon('godotengine') },
   godot: { colorPalette: 'blue', avatar: simpleicon('godotengine') },
-  unity: { colorPalette: 'gray', avatar: simpleicon('unity',{color:"black"}) },
+  unity: {
+    colorPalette: 'gray',
+    avatar: simpleicon('unity', { color: 'black' }),
+  },
   unreal: { colorPalette: 'gray', avatar: simpleicon('unrealengine') },
   vscode: { colorPalette: 'blue' },
   vim: { colorPalette: 'green' },
@@ -156,8 +201,8 @@ export const TAG_STYLE_MAP: Record<string, TagStyle> = {
   heroku: { colorPalette: 'purple' },
   supabase: { colorPalette: 'green' },
   firebase: { colorPalette: 'yellow' },
-  postgres: { colorPalette: 'blue',avatar:simpleicon('postgresql') },
-  postgresql: { colorPalette: 'blue',avatar:simpleicon('postgresql') },
+  postgres: { colorPalette: 'blue', avatar: simpleicon('postgresql') },
+  postgresql: { colorPalette: 'blue', avatar: simpleicon('postgresql') },
   mysql: { colorPalette: 'teal' },
   sqlite: { colorPalette: 'gray' },
   mongodb: { colorPalette: 'green' },
@@ -189,7 +234,12 @@ export const TAG_STYLE_MAP: Record<string, TagStyle> = {
   pnpm: { colorPalette: 'yellow' },
   yarn: { colorPalette: 'blue' },
   npm: { colorPalette: 'red' },
-  bun: { colorPalette: 'gray',bg:'#888', fg:'white',avatar:simpleicon('bun',{color:'white'}) },
+  bun: {
+    colorPalette: 'gray',
+    bg: '#888',
+    fg: 'white',
+    avatar: simpleicon('bun', { color: 'white' }),
+  },
   deno: { colorPalette: 'gray' },
   nodejs: { colorPalette: 'green', avatar: simpleicon('nodedotjs') },
   python: { colorPalette: 'blue' },
@@ -203,7 +253,7 @@ export const TAG_STYLE_MAP: Record<string, TagStyle> = {
   csharp: { colorPalette: 'purple' },
   dotnet: { colorPalette: 'purple' },
   typescript: { colorPalette: 'blue' },
-  javascript: { colorPalette:'yellow' },
+  javascript: { colorPalette: 'yellow' },
   linux: { colorPalette: 'gray' },
   macos: { colorPalette: 'gray' },
   windows: { colorPalette: 'blue' },
@@ -214,17 +264,17 @@ export const TAG_STYLE_MAP: Record<string, TagStyle> = {
   btc: bitcoin,
   bitcoin,
   ethereum: {
-    colorPalette:'teal',
-    avatar: simpleicon('ethereum')
+    colorPalette: 'teal',
+    avatar: simpleicon('ethereum'),
   },
   eth: {
-    colorPalette:'teal',
-    avatar: simpleicon('ethereum')
+    colorPalette: 'teal',
+    avatar: simpleicon('ethereum'),
   },
   sol: {
     bg: '#9945FF',
     fg: '#FFFFFF',
-    avatar: simpleicon('solana')
+    avatar: simpleicon('solana'),
   },
   solana: {
     bg: '#9945FF',
@@ -232,7 +282,7 @@ export const TAG_STYLE_MAP: Record<string, TagStyle> = {
   },
   ada: {
     fg: '#0033AD',
-    avatar: simpleicon('cardano')
+    avatar: simpleicon('cardano'),
   },
   cardano: {
     fg: '#0033AD',
@@ -285,13 +335,14 @@ export const TAG_STYLE_MAP: Record<string, TagStyle> = {
   wbtc: { colorPalette: 'yellow' },
   usdt: {
     // bg: '#26A17B',
-colorPalette:'teal',
+    colorPalette: 'teal',
     avatar: simpleicon('tether'),
   },
   usdc: {
     // bg: '#2775CA',
     colorPalette: 'blue',
-    avatar: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/USD_Coin_logo_%28cropped%29.png/960px-USD_Coin_logo_%28cropped%29.png',
+    avatar:
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/USD_Coin_logo_%28cropped%29.png/960px-USD_Coin_logo_%28cropped%29.png',
   },
   dai: { colorPalette: 'yellow' },
   busd: { colorPalette: 'yellow' },
@@ -299,11 +350,11 @@ colorPalette:'teal',
 
   // Countries (Americas)
   usa: {
-    colorPalette:'red',
+    colorPalette: 'red',
     avatar: flagicon('us'),
   },
   us: {
-    colorPalette:'red',
+    colorPalette: 'red',
     avatar: flagicon('us'),
   },
   unitedstates: {
@@ -321,7 +372,7 @@ colorPalette:'teal',
   canada: { colorPalette: 'teal', avatar: flagicon('ca') },
   mexico: { colorPalette: 'teal', avatar: flagicon('mx') },
   brazil: {
-    colorPalette:'green',
+    colorPalette: 'green',
     avatar: flagicon('br'),
   },
   argentina: { colorPalette: 'cyan', avatar: flagicon('ar') },
@@ -339,7 +390,12 @@ colorPalette:'teal',
   nicaragua: { colorPalette: 'blue', avatar: flagicon('ni') },
   costarica: { colorPalette: 'blue', avatar: flagicon('cr') },
   panama: { colorPalette: 'blue', avatar: flagicon('pa') },
-  cuba: { bg: 'white', fg: 'blue', border: 'dodgerblue', avatar: flagicon('cu') },
+  cuba: {
+    bg: 'white',
+    fg: 'blue',
+    border: 'dodgerblue',
+    avatar: flagicon('cu'),
+  },
   dominicanrepublic: { colorPalette: 'blue', avatar: flagicon('do') },
   jamaica: { colorPalette: 'green', avatar: flagicon('jm') },
 
@@ -348,7 +404,7 @@ colorPalette:'teal',
   unitedkingdom: { colorPalette: 'teal', avatar: flagicon('gb') },
   ireland: { colorPalette: 'green', avatar: flagicon('ie') },
   france: {
-    colorPalette:'blue',
+    colorPalette: 'blue',
     avatar: flagicon('fr'),
   },
   germany: { colorPalette: 'yellow', avatar: flagicon('de') },
@@ -391,7 +447,7 @@ colorPalette:'teal',
   southkorea: { colorPalette: 'blue', avatar: flagicon('kr') },
   northkorea: { colorPalette: 'red', avatar: flagicon('kp') },
   india: {
-    colorPalette:'orange',
+    colorPalette: 'orange',
     avatar: flagicon('in'),
   },
   pakistan: { colorPalette: 'green', avatar: flagicon('pk') },
@@ -440,6 +496,5 @@ colorPalette:'teal',
   fiji: { colorPalette: 'cyan', avatar: flagicon('fj') },
 }
 
-export const TAG_REGEX_OVERRIDES: Array<{ pattern: RegExp; style: TagStyle }> = [
-  { pattern: /^hive(io)?$/i, style: hiveStyle },
-]
+export const TAG_REGEX_OVERRIDES: Array<{ pattern: RegExp; style: TagStyle }> =
+  [{ pattern: /^hive(io)?$/i, style: hiveStyle }]

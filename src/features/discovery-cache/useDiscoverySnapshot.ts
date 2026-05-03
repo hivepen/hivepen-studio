@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { discoveryCache } from './index'
-import type { DiscoveryEntityMap, DiscoveryEntityType, DiscoverySnapshot } from './types'
+import type {
+  DiscoveryEntityMap,
+  DiscoveryEntityType,
+  DiscoverySnapshot,
+} from './types'
 
 export default function useDiscoverySnapshot<T extends DiscoveryEntityType>(
   type: T,
   query: string,
-  limit: number
+  limit: number,
 ) {
-  const [snapshot, setSnapshot] = useState<DiscoverySnapshot<DiscoveryEntityMap[T]>>(
-    () => discoveryCache.getSnapshot(type, query, limit)
-  )
+  const [snapshot, setSnapshot] = useState<
+    DiscoverySnapshot<DiscoveryEntityMap[T]>
+  >(() => discoveryCache.getSnapshot(type, query, limit))
 
   useEffect(() => {
     setSnapshot(discoveryCache.getSnapshot(type, query, limit))

@@ -118,7 +118,8 @@ export default function EditorBody({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transition: 'opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease',
+          transition:
+            'opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease',
           zIndex: 50,
         },
         '& .drag-handle:hover': {

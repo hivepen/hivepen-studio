@@ -1,5 +1,5 @@
-import { VoteDetail } from '@/lib/posts/votes'
 import { hiveClient } from './client'
+import type { VoteDetail } from '@/lib/posts/votes'
 
 type BridgeVote = {
   voter?: string
@@ -9,7 +9,7 @@ type BridgeVote = {
 }
 
 type BridgePost = {
-  active_votes?: BridgeVote[]
+  active_votes?: Array<BridgeVote>
 }
 
 const toNumber = (
@@ -27,9 +27,7 @@ const toNumber = (
 }
 
 const extractVoteDetails = (post: BridgePost | null | undefined) => {
-  const activeVotes = Array.isArray(post?.active_votes)
-    ? post.active_votes
-    : []
+  const activeVotes = Array.isArray(post?.active_votes) ? post.active_votes : []
 
   const voteDetails = activeVotes
     .map((vote) => {
@@ -46,9 +44,7 @@ const extractVoteDetails = (post: BridgePost | null | undefined) => {
       }
     })
     .filter(
-      (
-        vote,
-      ): vote is VoteDetail & { weight?: number; rshares?: number } =>
+      (vote): vote is VoteDetail & { weight?: number; rshares?: number } =>
         Boolean(vote),
     )
 
@@ -78,7 +74,7 @@ export async function fetchPostVoteDetails({
 }: {
   author: string
   permlink: string
-}): Promise<VoteDetail[]> {
+}): Promise<Array<VoteDetail>> {
   try {
     const result = await hiveClient.hivemind.call('get_post', {
       author,

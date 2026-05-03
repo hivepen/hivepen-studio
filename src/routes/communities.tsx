@@ -9,15 +9,15 @@ import {
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
-import { getCommunityIdentifier, listCommunities } from '@/lib/hive/client'
 import type { HiveCommunity } from '@/lib/hive/client'
+import type {AccountProfile} from '@/features/profile/profileTypes';
+import { getCommunityIdentifier, listCommunities } from '@/lib/hive/client'
 import DevOnly from '@/components/DevOnly'
 import { m } from '@/paraglide/messages'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import SearchPanel from '@/components/SearchPanel'
 import CommunityCard from '@/components/CommunityCard'
 import useProfilesQuery from '@/features/profile/useProfilesQuery'
-import { type AccountProfile } from '@/features/profile/profileTypes'
 import { discoveryCache } from '@/features/discovery-cache'
 import useDiscoverySnapshot from '@/features/discovery-cache/useDiscoverySnapshot'
 
@@ -28,7 +28,7 @@ export const Route = createFileRoute('/communities')({
 function Communities() {
   const [query, setQuery, queryReady] = useLocalStorageState(
     'hivepen.communities.query',
-    ''
+    '',
   )
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const trimmedQuery = query.trim()
@@ -51,22 +51,34 @@ function Communities() {
 
   useEffect(() => {
     if (!communitiesQuery.data || debouncedQuery.length < 2) return
-    discoveryCache.cacheSearchResults('communities', debouncedQuery, communitiesQuery.data)
+    discoveryCache.cacheSearchResults(
+      'communities',
+      debouncedQuery,
+      communitiesQuery.data,
+    )
     refreshCachedCommunities()
   }, [communitiesQuery.data, debouncedQuery, refreshCachedCommunities])
 
   const results = useMemo(() => {
-    if (trimmedQuery === debouncedQuery && communitiesQuery.data !== undefined) {
+    if (
+      trimmedQuery === debouncedQuery &&
+      communitiesQuery.data !== undefined
+    ) {
       return communitiesQuery.data
     }
     return cachedCommunities.results
-  }, [cachedCommunities.results, communitiesQuery.data, debouncedQuery, trimmedQuery])
+  }, [
+    cachedCommunities.results,
+    communitiesQuery.data,
+    debouncedQuery,
+    trimmedQuery,
+  ])
   const communityIds = useMemo(
     () =>
       results
         .map((community) => getCommunityIdentifier(community))
         .filter(Boolean),
-    [results]
+    [results],
   )
   const profilesQuery = useProfilesQuery(communityIds)
   const profilesByName = useMemo(() => {
@@ -95,9 +107,7 @@ function Communities() {
         <Heading size="lg" mb={2}>
           {m.communities_heading()}
         </Heading>
-        <Text color="fg.muted">
-          {m.communities_description()}
-        </Text>
+        <Text color="fg.muted">{m.communities_description()}</Text>
       </Box>
 
       <SearchPanel
@@ -127,7 +137,9 @@ function Communities() {
                 <CommunityCard
                   key={community.id || community.name}
                   community={community}
-                  profile={communityId ? profilesByName.get(communityId) : undefined}
+                  profile={
+                    communityId ? profilesByName.get(communityId) : undefined
+                  }
                   onSelect={handleCommunitySelect}
                 />
               )

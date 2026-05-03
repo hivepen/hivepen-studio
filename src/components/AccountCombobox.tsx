@@ -12,8 +12,8 @@ import {
 } from '@chakra-ui/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import AccountAvatar from '@/components/AccountAvatar'
 import type { HiveAccountSearchResult } from '@/lib/hive/account'
+import AccountAvatar from '@/components/AccountAvatar'
 
 type AccountOption = HiveAccountSearchResult & {
   label: string
@@ -23,8 +23,8 @@ type AccountOption = HiveAccountSearchResult & {
 type AccountComboboxProps = {
   value: string
   onChange: (value: string) => void
-  suggestions: HiveAccountSearchResult[]
-  featuredSuggestions?: HiveAccountSearchResult[]
+  suggestions: Array<HiveAccountSearchResult>
+  featuredSuggestions?: Array<HiveAccountSearchResult>
   loading?: boolean
   placeholder?: string
   searchingText: string

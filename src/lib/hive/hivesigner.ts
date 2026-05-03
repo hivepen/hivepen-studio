@@ -18,7 +18,9 @@ const parseAuthFromSearch = (search: string) => {
   const expiresIn = params.get('expires_in')
   if (!accessToken || !username) return null
 
-  const expiresAt = expiresIn ? Date.now() + Number(expiresIn) * 1000 : undefined
+  const expiresAt = expiresIn
+    ? Date.now() + Number(expiresIn) * 1000
+    : undefined
   return { accessToken, username, expiresAt }
 }
 
@@ -26,7 +28,9 @@ export const persistHiveSignerAuthFromUrl = () => {
   if (typeof window === 'undefined') return null
   const auth =
     parseAuthFromSearch(window.location.search) ??
-    parseAuthFromSearch(window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '')
+    parseAuthFromSearch(
+      window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '',
+    )
   if (!auth) return null
 
   const storage = getStorage()
@@ -66,7 +70,7 @@ export const clearHiveSignerAuth = () => {
   storage?.removeItem(STORAGE_KEY)
 }
 
-export const getHiveSignerLoginUrl = (scope: string[] = ['comment']) => {
+export const getHiveSignerLoginUrl = (scope: Array<string> = ['comment']) => {
   const app = import.meta.env.VITE_HIVESIGNER_APP
   const redirect = import.meta.env.VITE_HIVESIGNER_REDIRECT
 

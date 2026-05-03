@@ -1,29 +1,25 @@
-import { useLocalStorageState } from "@/hooks/useLocalStorageState";
-import { Avatar, AvatarProps } from "./ui/avatar";
-import { hiveAvatarUrl } from "@/lib/posts/tagColorConfig";
+import { Avatar } from './ui/avatar'
+import type { AvatarProps } from './ui/avatar';
+import { useLocalStorageState } from '@/hooks/useLocalStorageState'
+import { hiveAvatarUrl } from '@/lib/posts/tagColorConfig'
 
 interface AccountAvatarProps extends AvatarProps {
-    username:string | null
+  username: string | null
 }
 
-function AccountAvatar ({username, ...props}:AccountAvatarProps){
+function AccountAvatar({ username, ...props }: AccountAvatarProps) {
+  const src: AvatarProps['src'] = username ? hiveAvatarUrl(username) : undefined
 
-  const src:AvatarProps['src'] = username ? hiveAvatarUrl(username) : undefined
-
-
-  return <Avatar src={src}  name={username ?? undefined} {...props}/>
+  return <Avatar src={src} name={username ?? undefined} {...props} />
 }
 
-
-function AuthAccountAvatar({...props}:AvatarProps){
-
-    
+function AuthAccountAvatar({ ...props }: AvatarProps) {
   const [accountName, setAccountName] = useLocalStorageState<string | null>(
     'hivepen.account',
-    null
+    null,
   )
 
-  return <AccountAvatar username={accountName}/>
+  return <AccountAvatar username={accountName} />
 }
 
 export default AccountAvatar

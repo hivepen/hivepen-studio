@@ -6,8 +6,8 @@ import {
   useMemo,
   useState,
 } from 'react'
-import type { Editor } from '@tiptap/react'
 import { Box, HStack, Icon, Popover, Portal, Text } from '@chakra-ui/react'
+import type { Editor } from '@tiptap/react'
 
 import type { SlashCommandItem } from '@/lib/tiptap/slashCommand'
 import { m } from '@/paraglide/messages'
@@ -15,7 +15,7 @@ import { m } from '@/paraglide/messages'
 type SlashCommandMenuProps = {
   editor: Editor
   anchorRect?: () => DOMRect | null
-  items: SlashCommandItem[]
+  items: Array<SlashCommandItem>
   query: string
   command: (item: SlashCommandItem) => void
 }
@@ -36,24 +36,27 @@ const SlashCommandMenu = forwardRef((props: SlashCommandMenuProps, ref) => {
     command(item)
   }
 
-  const onKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault()
-      setSelectedIndex((prev) => (prev + 1) % items.length)
-      return true
-    }
-    if (event.key === 'ArrowUp') {
-      event.preventDefault()
-      setSelectedIndex((prev) => (prev - 1 + items.length) % items.length)
-      return true
-    }
-    if (event.key === 'Enter') {
-      event.preventDefault()
-      selectItem(selectedIndex)
-      return true
-    }
-    return false
-  }, [items.length, selectItem, selectedIndex])
+  const onKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        setSelectedIndex((prev) => (prev + 1) % items.length)
+        return true
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        setSelectedIndex((prev) => (prev - 1 + items.length) % items.length)
+        return true
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        selectItem(selectedIndex)
+        return true
+      }
+      return false
+    },
+    [items.length, selectItem, selectedIndex],
+  )
 
   useImperativeHandle(ref, () => ({
     onKeyDown,
@@ -90,7 +93,7 @@ const SlashCommandMenu = forwardRef((props: SlashCommandMenuProps, ref) => {
 
   const menuItems = useMemo(() => items, [items])
   const groupedItems = useMemo(() => {
-    const groups = new Map<string, SlashCommandItem[]>()
+    const groups = new Map<string, Array<SlashCommandItem>>()
     menuItems.forEach((item) => {
       const group = groups.get(item.category) ?? []
       group.push(item)

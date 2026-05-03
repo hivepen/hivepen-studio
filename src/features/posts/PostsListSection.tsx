@@ -1,5 +1,6 @@
 import { SimpleGrid, Stack, Text } from '@chakra-ui/react'
-import PostCard, { PostCardProps } from '@/components/PostCard'
+import type { PostCardProps } from '@/components/PostCard';
+import PostCard from '@/components/PostCard'
 import PostCardSkeleton from '@/components/PostCardSkeleton'
 import { m } from '@/paraglide/messages'
 
@@ -9,7 +10,7 @@ export default function PostsListSection({
   emptyMessage = m.posts_empty_default(),
   renderActions,
 }: {
-  posts: PostCardProps[]
+  posts: Array<PostCardProps>
   loading: boolean
   emptyMessage?: string
   renderActions?: (post: PostCardProps) => React.ReactNode

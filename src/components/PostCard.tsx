@@ -8,10 +8,11 @@ import {
   Show,
   Spacer,
   Stack,
-  StackProps,
   Text,
 } from '@chakra-ui/react'
 import { Link } from '@tanstack/react-router'
+import type {
+  StackProps} from '@chakra-ui/react';
 import type { ReactNode } from 'react'
 import type { VoteDetail } from '@/lib/posts/votes'
 import useTitleMeta from '@/hooks/useTitleMeta'
@@ -113,7 +114,7 @@ export default function PostCard({
               )}
               {summary ? (
                 <Text fontSize="sm" color="fg.muted" lineClamp={2}>
-{/*//fontSize="sm" color="fg.muted" lineClamp={2}*/}
+                  {/* //fontSize="sm" color="fg.muted" lineClamp={2}*/}
                   {summary}
                 </Text>
               ) : null}
@@ -176,7 +177,7 @@ function PostCardAuthor({
               fontWeight="semibold"
               fontSize="sm"
               _hover={{ textDecoration: 'underline' }}
-              textTransform="capitalize" //TODO: change by the actual account display name
+              textTransform="capitalize" // TODO: change by the actual account display name
             >
               {author}
             </Text>

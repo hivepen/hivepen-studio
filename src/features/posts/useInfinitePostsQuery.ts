@@ -1,16 +1,17 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import {
+  
   getAccountPostsInfiniteQueryOptions,
-  getPostsRankedInfiniteQueryOptions,
-  type Entry,
+  getPostsRankedInfiniteQueryOptions
 } from '@ecency/sdk'
-import { type SearchResult } from '@/lib/hive/search'
+import type {Entry} from '@ecency/sdk';
+import type {SearchResult} from '@/lib/hive/search';
 import type { PostsQueryParams } from '@/features/posts/usePostsQuery'
 import { mapEntryToSearchResult } from '@/features/posts/postMapping'
 
-export type PostsPage = SearchResult[]
+export type PostsPage = Array<SearchResult>
 
-const filterPosts = (posts: SearchResult[], params: PostsQueryParams) => {
+const filterPosts = (posts: Array<SearchResult>, params: PostsQueryParams) => {
   const author = params.author?.trim()
   const dateFrom = params.dateFrom ? new Date(params.dateFrom) : null
   const dateTo = params.dateTo ? new Date(params.dateTo) : null
@@ -32,16 +33,28 @@ export default function useInfinitePostsQuery(params: PostsQueryParams) {
 
   const baseOptions =
     source === 'account'
-      ? getAccountPostsInfiniteQueryOptions(author, 'posts', pageSize, undefined, enabled)
-      : getPostsRankedInfiniteQueryOptions(params.sort, tag, pageSize, undefined, enabled)
+      ? getAccountPostsInfiniteQueryOptions(
+          author,
+          'posts',
+          pageSize,
+          undefined,
+          enabled,
+        )
+      : getPostsRankedInfiniteQueryOptions(
+          params.sort,
+          tag,
+          pageSize,
+          undefined,
+          enabled,
+        )
 
   return useInfiniteQuery({
     ...(baseOptions as object),
     enabled,
     select: (data: any) => ({
       ...data,
-      pages: data.pages.map((page: Entry[]) =>
-        filterPosts(page.map(mapEntryToSearchResult), params)
+      pages: data.pages.map((page: Array<Entry>) =>
+        filterPosts(page.map(mapEntryToSearchResult), params),
       ),
     }),
     staleTime: 2 * 60 * 1000,

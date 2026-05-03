@@ -10,7 +10,7 @@ export type DiscoveryEntityMap = {
 
 export type CachedEntity<T> = {
   key: string
-  aliases: string[]
+  aliases: Array<string>
   value: T
   cachedAt: number
   expiresAt: number
@@ -18,7 +18,7 @@ export type CachedEntity<T> = {
 
 export type CachedSearchBucket = {
   query: string
-  keys: string[]
+  keys: Array<string>
   cachedAt: number
   expiresAt: number
 }
@@ -37,7 +37,7 @@ export type DiscoveryRecentEntry = {
 export type DiscoveryCacheCollection<T> = {
   entities: Record<string, CachedEntity<T>>
   buckets: Record<string, CachedSearchBucket>
-  recent: DiscoveryRecentEntry[]
+  recent: Array<DiscoveryRecentEntry>
   frequency: Record<string, DiscoveryFrequencyEntry>
 }
 
@@ -49,7 +49,7 @@ export type DiscoveryCacheState = {
 
 export type DiscoverySnapshot<T> = {
   query: string
-  results: T[]
+  results: Array<T>
   cachedAt: number | null
   isStale: boolean
 }

@@ -5,7 +5,7 @@ import type { SearchResult } from '@/lib/hive/search'
 describe('aggregateMonthlyPostRewards', () => {
   it('buckets post rewards into the last 12 months', () => {
     const now = new Date('2026-04-28T12:00:00.000Z')
-    const posts: SearchResult[] = [
+    const posts: Array<SearchResult> = [
       {
         author: 'alice',
         permlink: 'april-post',
@@ -39,7 +39,11 @@ describe('aggregateMonthlyPostRewards', () => {
 
     expect(result.timeline).toHaveLength(12)
     expect(april).toMatchObject({ totalAmount: 4, postCount: 1, symbol: 'HBD' })
-    expect(march).toMatchObject({ totalAmount: 2.5, postCount: 1, symbol: 'HBD' })
+    expect(march).toMatchObject({
+      totalAmount: 2.5,
+      postCount: 1,
+      symbol: 'HBD',
+    })
     expect(oldestTracked.month).toBe('2025-05')
     expect(result.summary).toMatchObject({
       totalRewardAmount: 6.5,
@@ -51,7 +55,7 @@ describe('aggregateMonthlyPostRewards', () => {
 
   it('ignores posts without parseable reward totals', () => {
     const now = new Date('2026-04-28T12:00:00.000Z')
-    const posts: SearchResult[] = [
+    const posts: Array<SearchResult> = [
       {
         author: 'alice',
         permlink: 'draft',

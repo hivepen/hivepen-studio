@@ -1,7 +1,7 @@
 import { Extension } from '@tiptap/core'
-import type { Editor, Range } from '@tiptap/core'
 import Suggestion from '@tiptap/suggestion'
 import { ReactRenderer } from '@tiptap/react'
+import type { Editor, Range } from '@tiptap/core'
 
 import SlashCommandMenu from '@/components/editor/SlashCommandMenu'
 
@@ -15,7 +15,7 @@ export type SlashCommandItem = {
 }
 
 type SlashCommandOptions = {
-  items: SlashCommandItem[]
+  items: Array<SlashCommandItem>
 }
 
 const SlashCommand = Extension.create<SlashCommandOptions>({
@@ -36,7 +36,9 @@ const SlashCommand = Extension.create<SlashCommandOptions>({
           if (!normalized) return this.options.items
           return this.options.items.filter((item) => {
             const match = item.title.toLowerCase().includes(normalized)
-            const categoryMatch = item.category.toLowerCase().includes(normalized)
+            const categoryMatch = item.category
+              .toLowerCase()
+              .includes(normalized)
             const descriptionMatch = item.description
               ? item.description.toLowerCase().includes(normalized)
               : false

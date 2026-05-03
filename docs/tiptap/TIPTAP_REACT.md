@@ -24,9 +24,9 @@ cd my-tiptap-project
 
 Next, install the `@tiptap/react` package, `@tiptap/pm` (the ProseMirror library), and `@tiptap/starter-kit`, which includes the most common extensions to get started quickly.
 
--   **@tiptap/react**: The React bindings for Tiptap including Tiptap's core functionality.
--   **@tiptap/pm**: Tiptap's ProseMirror dependencies, which are required for the editor to function.
--   **@tiptap/starter-kit**: A collection of commonly used extensions that provide basic functionality like paragraphs, headings, bold, italic, and more.
+- **@tiptap/react**: The React bindings for Tiptap including Tiptap's core functionality.
+- **@tiptap/pm**: Tiptap's ProseMirror dependencies, which are required for the editor to function.
+- **@tiptap/starter-kit**: A collection of commonly used extensions that provide basic functionality like paragraphs, headings, bold, italic, and more.
 
 ```
 npm install @tiptap/react @tiptap/pm @tiptap/starter-kit
@@ -202,8 +202,8 @@ Tiptap also provides a declarative `<Tiptap>` component that simplifies editor s
 
 ## [](#next-steps)Next steps
 
--   [Configure your editor](/docs/editor/getting-started/configure)
--   [Add styles to your editor](/docs/editor/getting-started/style-editor)
--   [Learn more about Tiptap concepts](/docs/editor/core-concepts/introduction)
--   [Learn how to persist the editor state](/docs/editor/core-concepts/persistence)
--   [Start building your own extensions](/docs/editor/extensions/custom-extensions)
+- [Configure your editor](/docs/editor/getting-started/configure)
+- [Add styles to your editor](/docs/editor/getting-started/style-editor)
+- [Learn more about Tiptap concepts](/docs/editor/core-concepts/introduction)
+- [Learn how to persist the editor state](/docs/editor/core-concepts/persistence)
+- [Start building your own extensions](/docs/editor/extensions/custom-extensions)

@@ -29,15 +29,14 @@ import type {
   HiveWalletActivity,
   HiveWalletOverview,
 } from '@/lib/hive/wallet'
-import type {WalletColorPalette} from '@/features/wallet/walletAssets';
+import type { WalletColorPalette } from '@/features/wallet/walletAssets'
 import { Alert } from '@/components/ui/alert'
 import { Avatar } from '@/components/ui/avatar'
 import useProfileQuery from '@/features/profile/useProfileQuery'
 import {
   WalletAssetBadge,
   WalletAssetIcon,
-  
-  getWalletAssetMeta
+  getWalletAssetMeta,
 } from '@/features/wallet/walletAssets'
 import useWalletQuery from '@/features/wallet/useWalletQuery'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'

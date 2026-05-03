@@ -1,6 +1,11 @@
 import { Extension } from '@tiptap/core'
-import { Plugin, PluginKey, NodeSelection, TextSelection } from '@tiptap/pm/state'
-import { Slice, Fragment } from '@tiptap/pm/model'
+import {
+  NodeSelection,
+  Plugin,
+  PluginKey,
+  TextSelection,
+} from '@tiptap/pm/state'
+import { Fragment, Slice } from '@tiptap/pm/model'
 import * as pmView from '@tiptap/pm/view'
 
 const getPmView = () => {
@@ -16,7 +21,10 @@ const serializeForClipboard = (view: any, slice: Slice) => {
     return view.serializeForClipboard(slice)
   }
   const proseMirrorView = getPmView()
-  if (proseMirrorView && typeof (proseMirrorView as any)?.__serializeForClipboard === 'function') {
+  if (
+    proseMirrorView &&
+    typeof (proseMirrorView as any)?.__serializeForClipboard === 'function'
+  ) {
     return (proseMirrorView as any).__serializeForClipboard(view, slice)
   }
   throw new Error('No supported clipboard serialization method found.')
@@ -42,7 +50,7 @@ const absoluteRect = (node: Element) => {
 
 const nodeDOMAtCoords = (
   coords: { x: number; y: number },
-  options: { customNodes: string[] }
+  options: { customNodes: Array<string> },
 ) => {
   const selectors = [
     'li',
@@ -61,14 +69,15 @@ const nodeDOMAtCoords = (
     .elementsFromPoint(coords.x, coords.y)
     .find(
       (elem) =>
-        elem.parentElement?.matches?.('.ProseMirror') || elem.matches(selectors)
+        elem.parentElement?.matches?.('.ProseMirror') ||
+        elem.matches(selectors),
     )
 }
 
 const nodePosAtDOM = (
   node: Element,
   view: pmView.EditorView,
-  options: { dragHandleWidth: number }
+  options: { dragHandleWidth: number },
 ) => {
   const boundingRect = node.getBoundingClientRect()
   return view.posAtCoords({
@@ -88,8 +97,8 @@ const DragHandlePlugin = (options: {
   dragHandleWidth: number
   scrollTreshold: number
   dragHandleSelector?: string
-  excludedTags: string[]
-  customNodes: string[]
+  excludedTags: Array<string>
+  customNodes: Array<string>
 }) => {
   let listType = ''
 
@@ -101,7 +110,7 @@ const DragHandlePlugin = (options: {
         x: event.clientX + 50 + options.dragHandleWidth,
         y: event.clientY,
       },
-      options
+      options,
     )
     if (!(node instanceof Element)) return
     let draggedNodePos = nodePosAtDOM(node, view, options)
@@ -115,7 +124,10 @@ const DragHandlePlugin = (options: {
     if (nodePos.node().type.name === 'doc') {
       differentNodeSelected = true
     } else {
-      const nodeSelection = NodeSelection.create(view.state.doc, nodePos.before())
+      const nodeSelection = NodeSelection.create(
+        view.state.doc,
+        nodePos.before(),
+      )
       differentNodeSelected = !(
         draggedNodePos + 1 >= nodeSelection.$from.pos &&
         draggedNodePos <= nodeSelection.$to.pos
@@ -129,17 +141,27 @@ const DragHandlePlugin = (options: {
       !(view.state.selection instanceof NodeSelection)
     ) {
       const endSelection = NodeSelection.create(view.state.doc, to - 1)
-      selection = TextSelection.create(view.state.doc, draggedNodePos, endSelection.$to.pos)
+      selection = TextSelection.create(
+        view.state.doc,
+        draggedNodePos,
+        endSelection.$to.pos,
+      )
     } else {
       selection = NodeSelection.create(view.state.doc, draggedNodePos)
-      if (selection.node.type.isInline || selection.node.type.name === 'tableRow') {
+      if (
+        selection.node.type.isInline ||
+        selection.node.type.name === 'tableRow'
+      ) {
         const $pos = view.state.doc.resolve(selection.from)
         selection = NodeSelection.create(view.state.doc, $pos.before())
       }
     }
 
     // Ensure blockquote stays intact when dragging its paragraph
-    if (selection instanceof NodeSelection && selection.node.type.name === 'paragraph') {
+    if (
+      selection instanceof NodeSelection &&
+      selection.node.type.name === 'paragraph'
+    ) {
       const $pos = view.state.doc.resolve(selection.from)
       if ($pos.parent.type.name === 'blockquote') {
         selection = NodeSelection.create(view.state.doc, $pos.before())
@@ -193,19 +215,24 @@ const DragHandlePlugin = (options: {
       const handleBySelector = options.dragHandleSelector
         ? document.querySelector(options.dragHandleSelector)
         : null
-      dragHandleElement = (handleBySelector as HTMLDivElement) ?? document.createElement('div')
+      dragHandleElement =
+        (handleBySelector as HTMLDivElement) ?? document.createElement('div')
       dragHandleElement.draggable = true
       dragHandleElement.dataset.dragHandle = ''
       dragHandleElement.classList.add('drag-handle')
 
-      const onDragHandleDragStart = (event: DragEvent) => handleDragStart(event, view)
+      const onDragHandleDragStart = (event: DragEvent) =>
+        handleDragStart(event, view)
       const onDragHandleDrag = (event: DragEvent) => {
         hideDragHandle()
         if (!event) return
         const scrollY = window.scrollY
         if (event.clientY < options.scrollTreshold) {
           window.scrollTo({ top: scrollY - 30, behavior: 'smooth' })
-        } else if (window.innerHeight - event.clientY < options.scrollTreshold) {
+        } else if (
+          window.innerHeight - event.clientY <
+          options.scrollTreshold
+        ) {
           window.scrollTo({ top: scrollY + 30, behavior: 'smooth' })
         }
       }
@@ -218,7 +245,10 @@ const DragHandlePlugin = (options: {
       if (!handleBySelector) {
         view?.dom?.parentElement?.appendChild(dragHandleElement)
       }
-      view?.dom?.parentElement?.addEventListener('mouseout', hideHandleOnEditorOut)
+      view?.dom?.parentElement?.addEventListener(
+        'mouseout',
+        hideHandleOnEditorOut,
+      )
 
       return {
         destroy: () => {
@@ -226,11 +256,17 @@ const DragHandlePlugin = (options: {
             dragHandleElement?.remove?.()
           }
           dragHandleElement?.removeEventListener('drag', onDragHandleDrag)
-          dragHandleElement?.removeEventListener('dragstart', onDragHandleDragStart)
+          dragHandleElement?.removeEventListener(
+            'dragstart',
+            onDragHandleDragStart,
+          )
           dragHandleElement?.removeEventListener('mouseenter', showDragHandle)
           dragHandleElement?.removeEventListener('mouseleave', hideDragHandle)
           dragHandleElement = null
-          view?.dom?.parentElement?.removeEventListener('mouseout', hideHandleOnEditorOut)
+          view?.dom?.parentElement?.removeEventListener(
+            'mouseout',
+            hideHandleOnEditorOut,
+          )
         },
       }
     },
@@ -238,11 +274,16 @@ const DragHandlePlugin = (options: {
       handleDOMEvents: {
         mousemove: (view, event) => {
           if (!view.editable) return
-          if (event.target instanceof Element && event.target.closest('.drag-handle')) {
+          if (
+            event.target instanceof Element &&
+            event.target.closest('.drag-handle')
+          ) {
             showDragHandle()
             return
           }
-          const handlesContainer = view.dom.closest('[data-show-handles]') as HTMLElement | null
+          const handlesContainer = view.dom.closest(
+            '[data-show-handles]',
+          )
           if (handlesContainer?.dataset.showHandles === 'false') {
             hideDragHandle()
             return
@@ -252,11 +293,17 @@ const DragHandlePlugin = (options: {
               x: event.clientX + 50 + options.dragHandleWidth,
               y: event.clientY,
             },
-            options
+            options,
           )
           const notDragging = node?.closest('.not-draggable')
-          const excludedTagList = options.excludedTags.concat(['ol', 'ul']).join(', ')
-          if (!(node instanceof Element) || node.matches(excludedTagList) || notDragging) {
+          const excludedTagList = options.excludedTags
+            .concat(['ol', 'ul'])
+            .join(', ')
+          if (
+            !(node instanceof Element) ||
+            node.matches(excludedTagList) ||
+            notDragging
+          ) {
             hideDragHandle()
             return
           }
@@ -301,15 +348,18 @@ const DragHandlePlugin = (options: {
           }
           if (!droppedNode) return
           const resolvedPos = view.state.doc.resolve(dropPos.pos)
-          const isDroppedInsideList = resolvedPos.parent.type.name === 'listItem'
+          const isDroppedInsideList =
+            resolvedPos.parent.type.name === 'listItem'
           if (
             view.state.selection instanceof NodeSelection &&
             view.state.selection.node.type.name === 'listItem' &&
             !isDroppedInsideList &&
             listType === 'OL'
           ) {
-            const newList =
-              view.state.schema.nodes.orderedList?.createAndFill(null, droppedNode)
+            const newList = view.state.schema.nodes.orderedList?.createAndFill(
+              null,
+              droppedNode,
+            )
             if (!newList) return
             const slice = new Slice(Fragment.from(newList), 0, 0)
             view.dragging = { slice, move: event.ctrlKey }

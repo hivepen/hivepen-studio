@@ -7,7 +7,7 @@ type RawPost = {
   body?: string
   created: string
   community?: string
-  json_metadata?: string | { tags?: string[] }
+  json_metadata?: string | { tags?: Array<string> }
   net_votes?: number
   children?: number
   category?: string
@@ -20,7 +20,7 @@ export type HivePost = {
   body: string
   created: string
   community?: string
-  tags: string[]
+  tags: Array<string>
   votes?: number
   comments?: number
   category?: string
@@ -36,7 +36,7 @@ const parseTags = (metadata: RawPost['json_metadata']) => {
             return {}
           }
         })()
-      : metadata ?? {}
+      : (metadata ?? {})
 
   return Array.isArray(parsed?.tags) ? parsed.tags : []
 }

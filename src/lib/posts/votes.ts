@@ -21,7 +21,7 @@ export const formatVotePercent = (percent: number) => {
   return `${percentFormatter.format(normalized)}%`
 }
 
-export const sortVoteDetailsByPercent = (votes: VoteDetail[]) =>
+export const sortVoteDetailsByPercent = (votes: Array<VoteDetail>) =>
   [...votes].sort(
     (a, b) => normalizeVotePercent(b.percent) - normalizeVotePercent(a.percent),
   )

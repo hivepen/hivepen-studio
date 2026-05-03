@@ -1,43 +1,43 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from 'react'
 import {
   Box,
-  HStack,
-  Input,
-  Stack,
-  Text,
-  Tabs,
-  IconButton,
   Code,
   Collapsible,
-  useCollapsible,
+  HStack,
   Icon,
+  IconButton,
+  Input,
   InputGroup,
-} from "@chakra-ui/react";
-import { ChevronDown, ChevronRight, Copy, Search } from "lucide-react";
+  Stack,
+  Tabs,
+  Text,
+  useCollapsible,
+} from '@chakra-ui/react'
+import { ChevronDown, ChevronRight, Copy, Search } from 'lucide-react'
 
 interface DevOnlyProps {
-  children?: React.ReactNode;
-  summary?: React.ReactNode;
-  json?: unknown;
-  defaultOpen?: boolean;
-  maxHeight?: string;
+  children?: React.ReactNode
+  summary?: React.ReactNode
+  json?: unknown
+  defaultOpen?: boolean
+  maxHeight?: string
 }
 
 /* -------------------------------- Utilities -------------------------------- */
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
-  typeof v === "object" && v !== null && !Array.isArray(v);
+  typeof v === 'object' && v !== null && !Array.isArray(v)
 
 const formatValue = (value: unknown) => {
-  if (typeof value === "string") return `"${value}"`;
-  if (typeof value === "number") return value;
-  if (typeof value === "boolean") return value ? "true" : "false";
-  if (value === null) return "null";
-  if (value === undefined) return "undefined";
-  if (Array.isArray(value)) return `Array(${value.length})`;
-  if (isObject(value)) return "Object";
-  return String(value);
-};
+  if (typeof value === 'string') return `"${value}"`
+  if (typeof value === 'number') return value
+  if (typeof value === 'boolean') return value ? 'true' : 'false'
+  if (value === null) return 'null'
+  if (value === undefined) return 'undefined'
+  if (Array.isArray(value)) return `Array(${value.length})`
+  if (isObject(value)) return 'Object'
+  return String(value)
+}
 
 /* ----------------------------- Tree View Nodes ------------------------------ */
 
@@ -47,28 +47,28 @@ const TreeNode = ({
   depth = 0,
   filter,
 }: {
-  label: string;
-  value: unknown;
-  depth?: number;
-  filter?: string;
+  label: string
+  value: unknown
+  depth?: number
+  filter?: string
 }) => {
-  const [open, setOpen] = useState(depth < 1);
+  const [open, setOpen] = useState(depth < 1)
 
-  const isExpandable = isObject(value) || Array.isArray(value);
+  const isExpandable = isObject(value) || Array.isArray(value)
 
   if (
     filter &&
     !label.toLowerCase().includes(filter.toLowerCase()) &&
     !JSON.stringify(value).toLowerCase().includes(filter.toLowerCase())
   ) {
-    return null;
+    return null
   }
 
   return (
     <Box pl={depth * 12}>
       <HStack
         gap={1}
-        cursor={isExpandable ? "pointer" : "default"}
+        cursor={isExpandable ? 'pointer' : 'default'}
         onClick={() => isExpandable && setOpen(!open)}
         align="center"
       >
@@ -102,35 +102,35 @@ const TreeNode = ({
         </Box>
       )}
     </Box>
-  );
-};
+  )
+}
 
 /* -------------------------------- Main UI -------------------------------- */
 
 const DevOnly = ({
   children,
-  summary = "dev-only debug",
+  summary = 'dev-only debug',
   json,
   defaultOpen = false,
-  maxHeight = "70vh",
+  maxHeight = '70vh',
 }: DevOnlyProps) => {
   const inDevMode =
-    import.meta.env.DEV || import.meta.env.MODE === "development";
+    import.meta.env.DEV || import.meta.env.MODE === 'development'
 
-  if (!inDevMode) return null;
+  if (!inDevMode) return null
 
-  const collapsible = useCollapsible({defaultOpen});
-  const [filter, setFilter] = useState("");
+  const collapsible = useCollapsible({ defaultOpen })
+  const [filter, setFilter] = useState('')
 
   const rawJson = useMemo(() => {
     try {
-      return JSON.stringify(json, null, 2);
+      return JSON.stringify(json, null, 2)
     } catch {
-      return "Unable to stringify value";
+      return 'Unable to stringify value'
     }
-  }, [json]);
+  }, [json])
 
-  const copy = () => navigator.clipboard.writeText(rawJson);
+  const copy = () => navigator.clipboard.writeText(rawJson)
 
   return (
     <Collapsible.RootProvider
@@ -143,8 +143,8 @@ const DevOnly = ({
         py={2}
         cursor="pointer"
         bg={{
-          _hover: "bg.muted",
-          base: collapsible.open ? "bg.muted" : undefined,
+          _hover: 'bg.muted',
+          base: collapsible.open ? 'bg.muted' : undefined,
         }}
         color="fg.subtle"
         w="full"
@@ -152,7 +152,7 @@ const DevOnly = ({
         <HStack>
           <Collapsible.Indicator
             transition="transform 0.2s"
-            _open={{ transform: "rotate(90deg)" }}
+            _open={{ transform: 'rotate(90deg)' }}
           >
             <ChevronRight size={14} />
           </Collapsible.Indicator>
@@ -161,25 +161,34 @@ const DevOnly = ({
           </Text>
         </HStack>
       </Collapsible.Trigger>
-      <Collapsible.Content bg="bg.subtle" borderWidth={collapsible.open ? 1 : undefined} borderColor="bg.muted">
-          <Tabs.Root defaultValue="tree">
-            <Tabs.List>
-              <Tabs.Trigger value="tree">Structured</Tabs.Trigger>
-              <Tabs.Trigger value="raw" title="Uses JSON.stringify">
-                Raw
-              </Tabs.Trigger>
-            </Tabs.List>
-        <Box px={4} pb={4} maxH={maxHeight} overflow="auto">
-
+      <Collapsible.Content
+        bg="bg.subtle"
+        borderWidth={collapsible.open ? 1 : undefined}
+        borderColor="bg.muted"
+      >
+        <Tabs.Root defaultValue="tree">
+          <Tabs.List>
+            <Tabs.Trigger value="tree">Structured</Tabs.Trigger>
+            <Tabs.Trigger value="raw" title="Uses JSON.stringify">
+              Raw
+            </Tabs.Trigger>
+          </Tabs.List>
+          <Box px={4} pb={4} maxH={maxHeight} overflow="auto">
             <Tabs.Content value="tree">
               <Stack gap={2}>
-                <InputGroup startElement={<Icon size="xs" ml={-1}><Search /></Icon>}>
-                    <Input
-                      size="xs"
-                      placeholder="Filter..."
-                      value={filter}
-                      onChange={(e) => setFilter(e.target.value)}
-                    />
+                <InputGroup
+                  startElement={
+                    <Icon size="xs" ml={-1}>
+                      <Search />
+                    </Icon>
+                  }
+                >
+                  <Input
+                    size="xs"
+                    placeholder="Filter..."
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                  />
                 </InputGroup>
 
                 {json && (isObject(json) || Array.isArray(json)) ? (
@@ -213,11 +222,11 @@ const DevOnly = ({
                 </Code>
               </Stack>
             </Tabs.Content>
-        </Box>
-          </Tabs.Root>
+          </Box>
+        </Tabs.Root>
       </Collapsible.Content>
     </Collapsible.RootProvider>
-  );
-};
+  )
+}
 
-export default DevOnly;
+export default DevOnly
