@@ -5,24 +5,24 @@ import {
   For,
   Group,
   HStack,
+  Icon,
   IconButton,
   Popover,
   Portal,
   Skeleton,
+  Slider,
   Stack,
   Text,
   Textarea,
   Wrap,
 } from '@chakra-ui/react'
-import { useState } from 'react'
-import { ArrowBigUp, MessageCircle, Send } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ChevronUp, MessageCircle, Ruler, Send, SlidersHorizontal, ThumbsUp } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import useVotePost from '@/features/posts/useVotePost'
 import useCommentPost from '@/features/posts/useCommentPost'
 import usePostVoteDetails from '@/hooks/usePostVoteDetails'
-import { Avatar } from '@/components/ui/avatar'
 import { Tooltip } from '@/components/ui/tooltip'
-import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { formatVotePercent, sortVoteDetailsByPercent } from '@/lib/posts/votes'
 import { m } from '@/paraglide/messages'
 import AccountAvatar from '@/components/AccountAvatar'
@@ -44,12 +44,21 @@ export default function PostActions({
   onCommentSuccess?: () => void
   variant?: 'detail' | 'card'
 }) {
+  const DEFAULT_VOTE_PERCENT = 10
+  const DEFAULT_VOTE_STEP = 5
+  const HOLD_TO_OPEN_DELAY_MS = 280
   const isCard = variant === 'card'
   const [commentBody, setCommentBody] = useState('')
   const [commentOpen, setCommentOpen] = useState(false)
   const [votesOpen, setVotesOpen] = useState(false)
+  const [customVoteOpen, setCustomVoteOpen] = useState(false)
+  const [customVotePercent, setCustomVotePercent] = useState(DEFAULT_VOTE_PERCENT)
+  const [customVoteStep, setCustomVoteStep] = useState<1 | 5>(DEFAULT_VOTE_STEP)
   const [shouldFetchVotes, setShouldFetchVotes] = useState(false)
-  const vote = useVotePost({ author, permlink })
+  const holdTimerRef = useRef<number | null>(null)
+  const preventQuickVoteRef = useRef(false)
+  const voteSliderThumbRef = useRef<HTMLDivElement | null>(null)
+  const voteController = useVotePost({ author, permlink })
   const comment = useCommentPost({
     parentAuthor: author,
     parentPermlink: permlink,
@@ -82,12 +91,72 @@ export default function PostActions({
     }
   }
 
-  const handleVote = async () => {
-    const response = await vote.vote(100)
+  const submitVote = async (weightPercent: number) => {
+    const response = await voteController.vote(weightPercent)
     if (response.success) {
+      setCustomVoteOpen(false)
       onVoteSuccess?.()
     }
   }
+
+  const clearHoldTimer = () => {
+    if (holdTimerRef.current !== null) {
+      window.clearTimeout(holdTimerRef.current)
+      holdTimerRef.current = null
+    }
+  }
+
+  const openCustomVote = () => {
+    clearHoldTimer()
+    preventQuickVoteRef.current = true
+    setCustomVoteOpen(true)
+  }
+
+  const handleVotePointerDown = () => {
+    if (voteController.isVoting || customVoteOpen) return
+    clearHoldTimer()
+    preventQuickVoteRef.current = false
+    holdTimerRef.current = window.setTimeout(() => {
+      openCustomVote()
+    }, HOLD_TO_OPEN_DELAY_MS)
+  }
+
+  const handleVotePointerEnd = () => {
+    clearHoldTimer()
+  }
+
+  const handleQuickVote = async () => {
+    if (customVoteOpen) {
+      setCustomVoteOpen(false)
+      preventQuickVoteRef.current = false
+      return
+    }
+
+    if (preventQuickVoteRef.current) {
+      preventQuickVoteRef.current = false
+      return
+    }
+
+    await submitVote(DEFAULT_VOTE_PERCENT)
+  }
+
+  const handleCustomVote = async () => {
+    await submitVote(customVotePercent)
+  }
+
+  const toggleCustomVoteStep = () => {
+    setCustomVoteStep((currentStep) => {
+      if (currentStep === 5) return 1
+      setCustomVotePercent((currentPercent) =>
+        Math.max(DEFAULT_VOTE_STEP, Math.round(currentPercent / 5) * 5),
+      )
+      return 5
+    })
+  }
+
+  useEffect(() => {
+    return () => clearHoldTimer()
+  }, [])
 
   const commentForm = (
     <Stack gap={3}>
@@ -113,14 +182,14 @@ export default function PostActions({
           </IconButton>
         </Tooltip>
       </HStack>
-      {isCard && (vote.error || comment.error) && (
+      {isCard && (voteController.error || comment.error) && (
         <Text fontSize="xs" color="fg.error">
-          {vote.error ?? comment.error}
+          {voteController.error ?? comment.error}
         </Text>
       )}
-      {isCard && (vote.success || comment.success) && (
+      {isCard && (voteController.success || comment.success) && (
         <Text fontSize="xs" color="fg.muted">
-          {vote.success
+          {voteController.success
             ? m.post_actions_vote_sent()
             : m.post_actions_comment_published()}
         </Text>
@@ -132,18 +201,128 @@ export default function PostActions({
     <Stack>
       <HStack gap={2} wrap="wrap" justify="end">
         <Group attached borderRadius="full">
-          <Tooltip content={m.post_actions_upvote()}>
-            <IconButton
-              size="md"
-              variant="ghost"
-              rounded="full"
-              onClick={handleVote}
-              loading={vote.isVoting}
-              aria-label={m.post_actions_upvote()}
-            >
-              <ArrowBigUp size={16} />
-            </IconButton>
-          </Tooltip>
+          <Popover.Root
+            open={customVoteOpen}
+            onOpenChange={(details) => {
+              setCustomVoteOpen(details.open)
+              if (!details.open) {
+                preventQuickVoteRef.current = false
+              }
+            }}
+            initialFocusEl={() => voteSliderThumbRef.current}
+            lazyMount
+            unmountOnExit
+            positioning={{ placement: 'top-start', offset: { mainAxis: 8 } }}
+          >
+            <Popover.Anchor asChild>
+              <IconButton
+                size="md"
+                variant="ghost"
+                rounded="full"
+                onPointerDown={handleVotePointerDown}
+                onPointerUp={handleVotePointerEnd}
+                onPointerCancel={handleVotePointerEnd}
+                onClick={handleQuickVote}
+                onContextMenu={(event) => {
+                  event.preventDefault()
+                  openCustomVote()
+                }}
+                loading={voteController.isVoting}
+                aria-label={m.post_actions_upvote()}
+              >
+                <ChevronUp size={16} strokeWidth={3} />
+              </IconButton>
+            </Popover.Anchor>
+            <Portal>
+              <Popover.Positioner>
+                <Popover.Content
+                  bg="bg.panel"
+                  border="1px solid"
+                  borderColor="border"
+                  borderRadius="16px"
+                  boxShadow="lg"
+                  p={3}
+                  width="288px"
+                >
+                  <Stack gap={3} colorPalette="green">
+                    <HStack justify="space-between" align="start" gap={3}>
+                      <Stack gap={0}>
+                        <Text
+                          color="fg.muted"
+                          fontSize="xs"
+                          fontWeight="600"
+                          letterSpacing="0.08em"
+                          textTransform="uppercase"
+                        >
+                          {m.post_actions_upvote()}
+                        </Text>
+                        <Text
+                          color="colorPalette.fg"
+                          fontSize="2xl"
+                          fontWeight="700"
+                          lineHeight="1"
+                        >
+                          {customVotePercent}%
+                        </Text>
+                      </Stack>
+                      <Tooltip
+                        content={
+                          customVoteStep === 5
+                            ? 'Switch to 1% steps'
+                            : 'Switch to 5% steps'
+                        }
+                      >
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          colorPalette="gray"
+                          onClick={toggleCustomVoteStep}
+                          gap={2}
+                          px={3}
+                        >
+                          <Text fontSize="xs" fontWeight="600">
+                            {customVoteStep}% {m.ui_slider_step()}
+                          </Text>
+                        </Button>
+                      </Tooltip>
+                    </HStack>
+
+                    <Slider.Root
+                      aria-label={['Vote percentage']}
+                      colorPalette="green"
+                      min={customVoteStep}
+                      max={100}
+                      step={customVoteStep}
+                      size="sm"
+                      value={[customVotePercent]}
+                      onValueChange={(details) =>
+                        setCustomVotePercent(details.value[0] ?? DEFAULT_VOTE_PERCENT)
+                      }
+                    >
+                      <Slider.Control>
+                        <Slider.Track bg="colorPalette.subtle">
+                          <Slider.Range />
+                        </Slider.Track>
+                        <Slider.Thumb index={0} ref={voteSliderThumbRef}>
+                          <Slider.HiddenInput />
+                        </Slider.Thumb>
+                      </Slider.Control>
+                    </Slider.Root>
+
+                    <Button
+                      loading={voteController.isVoting}
+                      onClick={handleCustomVote}
+                      width="full"
+                      colorPalette="gray"
+                    > 
+                    <Icon as={ThumbsUp} />
+                      {m.post_actions_upvote()} {customVotePercent}%
+                    </Button>
+                  </Stack>
+                </Popover.Content>
+              </Popover.Positioner>
+            </Portal>
+          </Popover.Root>
           <Popover.Root
             open={votesOpen}
             onOpenChange={(details) => setVotesOpen(details.open)}
@@ -202,15 +381,15 @@ export default function PostActions({
                               (voteEntry) => voteEntry.percent >= 1,
                             )}
                           >
-                            {(vote) => (
+                            {(voteEntry) => (
                               <HStack
                                 h={1}
                                 bg="colorPalette.subtle"
                                 gap="0.5"
                                 colorPalette={'gray'}
-                                key={vote.account}
+                                key={voteEntry.account}
                                 rounded="xs"
-                                width={formatVotePercent(vote.percent)}
+                                width={formatVotePercent(voteEntry.percent)}
                               ></HStack>
                             )}
                           </For>
@@ -222,21 +401,21 @@ export default function PostActions({
                             (voteEntry) => voteEntry.percent >= 0.1,
                           )}
                         >
-                          {(vote) => (
+                          {(voteEntry) => (
                             <HStack
-                              key={vote.account}
+                              key={voteEntry.account}
                               justify="space-between"
                               gap={4}
                             >
                               <HStack asChild gap={2} minW={0}>
                                 <Link
                                   to="/$accountname"
-                                  params={{ accountname: `@${vote.account}` }}
+                                  params={{ accountname: `@${voteEntry.account}` }}
                                 >
                                   <AccountAvatar
                                     size="xs"
                                     boxSize={6}
-                                    username={vote.account}
+                                    username={voteEntry.account}
                                   />
 
                                   <HStack gap="0.5">
@@ -254,7 +433,7 @@ export default function PostActions({
                                       fontWeight="semibold"
                                       lineClamp={1}
                                     >
-                                      {vote.account}
+                                      {voteEntry.account}
                                     </Text>
                                   </HStack>
                                 </Link>
@@ -265,14 +444,14 @@ export default function PostActions({
                                   color="fg.muted"
                                   fontWeight="600"
                                 >
-                                  {formatVotePercent(vote.percent)}
+                                  {formatVotePercent(voteEntry.percent)}
                                 </Text>
                                 <Box
                                   rounded="full"
                                   me="1"
                                   bg="colorPalette.muted"
                                   h="1"
-                                  w={formatVotePercent(vote.percent)}
+                                  w={formatVotePercent(voteEntry.percent)}
                                 ></Box>
                               </Stack>
                             </HStack>
@@ -290,15 +469,15 @@ export default function PostActions({
                               (voteEntry) => voteEntry.percent <= 0.1,
                             )}
                           >
-                            {(vote) => (
+                            {(voteEntry) => (
                               <Link
                                 to="/$accountname"
-                                params={{ accountname: `@${vote.account}` }}
+                                params={{ accountname: `@${voteEntry.account}` }}
                               >
                                 <AccountAvatar
                                   size="xs"
                                   boxSize={6}
-                                  username={vote.account}
+                                  username={voteEntry.account}
                                 />
                               </Link>
                             )}
@@ -377,14 +556,14 @@ export default function PostActions({
 
       {!isCard && (
         <>
-          {(vote.error || comment.error) && (
+          {(voteController.error || comment.error) && (
             <Text fontSize="xs" color="fg.error" mt={2}>
-              {vote.error ?? comment.error}
+              {voteController.error ?? comment.error}
             </Text>
           )}
-          {(vote.success || comment.success) && (
+          {(voteController.success || comment.success) && (
             <Text fontSize="xs" color="fg.muted" mt={2}>
-              {vote.success
+              {voteController.success
                 ? m.post_actions_vote_sent()
                 : m.post_actions_comment_published()}
             </Text>

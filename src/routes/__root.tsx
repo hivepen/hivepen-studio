@@ -10,7 +10,7 @@ import { getLocale, shouldRedirect } from '@/paraglide/runtime'
 import appCss from '../styles.css?url'
 
 import type { QueryClient } from '@tanstack/react-query'
-import { system } from '../theme'
+import { chakraSystem } from '../theme'
 import AppShell from '../components/AppShell'
 
 interface MyRouterContext {
@@ -57,7 +57,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <ChakraProvider value={system}>
+        <ChakraProvider value={chakraSystem}>
           <AppShell>{children}</AppShell>
         </ChakraProvider>
         <TanStackDevtools
