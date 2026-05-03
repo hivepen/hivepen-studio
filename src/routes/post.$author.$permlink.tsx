@@ -13,7 +13,26 @@ import { renderHiveMarkdown } from '@/lib/posts/markdown'
 import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/post/$author/$permlink')({
-  component: PostDetailPage,
+    component: PostDetailPage,
+    loader: async ({ params }) => {
+
+    },
+    head: ({ loaderData }) => ({
+        meta: [
+          // { title: loaderData.post.title },
+          // { name: 'description', content: loaderData.post.summary },
+          // // Open Graph
+          // { property: 'og:title', content: loaderData.post.title },
+          // { property: 'og:description', content: loaderData.post.excerpt },
+          // { property: 'og:image', content: loaderData.post.coverImage },
+          // { property: 'og:type', content: 'article' },
+          // // Twitter Card
+          // { name: 'twitter:card', content: 'summary_large_image' },
+          // { name: 'twitter:title', content: loaderData.post.title },
+          // { name: 'twitter:description', content: loaderData.post.excerpt },
+          // { name: 'twitter:image', content: loaderData.post.coverImage },
+        ],
+      }),
 })
 
 function PostDetailPage() {

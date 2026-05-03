@@ -17,7 +17,14 @@ import {
   Wrap,
 } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
-import { ChevronUp, MessageCircle, Ruler, Send, SlidersHorizontal, ThumbsUp } from 'lucide-react'
+import {
+  ChevronUp,
+  MessageCircle,
+  Ruler,
+  Send,
+  SlidersHorizontal,
+  ThumbsUp,
+} from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import useVotePost from '@/features/posts/useVotePost'
 import useCommentPost from '@/features/posts/useCommentPost'
@@ -52,7 +59,8 @@ export default function PostActions({
   const [commentOpen, setCommentOpen] = useState(false)
   const [votesOpen, setVotesOpen] = useState(false)
   const [customVoteOpen, setCustomVoteOpen] = useState(false)
-  const [customVotePercent, setCustomVotePercent] = useState(DEFAULT_VOTE_PERCENT)
+  const [customVotePercent, setCustomVotePercent] =
+    useState(DEFAULT_VOTE_PERCENT)
   const [customVoteStep, setCustomVoteStep] = useState<1 | 5>(DEFAULT_VOTE_STEP)
   const [shouldFetchVotes, setShouldFetchVotes] = useState(false)
   const holdTimerRef = useRef<number | null>(null)
@@ -230,7 +238,7 @@ export default function PostActions({
                 loading={voteController.isVoting}
                 aria-label={m.post_actions_upvote()}
               >
-                <ChevronUp size={16} strokeWidth={3} />
+                <Icon as={ChevronUp} strokeWidth={3} />
               </IconButton>
             </Popover.Anchor>
             <Portal>
@@ -296,7 +304,9 @@ export default function PostActions({
                       size="sm"
                       value={[customVotePercent]}
                       onValueChange={(details) =>
-                        setCustomVotePercent(details.value[0] ?? DEFAULT_VOTE_PERCENT)
+                        setCustomVotePercent(
+                          details.value[0] ?? DEFAULT_VOTE_PERCENT,
+                        )
                       }
                     >
                       <Slider.Control>
@@ -314,8 +324,8 @@ export default function PostActions({
                       onClick={handleCustomVote}
                       width="full"
                       colorPalette="gray"
-                    > 
-                    <Icon as={ThumbsUp} />
+                    >
+                      <Icon as={ThumbsUp} />
                       {m.post_actions_upvote()} {customVotePercent}%
                     </Button>
                   </Stack>
@@ -410,7 +420,9 @@ export default function PostActions({
                               <HStack asChild gap={2} minW={0}>
                                 <Link
                                   to="/$accountname"
-                                  params={{ accountname: `@${voteEntry.account}` }}
+                                  params={{
+                                    accountname: `@${voteEntry.account}`,
+                                  }}
                                 >
                                   <AccountAvatar
                                     size="xs"
@@ -472,7 +484,9 @@ export default function PostActions({
                             {(voteEntry) => (
                               <Link
                                 to="/$accountname"
-                                params={{ accountname: `@${voteEntry.account}` }}
+                                params={{
+                                  accountname: `@${voteEntry.account}`,
+                                }}
                               >
                                 <AccountAvatar
                                   size="xs"
@@ -510,8 +524,9 @@ export default function PostActions({
                   rounded="full"
                   aria-label={m.post_actions_comment()}
                   gap={2}
+                  disabled //TODO: Disabled until a quick popup comment feature is implemented
                 >
-                  <MessageCircle size={16} />
+                  <Icon as={MessageCircle} strokeWidth="3" />
                   <Text fontSize="xs" fontWeight="600" color="fg.muted">
                     {resolvedCommentCount}
                   </Text>
