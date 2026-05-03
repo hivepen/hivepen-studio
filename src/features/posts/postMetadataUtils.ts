@@ -28,7 +28,7 @@ export const resolveApp = (metadata: Entry['json_metadata']) => {
 export const resolveImages = (metadata: Entry['json_metadata']): string[] => {
   const resolved = resolveMetadata(metadata)
   if (!Array.isArray(resolved?.image)) return []
-  return resolved.image.filter((img): img is string => typeof img === 'string')
+  return resolved.image.filter((img: unknown): img is string => typeof img === 'string')
 }
 
 export const resolveCoverImageUrl = (metadata: Entry['json_metadata']): string | undefined => {
