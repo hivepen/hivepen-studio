@@ -8,6 +8,7 @@ export type SearchResult = {
   communityTitle?: string
   summary?: string
   coverUrl?: string
+  images?: Array<string>
   app?: string
   votes?: number
   comments?: number

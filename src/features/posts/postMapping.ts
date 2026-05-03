@@ -14,11 +14,29 @@ const resolveMetadata = (metadata: Entry['json_metadata']) => {
   return metadata
 }
 
+export const resolveImages = (metadata: Entry['json_metadata']) => {
+  if (!metadata) return []
+  return Array.isArray(metadata.image) ? metadata.image : []
+}
+
+export const resolveCoverUrl = (metadata: Entry['json_metadata']) => {
+  if (!metadata) return undefined
+  
+  // Check for custom cover image first (for future implementation)
+  if (typeof metadata.coverImage === 'string') {
+    return metadata.coverImage
+  }
+  
+  // Fall back to first image in the images array
+  const images = resolveImages(metadata)
+  return typeof images[0] === 'string' ? images[0] : undefined
+}
+
 export const mapEntryToSearchResult = (entry: Entry): SearchResult => {
   const metadata = resolveMetadata(entry.json_metadata)
   const tags = Array.isArray(metadata?.tags) ? metadata.tags : []
-  const imageList = Array.isArray(metadata?.image) ? metadata.image : []
-  const coverUrl = typeof imageList[0] === 'string' ? imageList[0] : undefined
+  const images = resolveImages(metadata)
+  const coverUrl = resolveCoverUrl(metadata)
   const summary =
     typeof metadata?.description === 'string' ? metadata.description : undefined
   const app =
@@ -59,6 +77,7 @@ export const mapEntryToSearchResult = (entry: Entry): SearchResult => {
     communityTitle: entry.community_title,
     summary,
     coverUrl,
+    images,
     app,
     payout,
     votes:

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import {  getPostQueryOptions } from '@ecency/sdk'
 import type {Entry} from '@ecency/sdk';
 import { sumAssetStrings } from '@/lib/hive/payouts'
+import { resolveImages, resolveCoverUrl } from './postMapping'
 
 type PostPayoutSummary = {
   pending: string
@@ -28,6 +29,7 @@ type PostViewModel = {
   beneficiaries?: Entry['beneficiaries']
   payout: PostPayoutSummary
   coverUrl?: string
+  images: Array<string>
 }
 
 const resolveTags = (metadata: Entry['json_metadata']) => {
@@ -41,11 +43,6 @@ const resolveApp = (metadata: Entry['json_metadata']) => {
   return app?.trim() || undefined
 }
 
-const resolveCoverUrl = (metadata: Entry['json_metadata']) => {
-  if (!metadata) return undefined
-  const imageList = Array.isArray(metadata.image) ? metadata.image : []
-  return typeof imageList[0] === 'string' ? imageList[0] : undefined
-}
 
 const buildPayoutSummary = (entry: Entry): PostPayoutSummary => {
   const totalFromPayouts = sumAssetStrings(
@@ -85,10 +82,11 @@ const mapEntryToPost = (entry: Entry): PostViewModel => {
     beneficiaries: entry.beneficiaries,
     payout: buildPayoutSummary(entry),
     coverUrl: resolveCoverUrl(entry.json_metadata),
+    images: resolveImages(entry.json_metadata),
   }
 }
 
-export { mapEntryToPost, buildPayoutSummary, resolveTags, resolveApp, resolveCoverUrl }
+export { mapEntryToPost, buildPayoutSummary, resolveTags, resolveApp }
 
 export default function usePostQuery({
   author,
