@@ -42,7 +42,7 @@
     "@tanstack/react-router-ssr-query": "^1.131.7",
     "@tanstack/react-start": "^1.132.0",
     "@tanstack/router-plugin": "^1.132.0",
-    "@tanstack/zod-adapter": "^1.162.9",
+    "@tanstack/zod-adapter": "^1.166.9",
     "@tiptap/extension-bubble-menu": "^3.20.0",
     "@tiptap/extension-image": "^3.19.0",
     "@tiptap/extension-link": "^3.19.0",
@@ -67,7 +67,7 @@
     "tiptap-extension-global-drag-handle": "^0.1.18",
     "vite-plugin-db": "^0.6.1",
     "vite-tsconfig-paths": "^6.0.2",
-    "zod": "^4.1.11"
+    "zod": "^4.4.2"
   },
   "devDependencies": {
     "@chakra-ui/cli": "^3.33.0",

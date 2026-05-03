@@ -28,7 +28,7 @@
         "@tanstack/react-router-ssr-query": "^1.131.7",
         "@tanstack/react-start": "^1.132.0",
         "@tanstack/router-plugin": "^1.132.0",
-        "@tanstack/zod-adapter": "^1.162.9",
+        "@tanstack/zod-adapter": "^1.166.9",
         "@tiptap/extension-bubble-menu": "^3.20.0",
         "@tiptap/extension-image": "^3.19.0",
         "@tiptap/extension-link": "^3.19.0",
@@ -53,7 +53,7 @@
         "tiptap-extension-global-drag-handle": "^0.1.18",
         "vite-plugin-db": "^0.6.1",
         "vite-tsconfig-paths": "^6.0.2",
-        "zod": "^4.1.11",
+        "zod": "^4.4.2",
       },
       "devDependencies": {
         "@chakra-ui/cli": "^3.33.0",
@@ -655,7 +655,7 @@
 
     "@tanstack/virtual-file-routes": ["@tanstack/virtual-file-routes@1.154.7", "", {}, "sha512-cHHDnewHozgjpI+MIVp9tcib6lYEQK5MyUr0ChHpHFGBl8Xei55rohFK0I0ve/GKoHeioaK42Smd8OixPp6CTg=="],
 
-    "@tanstack/zod-adapter": ["@tanstack/zod-adapter@1.162.9", "", { "peerDependencies": { "@tanstack/react-router": ">=1.43.2", "zod": "^3.23.8" } }, "sha512-O0z/MFGBvKhVZogVfnvCcYOA9Ftws/ggeRtpDywRUFZJEk7DLQJeq2XcNmOTrJUXts8OgRua+ZRg9uU7CdctwQ=="],
+    "@tanstack/zod-adapter": ["@tanstack/zod-adapter@1.166.9", "", { "peerDependencies": { "@tanstack/react-router": ">=1.43.2", "zod": "^3.23.8" } }, "sha512-HHllQ/CKGi8YBbftv6OmzojtHM6Rk4UszAFICAgUMbwiqtKqjlIZQ/7mv2IPNxBb8YlOQgzyQ4jz2UTEXIi6YA=="],
 
     "@testing-library/dom": ["@testing-library/dom@10.4.1", "", { "dependencies": { "@babel/code-frame": "^7.10.4", "@babel/runtime": "^7.12.5", "@types/aria-query": "^5.0.1", "aria-query": "5.3.0", "dom-accessibility-api": "^0.5.9", "lz-string": "^1.5.0", "picocolors": "1.1.1", "pretty-format": "^27.0.2" } }, "sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg=="],
 
@@ -2185,7 +2185,7 @@
 
     "zeptomatch": ["zeptomatch@2.1.0", "", { "dependencies": { "grammex": "^3.1.11", "graphmatch": "^1.1.0" } }, "sha512-KiGErG2J0G82LSpniV0CtIzjlJ10E04j02VOudJsPyPwNZgGnRKQy7I1R7GMyg/QswnE4l7ohSGrQbQbjXPPDA=="],
 
-    "zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
+    "zod": ["zod@4.4.2", "", {}, "sha512-IynmDyxsEsb9RKzO3J9+4SxXnl2FTFSzNBaKKaMV6tsSk0rw9gYw9gs+JFCq/qk2LCZ78KDwyj+Z289TijSkUw=="],
 
     "@aioha/ledger-app-hive/bs58": ["bs58@5.0.0", "", { "dependencies": { "base-x": "^4.0.0" } }, "sha512-r+ihvQJvahgYT50JD05dyJNKlmmSlMoOGwn1lCcEzanPglg7TxYjioQUYehQ9mAR/+hOSd2jRc/Z2y5UxBymvQ=="],
 
