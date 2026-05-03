@@ -65,7 +65,7 @@ export const Route = createFileRoute('/post/$author/$permlink')({
       },
       { 
         property: 'og:image', 
-        content: loaderData?.post?.coverUrl || `${APP_CONFIG.BASE_URL}/og-image.png` 
+        content: loaderData?.post?.coverImageUrl || `${APP_CONFIG.BASE_URL}/og-image.png` 
       },
       // Twitter Card
       { name: 'twitter:card', content: 'summary_large_image' },
@@ -85,7 +85,7 @@ export const Route = createFileRoute('/post/$author/$permlink')({
       },
       { 
         name: 'twitter:image', 
-        content: loaderData?.post?.coverUrl || `${APP_CONFIG.BASE_URL}/og-image.png` 
+        content: loaderData?.post?.coverImageUrl || `${APP_CONFIG.BASE_URL}/og-image.png` 
       },
     ],
   }),

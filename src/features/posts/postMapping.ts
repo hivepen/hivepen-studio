@@ -1,48 +1,16 @@
 import type {Entry} from '@ecency/sdk';
 import type {SearchResult} from '@/lib/hive/search';
 import { sumAssetStrings } from '@/lib/hive/payouts'
-
-const resolveMetadata = (metadata: Entry['json_metadata']) => {
-  if (!metadata) return {}
-  if (typeof metadata === 'string') {
-    try {
-      return JSON.parse(metadata)
-    } catch {
-      return {}
-    }
-  }
-  return metadata
-}
-
-export const resolveImages = (metadata: Entry['json_metadata']) => {
-  if (!metadata) return []
-  return Array.isArray(metadata.image) ? metadata.image : []
-}
-
-export const resolveCoverUrl = (metadata: Entry['json_metadata']) => {
-  if (!metadata) return undefined
-  
-  // Check for custom cover image first (for future implementation)
-  if (typeof metadata.coverImage === 'string') {
-    return metadata.coverImage
-  }
-  
-  // Fall back to first image in the images array
-  const images = resolveImages(metadata)
-  return typeof images[0] === 'string' ? images[0] : undefined
-}
+import { resolveMetadata, resolveTags, resolveApp, resolveImages, resolveCoverImageUrl } from './postMetadataUtils'
 
 export const mapEntryToSearchResult = (entry: Entry): SearchResult => {
   const metadata = resolveMetadata(entry.json_metadata)
-  const tags = Array.isArray(metadata?.tags) ? metadata.tags : []
-  const images = resolveImages(metadata)
-  const coverUrl = resolveCoverUrl(metadata)
+  const tags = resolveTags(entry.json_metadata)
+  const images = resolveImages(entry.json_metadata)
+  const coverImageUrl = resolveCoverImageUrl(entry.json_metadata)
   const summary =
     typeof metadata?.description === 'string' ? metadata.description : undefined
-  const app =
-    typeof metadata?.app === 'string'
-      ? metadata.app.split('/')[0]?.trim() || undefined
-      : undefined
+  const app = resolveApp(entry.json_metadata)
   const pendingPayout =
     typeof entry.pending_payout_value === 'string'
       ? entry.pending_payout_value
@@ -76,7 +44,7 @@ export const mapEntryToSearchResult = (entry: Entry): SearchResult => {
     community: entry.community,
     communityTitle: entry.community_title,
     summary,
-    coverUrl,
+    coverUrl: coverImageUrl,
     images,
     app,
     payout,
