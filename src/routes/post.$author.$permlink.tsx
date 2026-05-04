@@ -2,9 +2,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { Badge, Box, Button, HStack, Stack, Tabs, Text } from '@chakra-ui/react'
 import { ArrowLeft } from 'lucide-react'
 import { getPostQueryOptions, type Entry } from '@ecency/sdk'
-import usePostQuery, {
-  mapEntryToPost
-} from '@/features/posts/usePostQuery'
+import usePostQuery, { mapEntryToPost } from '@/features/posts/usePostQuery'
 import PostActions from '@/features/posts/PostActions'
 import usePostCommentsQuery from '@/features/posts/usePostCommentsQuery'
 import PostContent from '@/components/posts/PostContent'
@@ -15,6 +13,7 @@ import DevOnly from '@/components/DevOnly'
 import { renderHiveMarkdown } from '@/lib/posts/markdown'
 import { m } from '@/paraglide/messages'
 import { APP_CONFIG } from '@/lib/constants'
+import { PostHeadInfo } from '@/components/PostCard'
 
 export const Route = createFileRoute('/post/$author/$permlink')({
   component: PostDetailPage,
@@ -57,15 +56,18 @@ export const Route = createFileRoute('/post/$author/$permlink')({
       },
       { property: 'og:type', content: 'article' },
       { property: 'og:site_name', content: APP_CONFIG.SITE_NAME },
-      { 
-        property: 'og:url', 
-        content: typeof window !== 'undefined' 
-          ? window.location.href 
-          : `${APP_CONFIG.BASE_URL}/post/${params.author}/${params.permlink}` 
+      {
+        property: 'og:url',
+        content:
+          typeof window !== 'undefined'
+            ? window.location.href
+            : `${APP_CONFIG.BASE_URL}/post/${params.author}/${params.permlink}`,
       },
-      { 
-        property: 'og:image', 
-        content: loaderData?.post?.coverImageUrl || `${APP_CONFIG.BASE_URL}/og-image.png` 
+      {
+        property: 'og:image',
+        content:
+          loaderData?.post?.coverImageUrl ||
+          `${APP_CONFIG.BASE_URL}/og-image.png`,
       },
       // Twitter Card
       { name: 'twitter:card', content: 'summary_large_image' },
@@ -77,15 +79,18 @@ export const Route = createFileRoute('/post/$author/$permlink')({
         name: 'twitter:description',
         content: loaderData?.post?.body?.slice(0, 160) || '',
       },
-      { 
-        name: 'twitter:url', 
-        content: typeof window !== 'undefined' 
-          ? window.location.href 
-          : `${APP_CONFIG.BASE_URL}/post/${params.author}/${params.permlink}` 
+      {
+        name: 'twitter:url',
+        content:
+          typeof window !== 'undefined'
+            ? window.location.href
+            : `${APP_CONFIG.BASE_URL}/post/${params.author}/${params.permlink}`,
       },
-      { 
-        name: 'twitter:image', 
-        content: loaderData?.post?.coverImageUrl || `${APP_CONFIG.BASE_URL}/og-image.png` 
+      {
+        name: 'twitter:image',
+        content:
+          loaderData?.post?.coverImageUrl ||
+          `${APP_CONFIG.BASE_URL}/og-image.png`,
       },
     ],
   }),
@@ -160,34 +165,13 @@ function PostDetailPage() {
       </Button>
 
       <Stack gap={3}>
-        <Text fontSize="sm" color="fg.muted">
-          {post.community ? (
-            <>
-              <Link
-                to="/communities/$communityId"
-                params={{ communityId: post.community }}
-                style={{ textDecoration: 'none' }}
-              >
-                <Text as="span" _hover={{ textDecoration: 'underline' }}>
-                  {post.community}
-                </Text>
-              </Link>
-              {' · '}
-            </>
-          ) : null}
-          <Link
-            to="/$accountname"
-            params={{ accountname: `@${post.author}` }}
-            style={{ textDecoration: 'none' }}
-          >
-            <Text as="span" _hover={{ textDecoration: 'underline' }}>
-              @{post.author}
-            </Text>
-          </Link>
-          {post.created
-            ? ` · ${new Date(post.created).toLocaleDateString()}`
-            : ''}
-        </Text>
+        <DevOnly json={post} />
+        <PostHeadInfo
+          author={author}
+          createdAt={post.created}
+          community={post.communityTitle}
+        />
+
         <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="600">
           {post.title || m.post_untitled()}
         </Text>
@@ -321,7 +305,7 @@ function PostDetailPage() {
         <PostActions
           author={post.author}
           permlink={post.permlink}
-          voteCount={post.votes}
+          voteCount={post.votesCount}
           commentCount={commentsQuery.data?.length}
           onCommentSuccess={() => commentsQuery.refetch()}
         />

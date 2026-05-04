@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Box, Button, Heading, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import type { SearchResult } from '@/lib/hive/search'
+import type { PostSearchResult } from '@/lib/hive/search'
 import PostsListSection from '@/features/posts/PostsListSection'
 import PostActions from '@/features/posts/PostActions'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
@@ -58,9 +58,9 @@ function MyBlogPage() {
   ])
 
   const posts = useMemo(() => {
-    const pages = (postsQuery.data?.pages ?? []) as Array<Array<SearchResult>>
+    const pages = (postsQuery.data?.pages ?? []) as Array<Array<PostSearchResult>>
     const flattened = pages.flat()
-    const unique = new Map<string, SearchResult>()
+    const unique = new Map<string, PostSearchResult>()
     flattened.forEach((post) => {
       const key = `${post.author}/${post.permlink}`
       if (!unique.has(key)) {
@@ -74,8 +74,8 @@ function MyBlogPage() {
       return {
         title: post.title || m.post_untitled(),
         author: post.author,
-        community: post.communityTitle ?? post.community,
-        communityId: post.community,
+        community: post.communityTitle ?? post.communityId,
+        communityId: post.communityId,
         tags: post.tags,
         summary: post.summary,
         coverUrl: post.coverUrl,

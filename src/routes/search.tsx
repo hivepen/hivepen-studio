@@ -15,7 +15,7 @@ import {
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { SearchResult } from '@/lib/hive/search'
+import type { PostSearchResult } from '@/lib/hive/search'
 import { searchAccounts } from '@/lib/hive/account'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
@@ -358,9 +358,9 @@ function Search() {
   )
 
   const cardResults = useMemo(() => {
-    const pages = (postsQuery.data?.pages ?? []) as Array<Array<SearchResult>>
+    const pages = (postsQuery.data?.pages ?? []) as Array<Array<PostSearchResult>>
     const flattened = pages.flat()
-    const unique = new Map<string, SearchResult>()
+    const unique = new Map<string, PostSearchResult>()
     flattened.forEach((post) => {
       const key = `${post.author}/${post.permlink}`
       if (!unique.has(key)) {
@@ -374,8 +374,8 @@ function Search() {
       return {
         title: post.title || m.post_untitled(),
         author: post.author,
-        community: post.communityTitle ?? post.community,
-        communityId: post.community,
+        community: post.communityTitle ?? post.communityId,
+        communityId: post.communityId,
         tags: post.tags,
         summary: post.summary,
         coverUrl: post.coverUrl,
