@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { aggregateMonthlyPostRewards } from './rewards'
-import type { SearchResult } from '@/lib/hive/search'
+import type { PostSearchResult } from '@/lib/hive/search'
 
 describe('aggregateMonthlyPostRewards', () => {
   it('buckets post rewards into the last 12 months', () => {
     const now = new Date('2026-04-28T12:00:00.000Z')
-    const posts: Array<SearchResult> = [
+    const posts: Array<PostSearchResult> = [
       {
         author: 'alice',
         permlink: 'april-post',
@@ -55,7 +55,7 @@ describe('aggregateMonthlyPostRewards', () => {
 
   it('ignores posts without parseable reward totals', () => {
     const now = new Date('2026-04-28T12:00:00.000Z')
-    const posts: Array<SearchResult> = [
+    const posts: Array<PostSearchResult> = [
       {
         author: 'alice',
         permlink: 'draft',

@@ -1,5 +1,5 @@
 import { getAccountPosts } from '@ecency/sdk'
-import type { SearchResult } from '@/lib/hive/search'
+import type { PostSearchResult } from '@/lib/hive/search'
 import type {
   AccountRewardTimelineData,
   AccountRewardTimelineSnapshot,
@@ -102,13 +102,13 @@ export const writeRewardTimelineSnapshot = (
   writeSnapshots(snapshots)
 }
 
-const resolveRewardAsset = (post: SearchResult) => {
+const resolveRewardAsset = (post: PostSearchResult) => {
   const value = post.payout?.total || post.payout?.pending
   return value ? parseAssetAmount(value) : null
 }
 
 export const aggregateMonthlyPostRewards = (
-  posts: Array<SearchResult>,
+  posts: Array<PostSearchResult>,
   now = new Date(),
 ): AccountRewardTimelineData => {
   const trackedStart = startOfTrackedWindow(now)
@@ -163,7 +163,7 @@ export const fetchAccountRewardTimeline = async (
 ): Promise<AccountRewardTimelineData> => {
   const normalized = normalizeUsername(username)
   const trackedStart = startOfTrackedWindow()
-  const collected = new Map<string, SearchResult>()
+  const collected = new Map<string, PostSearchResult>()
   let startAuthor: string | undefined
   let startPermlink: string | undefined
 
