@@ -1,4 +1,4 @@
-import { Box, HStack, Image, Stack, Text } from '@chakra-ui/react'
+import { Box, HStack, Image, Show, Stack, Text } from '@chakra-ui/react'
 import type { BoxProps } from '@chakra-ui/react'
 import { Avatar } from '@/components/ui/avatar'
 
@@ -48,7 +48,7 @@ const ProfileBanner = ({
               left={0}
               right={0}
               h="100px"
-              bg="linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)"
+              // bg="linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)"
             />
           </>
         ) : null}
@@ -92,42 +92,40 @@ const ProfileBanner = ({
             >
               <Avatar size={avatarSize} src={avatarUrl} name={avatarName} />
             </Box>
-            <Stack gap={1}>
-              {typeof title === 'string' ? (
-                <Text
-                  fontSize={isCompact ? 'md' : 'lg'}
-                  fontWeight="700"
-                  color={coverUrl ? 'white' : 'fg.default'}
-                  textShadow={coverUrl ? '0 0 2px rgba(0,0,0,0.5)' : undefined}
-                >
-                  {title}
-                </Text>
-              ) : (
-                title
-              )}
-              {subtitle ? (
-                <Text
-                  fontSize="xs"
-                  color="fg.muted"
-                  _hover={{ textDecoration: 'underline', cursor: 'pointer' }}
-                  title={`Copy "${subtitle}" to clipboard`}
-                  onClick={() =>
-                    navigator.clipboard.writeText(String(subtitle))
-                  }
-                >
-                  {subtitle}
-                </Text>
-              ) : null}
-            </Stack>
           </HStack>
-          {actions ? <Box>{actions}</Box> : null}
+          <Show when={actions}>
+            <Box>{actions}</Box>
+          </Show>
         </HStack>
-        {description ? (
-          <Text fontSize="sm" color="fg.muted">
+        <Stack gap={0}>
+          {' '}
+          <Show when={typeof title === 'string'} fallback={title}>
+            {() => (
+              <Text fontSize={isCompact ? 'md' : 'lg'} fontWeight="700">
+                {title}
+              </Text>
+            )}
+          </Show>
+          <Show when={subtitle}>
+            <Text
+              fontSize="xs"
+              color="fg.muted"
+              _hover={{ textDecoration: 'underline', cursor: 'pointer' }}
+              title={`Copy "${subtitle}" to clipboard`}
+              onClick={() => navigator.clipboard.writeText(String(subtitle))}
+            >
+              {subtitle}
+            </Text>
+          </Show>
+        </Stack>
+        <Show when={description}>
+          <Text fontSize="sm" color="fg.muted" textWrap="wrap">
             {description}
           </Text>
-        ) : null}
-        {meta ? <Box>{meta}</Box> : null}
+        </Show>
+        <Show when={meta}>
+          <Box>{meta}</Box>
+        </Show>
       </Stack>
     </Box>
   )
