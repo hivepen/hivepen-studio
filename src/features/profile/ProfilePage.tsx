@@ -4,15 +4,16 @@ import {
   Group,
   HStack,
   Heading,
+  Icon,
   IconButton,
   Stack,
   Text,
 } from '@chakra-ui/react'
 import { Link } from '@tanstack/react-router'
-import { MessageSquareIcon, Wallet } from 'lucide-react'
+import { InfoIcon, MessageSquare, MessageSquareIcon, MoreVertical, Wallet } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import type { SearchResult } from '@/lib/hive/search'
+import type { PostSearchResult } from '@/lib/hive/search'
 import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import ProfileBanner from '@/components/ProfileBanner'
@@ -64,9 +65,11 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
   ])
 
   const posts = useMemo(() => {
-    const pages = (postsQuery.data?.pages ?? []) as Array<Array<SearchResult>>
+    const pages = (postsQuery.data?.pages ?? []) as Array<
+      Array<PostSearchResult>
+    >
     const flattened = pages.flat()
-    const unique = new Map<string, SearchResult>()
+    const unique = new Map<string, PostSearchResult>()
 
     flattened.forEach((post) => {
       const key = `${post.author}/${post.permlink}`
@@ -83,8 +86,8 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
         app: post.app,
         author: post.author,
         comments: overrides.comments ?? post.comments,
-        community: post.communityTitle ?? post.community,
-        communityId: post.community,
+        community: post.communityTitle ?? post.communityId,
+        communityId: post.communityId,
         coverUrl: post.coverUrl,
         createdAt: new Date(post.created).toLocaleDateString(),
         payout: post.payout,
@@ -123,24 +126,22 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
         actions={
           <Group
             bg="bg.panel"
-            border="1px solid"
-            borderColor="border"
             gap={2}
             p={1}
             rounded="md"
           >
-            <Button asChild colorPalette="red" variant="subtle">
+            <Button variant="ghost">{m.profile_follow_button()}</Button>
+            <IconButton title={m.profile_message_button()} variant="ghost">
+                <Icon as={MessageSquare} strokeWidth={2.5} />
+
+            </IconButton>
+            <IconButton asChild variant="ghost">
               <Link
                 params={{ accountname: `@${username}` }}
                 to="/$accountname/wallet"
               >
-                <Wallet />
-                {m.profile_wallet_button()}
+                <Icon as={MoreVertical} strokeWidth={2.5} />
               </Link>
-            </Button>
-            <Button variant="ghost">{m.profile_follow_button()}</Button>
-            <IconButton title={m.profile_message_button()} variant="ghost">
-              <MessageSquareIcon />
             </IconButton>
           </Group>
         }
@@ -153,7 +154,8 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
         meta={profileMeta}
         subtitle={profileQuery.data?.displayName ? `@${username}` : undefined}
         title={profileQuery.data?.displayName || `@${username}`}
-      />
+          />
+          <DevOnly json={profileQuery.data} />
 
       <InfiniteDebugBanner
         hasNextPage={postsQuery.hasNextPage}
