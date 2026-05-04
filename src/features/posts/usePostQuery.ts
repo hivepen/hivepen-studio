@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import {  getPostQueryOptions } from '@ecency/sdk'
+import {resolveApp, resolveTags, resolveImages, resolveCoverImageUrl } from './postMetadataUtils'
 import type {Entry} from '@ecency/sdk';
 import { sumAssetStrings } from '@/lib/hive/payouts'
-import { resolveTags, resolveApp, resolveImages, resolveCoverImageUrl } from './postMetadataUtils'
 
 type PostPayoutSummary = {
   pending: string
@@ -11,25 +11,28 @@ type PostPayoutSummary = {
   curator: string
   isPaidOut: boolean
 }
-
-type PostViewModel = {
+export type CommunityId = `hive-${string}` | string
+export type CommunityInfo = { id: CommunityId; name?: string }
+export type PostViewModel = {
   author: string
   permlink: string
   title: string
   body: string
   created: string
   updated?: string
-  community?: string
+  communityId?: CommunityId
+  communityTitle?: string
+  communityInfo?: CommunityInfo
   tags: Array<string>
-  votes?: number
-  comments?: number
+  votesCount?: number
+  commentsCount?: number
   category?: string
   app?: string
   payoutAt?: string
   beneficiaries?: Entry['beneficiaries']
   payout: PostPayoutSummary
   coverImageUrl?: string
-  images: string[]
+  images: Array<string>
 }
 
 
@@ -61,10 +64,12 @@ const mapEntryToPost = (entry: Entry): PostViewModel => {
     body: entry.body,
     created: entry.created,
     updated: entry.updated,
-    community: entry.community,
+    communityId: entry.community,
+    communityTitle: entry.community_title,
+    // community: {id: entry.community, title: entry.community_title},
     tags: resolveTags(entry.json_metadata),
-    votes,
-    comments: entry.children,
+    votesCount: votes,
+    commentsCount: entry.children,
     category: entry.category,
     app: resolveApp(entry.json_metadata),
     payoutAt: entry.payout_at,

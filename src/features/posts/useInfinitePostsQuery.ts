@@ -5,13 +5,13 @@ import {
   getPostsRankedInfiniteQueryOptions
 } from '@ecency/sdk'
 import type {Entry} from '@ecency/sdk';
-import type {SearchResult} from '@/lib/hive/search';
+import type {PostSearchResult} from '@/lib/hive/search';
 import type { PostsQueryParams } from '@/features/posts/usePostsQuery'
 import { mapEntryToSearchResult } from '@/features/posts/postMapping'
 
-export type PostsPage = Array<SearchResult>
+export type PostsPage = Array<PostSearchResult>
 
-const filterPosts = (posts: Array<SearchResult>, params: PostsQueryParams) => {
+const filterPosts = (posts: Array<PostSearchResult>, params: PostsQueryParams) => {
   const author = params.author?.trim()
   const dateFrom = params.dateFrom ? new Date(params.dateFrom) : null
   const dateTo = params.dateTo ? new Date(params.dateTo) : null

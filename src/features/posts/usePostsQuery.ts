@@ -5,7 +5,7 @@ import {
   getPostsRankedQueryOptions
 } from '@ecency/sdk'
 import type {Entry} from '@ecency/sdk';
-import type {RankedSort, SearchResult} from '@/lib/hive/search';
+import type {RankedSort, PostSearchResult} from '@/lib/hive/search';
 import { mapEntryToSearchResult } from '@/features/posts/postMapping'
 
 export type PostsQueryParams = {
@@ -18,7 +18,7 @@ export type PostsQueryParams = {
   limit?: number
 }
 
-const filterPosts = (posts: Array<SearchResult>, params: PostsQueryParams) => {
+const filterPosts = (posts: Array<PostSearchResult>, params: PostsQueryParams) => {
   const author = params.author?.trim()
   const dateFrom = params.dateFrom ? new Date(params.dateFrom) : null
   const dateTo = params.dateTo ? new Date(params.dateTo) : null

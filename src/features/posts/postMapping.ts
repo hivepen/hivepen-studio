@@ -1,9 +1,9 @@
-import type {Entry} from '@ecency/sdk';
-import type {SearchResult} from '@/lib/hive/search';
-import { sumAssetStrings } from '@/lib/hive/payouts'
 import { resolveMetadata, resolveTags, resolveApp, resolveImages, resolveCoverImageUrl } from './postMetadataUtils'
+import type {Entry} from '@ecency/sdk';
+import type {PostSearchResult} from '@/lib/hive/search';
+import { sumAssetStrings } from '@/lib/hive/payouts'
 
-export const mapEntryToSearchResult = (entry: Entry): SearchResult => {
+export const mapEntryToSearchResult = (entry: Entry): PostSearchResult => {
   const metadata = resolveMetadata(entry.json_metadata)
   const tags = resolveTags(entry.json_metadata)
   const images = resolveImages(entry.json_metadata)
@@ -41,8 +41,9 @@ export const mapEntryToSearchResult = (entry: Entry): SearchResult => {
     title: entry.title,
     created: entry.created,
     tags,
-    community: entry.community,
+    communityId: entry.community,
     communityTitle: entry.community_title,
+    communityInfo: { id: entry.community, name: entry.community_title },
     summary,
     coverUrl: coverImageUrl,
     images,
