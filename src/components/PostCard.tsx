@@ -15,6 +15,7 @@ import type {
   StackProps} from '@chakra-ui/react';
 import type { ReactNode } from 'react'
 import type { VoteDetail } from '@/lib/posts/votes'
+import type { CommunityInfo } from '@/features/posts/usePostQuery';
 import useTitleMeta from '@/hooks/useTitleMeta'
 import PostTag from '@/components/PostTag'
 import PostPayoutBadge from '@/components/posts/PostPayoutBadge'
@@ -23,7 +24,7 @@ import { isCommunityId } from '@/lib/hive/community'
 import AccountAvatar from '@/components/AccountAvatar'
 import PostActions from '@/features/posts/PostActions'
 
-export type PostCardProps = {
+export type PostCardProps  = {
   title: string
   author: string
   community?: string
@@ -76,7 +77,7 @@ export default function PostCard({
       <Stack flex="1" minW={0} gap={0}>
         <Card.Header pb={0} px={{ base: 3, md: 4 }} pt={{ base: 3, md: 4 }}>
           <HStack gap={3} align="start">
-            <PostCardAuthor {...{ author, createdAt, community }} />
+            <PostHeadInfo {...{ author, createdAt, community }} />
           </HStack>
         </Card.Header>
 
@@ -149,14 +150,14 @@ export default function PostCard({
   )
 }
 
-function PostCardAuthor({
+export function PostHeadInfo({
   author,
   createdAt,
   community,
 }: {
   author: string
   createdAt?: string
-  community?: string
+  community?: CommunityInfo
 }) {
   return (
     <HStack flex="1" justify="space-between" align="start" gap={3} wrap="wrap">
