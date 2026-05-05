@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-05-05
+
+- Committed the Aioha wallet migration and HiveAuth desktop QR/deeplink fix.
+- Added the canonical wallet and connected-accounts roadmap at
+  `docs/wallet/WALLET_ACCOUNTS_ROADMAP.md`.
+- Shipped the first multiple-connected-account foundation with active-account
+  switching in the shared wallet layer and app shell.
+
 ## 2026-04-28
 
 - Added the canonical analytics and discovery cache roadmap.

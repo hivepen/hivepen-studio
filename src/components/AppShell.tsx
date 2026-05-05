@@ -1,5 +1,6 @@
 import { Link, Outlet, useRouter, useRouterState } from '@tanstack/react-router'
 import {
+  Badge,
   Box,
   Button,
   Flex,
@@ -16,6 +17,7 @@ import {
   BarChart3,
   BookOpen,
   ChevronRightIcon,
+  CircleOff,
   FilePenLine,
   LayoutDashboard,
   LogOut,
@@ -24,7 +26,6 @@ import {
   NotebookText,
   Search,
   Settings,
-  Shuffle,
   SidebarCloseIcon,
   SidebarOpenIcon,
   UserPlus,
@@ -35,8 +36,9 @@ import { useEffect, useMemo, useState } from 'react'
 import AccountConnectDialog from './AccountConnectDialog'
 import AccountAvatar from './AccountAvatar'
 import type { Home } from 'lucide-react'
-
 import type { WalletProvider } from '@/lib/hive/walletAuth'
+
+import { formatWalletProviderName } from '@/lib/hive/walletAuth'
 import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
 import { CONNECT_ACCOUNT_DIALOG_EVENT } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
@@ -60,18 +62,23 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
     select: (state) => state.location.pathname,
   })
   const [collapsed, setCollapsed] = useState(true)
+  const [connectError, setConnectError] = useState<string | null>(null)
   const [showConnectDialog, setShowConnectDialog] = useState(false)
   const [connectingProvider, setConnectingProvider] =
     useState<WalletProvider | null>(null)
+  const [walletActionKey, setWalletActionKey] = useState<string | null>(null)
   const {
     account,
+    connectedAccounts,
     connectWithHiveAuth,
     connectWithKeychain,
-    disconnect,
+    disconnectAccount,
+    disconnectAll,
     isHiveAuthAvailable,
     isHiveAuthLoading,
     isKeychainAvailable,
     pendingHiveAuthRequest,
+    switchAccount,
   } = useHiveWallet()
   const profileQuery = useProfileQuery(account)
   const locale = getLocale()
@@ -80,6 +87,8 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
     if (!account) return m.app_shell_connect_account()
     return profileQuery.data?.displayName || `@${account}`
   }, [account, locale, profileQuery.data?.displayName])
+
+  const hasConnectedAccounts = connectedAccounts.length > 0
 
   const navGroups: Array<NavGroup> = useMemo(
     () => [
@@ -161,8 +170,18 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
     return segments.map((segment) => map[segment] ?? segment)
   }, [pathname, locale])
 
+  const openConnectDialog = () => {
+    setConnectError(null)
+    setShowConnectDialog(true)
+  }
+
+  const closeConnectDialog = () => {
+    setConnectError(null)
+    setShowConnectDialog(false)
+  }
+
   useEffect(() => {
-    const handleOpenConnectDialog = () => setShowConnectDialog(true)
+    const handleOpenConnectDialog = () => openConnectDialog()
     window.addEventListener(
       CONNECT_ACCOUNT_DIALOG_EVENT,
       handleOpenConnectDialog,
@@ -178,6 +197,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
   const handleConnect = async (provider: WalletProvider, username: string) => {
     if (!username.trim()) return
 
+    setConnectError(null)
     setConnectingProvider(provider)
 
     const response =
@@ -186,23 +206,40 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
         : await connectWithKeychain(username.trim())
 
     if (response.success) {
+      setConnectError(null)
       setShowConnectDialog(false)
     } else {
-      window.alert(response.error ?? m.app_shell_login_rejected())
+      setConnectError(response.error ?? m.app_shell_login_rejected())
     }
 
     setConnectingProvider(null)
   }
 
   const handleLogout = async () => {
-    await disconnect()
+    await disconnectAll()
     router.navigate({ to: '/' })
   }
 
-  const handleSwitchAccount = () => {
-    void disconnect()
-    router.navigate({ to: '/' })
-    setShowConnectDialog(true)
+  const handleSwitchAccount = async (username: string) => {
+    setWalletActionKey(`switch:${username}`)
+    const response = await switchAccount(username)
+    if (!response.success) {
+      window.alert(response.error ?? m.app_shell_login_rejected())
+    }
+    setWalletActionKey(null)
+  }
+
+  const handleDisconnectAccount = async (username: string) => {
+    const shouldNavigateHome =
+      username === account && connectedAccounts.length === 1
+    setWalletActionKey(`disconnect:${username}`)
+    const response = await disconnectAccount(username)
+    if (!response.success) {
+      window.alert(response.error ?? m.app_shell_login_rejected())
+    } else if (shouldNavigateHome) {
+      router.navigate({ to: '/' })
+    }
+    setWalletActionKey(null)
   }
 
   return (
@@ -310,33 +347,113 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
               </Button>
             </Menu.Trigger>
             <Menu.Positioner>
-              <Menu.Content minW="220px" bg="bg.panel" borderColor="border">
-                {!account && (
-                  <Menu.Item
-                    value="connect"
-                    onSelect={() => setShowConnectDialog(true)}
-                    disabled={Boolean(connectingProvider)}
-                  >
-                    <HStack gap={2}>
-                      <Icon as={UserPlus} boxSize={4} />
-                      <Text>
-                        {connectingProvider
-                          ? m.app_shell_menu_connecting()
-                          : m.app_shell_menu_connect_account()}
-                      </Text>
-                    </HStack>
-                  </Menu.Item>
-                )}
+              <Menu.Content minW="280px" bg="bg.panel" borderColor="border">
                 <Menu.Item
-                  value="switch"
-                  onSelect={handleSwitchAccount}
-                  disabled={!account}
+                  value="connect"
+                  onSelect={openConnectDialog}
+                  disabled={
+                    Boolean(connectingProvider) || walletActionKey !== null
+                  }
                 >
                   <HStack gap={2}>
-                    <Icon as={Shuffle} boxSize={4} />
-                    <Text>{m.app_shell_menu_switch_account()}</Text>
+                    <Icon as={UserPlus} boxSize={4} />
+                    <Text>
+                      {connectingProvider
+                        ? m.app_shell_menu_connecting()
+                        : hasConnectedAccounts
+                          ? m.app_shell_menu_connect_another_account()
+                          : m.app_shell_menu_connect_account()}
+                    </Text>
                   </HStack>
                 </Menu.Item>
+
+                {hasConnectedAccounts ? (
+                  <>
+                    <Menu.Separator />
+                    <Box px={3} py={2}>
+                      <Text
+                        fontSize="xs"
+                        textTransform="uppercase"
+                        letterSpacing="0.08em"
+                        color="fg.muted"
+                      >
+                        {m.app_shell_menu_connected_accounts()}
+                      </Text>
+                    </Box>
+                    {connectedAccounts.map((connectedAccount) => (
+                      <Menu.Item
+                        key={`switch-${connectedAccount.account}`}
+                        value={`switch-${connectedAccount.account}`}
+                        onSelect={() => {
+                          if (!connectedAccount.isActive) {
+                            void handleSwitchAccount(connectedAccount.account)
+                          }
+                        }}
+                        disabled={
+                          connectedAccount.isActive ||
+                          Boolean(connectingProvider) ||
+                          walletActionKey !== null
+                        }
+                      >
+                        <HStack w="full" justify="space-between" gap={3}>
+                          <HStack gap={3} minW={0}>
+                            <AccountAvatar
+                              size="xs"
+                              boxSize={6}
+                              username={connectedAccount.account}
+                            />
+                            <Box minW={0}>
+                              <Text fontSize="sm" lineClamp={1}>
+                                @{connectedAccount.account}
+                              </Text>
+                              <Text fontSize="xs" color="fg.muted">
+                                {formatWalletProviderName(
+                                  connectedAccount.provider,
+                                )}
+                              </Text>
+                            </Box>
+                          </HStack>
+                          {connectedAccount.isActive ? (
+                            <Badge colorPalette="green" variant="subtle">
+                              {m.app_shell_menu_active_badge()}
+                            </Badge>
+                          ) : null}
+                        </HStack>
+                      </Menu.Item>
+                    ))}
+                    <Menu.Separator />
+                    {connectedAccounts.map((connectedAccount) => (
+                      <Menu.Item
+                        key={`disconnect-${connectedAccount.account}`}
+                        value={`disconnect-${connectedAccount.account}`}
+                        onSelect={() =>
+                          void handleDisconnectAccount(connectedAccount.account)
+                        }
+                        disabled={
+                          Boolean(connectingProvider) ||
+                          walletActionKey !== null
+                        }
+                      >
+                        <HStack gap={2}>
+                          <Icon
+                            as={connectedAccount.isActive ? LogOut : CircleOff}
+                            boxSize={4}
+                          />
+                          <Text>
+                            {connectedAccount.isActive
+                              ? m.app_shell_menu_disconnect_account({
+                                  account: connectedAccount.account,
+                                })
+                              : m.app_shell_menu_remove_account({
+                                  account: connectedAccount.account,
+                                })}
+                          </Text>
+                        </HStack>
+                      </Menu.Item>
+                    ))}
+                  </>
+                ) : null}
+
                 <Menu.Item
                   value="wallet"
                   onSelect={() =>
@@ -365,7 +482,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
                   </HStack>
                 </Menu.Item>
                 <Menu.Item
-                  value="logout"
+                  value="logout-all"
                   onSelect={handleLogout}
                   disabled={!account}
                 >
@@ -426,7 +543,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
       </Flex>
       <AccountConnectDialog
         open={showConnectDialog}
-        onClose={() => setShowConnectDialog(false)}
+        onClose={closeConnectDialog}
         onConnect={handleConnect}
         isConnecting={Boolean(connectingProvider)}
         isHiveAuthAvailable={isHiveAuthAvailable}
@@ -434,6 +551,8 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
         keychainAvailable={isKeychainAvailable}
         pendingHiveAuthRequest={pendingHiveAuthRequest}
         connectingProvider={connectingProvider}
+        errorMessage={connectError}
+        onClearError={() => setConnectError(null)}
       />
     </Flex>
   )

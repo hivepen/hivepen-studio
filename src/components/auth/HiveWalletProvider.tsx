@@ -8,27 +8,39 @@ import {
 import { Providers } from '@aioha/aioha'
 import type { Operation } from '@hiveio/dhive'
 import type {
+  ConnectedWalletAccount,
   PendingHiveAuthRequest,
   WalletLoginResult,
   WalletProvider,
   WalletRequestResult,
 } from '@/lib/hive/walletAuth'
-import { buildPendingHiveAuthRequest } from '@/lib/hive/walletAuth'
 import {
+  buildPendingHiveAuthRequest,
+  normalizeWalletUsername,
+} from '@/lib/hive/walletAuth'
+import {
+  disconnectAiohaAccount,
   getAiohaInstance,
   getAiohaWalletState,
+  isAiohaAccountConnected,
   loginWithAioha,
-  logoutAioha,
+  logoutAllAioha,
   signAndBroadcastOperationsWithAioha,
+  switchAiohaAccount,
   syncLegacyWalletStorage,
 } from '@/lib/hive/aioha'
 
 type WalletContextValue = {
   account: string | null
+  activeAccount: string | null
+  activeProvider: WalletProvider | null
   clearPendingHiveAuthRequest: () => void
+  connectedAccounts: Array<ConnectedWalletAccount>
   connectWithHiveAuth: (username: string) => Promise<WalletLoginResult>
   connectWithKeychain: (username: string) => Promise<WalletLoginResult>
   disconnect: () => Promise<void>
+  disconnectAccount: (username: string) => Promise<WalletLoginResult>
+  disconnectAll: () => Promise<void>
   isHiveAuthAvailable: boolean
   isHiveAuthLoading: boolean
   isKeychainAvailable: boolean
@@ -38,14 +50,10 @@ type WalletContextValue = {
     operations: Array<Operation>,
     keyType?: 'Posting' | 'Active',
   ) => Promise<WalletRequestResult>
+  switchAccount: (username: string) => Promise<WalletLoginResult>
 }
 
-type WalletState = {
-  account: string | null
-  isHiveAuthAvailable: boolean
-  isKeychainAvailable: boolean
-  provider: WalletProvider | null
-}
+type WalletState = ReturnType<typeof getAiohaWalletState>
 
 type HiveAuthEvent = {
   expire: number
@@ -72,6 +80,10 @@ function getInitialWalletState(): WalletState {
 function normalizeWalletError(error: string | undefined, fallback: string) {
   const trimmed = error?.trim()
   return trimmed || fallback
+}
+
+function duplicateAccountError(username: string) {
+  return `@${normalizeWalletUsername(username)} is already connected.`
 }
 
 export function HiveWalletProvider({
@@ -153,6 +165,13 @@ export function HiveWalletProvider({
   }
 
   const connectWithKeychain = async (username: string) => {
+    if (isAiohaAccountConnected(username, aioha)) {
+      return {
+        success: false,
+        error: duplicateAccountError(username),
+      } satisfies WalletLoginResult
+    }
+
     const result = await loginWithAioha(Providers.Keychain, username)
 
     if (result.success) {
@@ -171,6 +190,13 @@ export function HiveWalletProvider({
   }
 
   const connectWithHiveAuth = async (username: string) => {
+    if (isAiohaAccountConnected(username, aioha)) {
+      return {
+        success: false,
+        error: duplicateAccountError(username),
+      } satisfies WalletLoginResult
+    }
+
     setIsHiveAuthLoading(true)
     clearPendingHiveAuthRequest()
 
@@ -197,8 +223,44 @@ export function HiveWalletProvider({
 
   const disconnect = async () => {
     clearPendingHiveAuthRequest()
-    await logoutAioha()
+    await logoutAllAioha()
     setWalletState(getAiohaWalletState(aioha))
+  }
+
+  const disconnectAll = async () => {
+    clearPendingHiveAuthRequest()
+    await logoutAllAioha()
+    setWalletState(getAiohaWalletState(aioha))
+  }
+
+  const switchAccount = (username: string) => {
+    const switched = switchAiohaAccount(username)
+
+    if (!switched) {
+      return Promise.resolve({
+        success: false,
+        error: `Unable to switch to @${normalizeWalletUsername(username)}.`,
+      } satisfies WalletLoginResult)
+    }
+
+    clearPendingHiveAuthRequest()
+    setWalletState(getAiohaWalletState(aioha))
+    return Promise.resolve({ success: true } satisfies WalletLoginResult)
+  }
+
+  const disconnectAccount = async (username: string) => {
+    clearPendingHiveAuthRequest()
+    const result = await disconnectAiohaAccount(username)
+    setWalletState(getAiohaWalletState(aioha))
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+      } satisfies WalletLoginResult
+    }
+
+    return { success: true } satisfies WalletLoginResult
   }
 
   const signAndBroadcastOperations = async (
@@ -232,16 +294,22 @@ export function HiveWalletProvider({
     <HiveWalletContext.Provider
       value={{
         account: walletState.account,
+        activeAccount: walletState.activeAccount,
+        activeProvider: walletState.activeProvider,
         clearPendingHiveAuthRequest,
+        connectedAccounts: walletState.connectedAccounts,
         connectWithHiveAuth,
         connectWithKeychain,
         disconnect,
+        disconnectAccount,
+        disconnectAll,
         isHiveAuthAvailable: walletState.isHiveAuthAvailable,
         isHiveAuthLoading,
         isKeychainAvailable: walletState.isKeychainAvailable,
         pendingHiveAuthRequest,
         provider: walletState.provider,
         signAndBroadcastOperations,
+        switchAccount,
       }}
     >
       {children}

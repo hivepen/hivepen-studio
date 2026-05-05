@@ -25,32 +25,41 @@ import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { m } from '@/paraglide/messages'
 
 export default function AccountConnectDialog({
-  open,
-  onClose,
-  onConnect,
+  connectingProvider,
+  errorMessage,
   isConnecting,
   isHiveAuthAvailable,
   isHiveAuthLoading,
   keychainAvailable,
+  open,
+  onConnect,
+  onClearError,
+  onClose,
   pendingHiveAuthRequest,
-  connectingProvider,
 }: {
-  open: boolean
-  onClose: () => void
-  onConnect: (provider: WalletProvider, username: string) => void
+  connectingProvider: WalletProvider | null
+  errorMessage?: string | null
   isConnecting: boolean
   isHiveAuthAvailable: boolean
   isHiveAuthLoading: boolean
   keychainAvailable: boolean
+  open: boolean
+  onConnect: (provider: WalletProvider, username: string) => void
+  onClearError?: () => void
+  onClose: () => void
   pendingHiveAuthRequest: PendingHiveAuthRequest | null
-  connectingProvider: WalletProvider | null
 }) {
   const [username, setUsername] = useState('')
 
   return (
     <Dialog.Root
       open={open}
-      onOpenChange={(details) => !details.open && onClose()}
+      onOpenChange={(details) => {
+        if (!details.open) {
+          onClearError?.()
+          onClose()
+        }
+      }}
     >
       <Dialog.Backdrop />
       <Dialog.Positioner>
@@ -85,7 +94,10 @@ export default function AccountConnectDialog({
                   <Input
                     placeholder={m.account_connect_username_placeholder()}
                     value={username}
-                    onChange={(event) => setUsername(event.target.value)}
+                    onChange={(event) => {
+                      onClearError?.()
+                      setUsername(event.target.value)
+                    }}
                   />
                 </InputGroup>
               </Field.Root>
@@ -95,6 +107,12 @@ export default function AccountConnectDialog({
                 </Alert>
               )}
 
+              {errorMessage ? (
+                <Alert status="error" colorPalette="red">
+                  {errorMessage}
+                </Alert>
+              ) : null}
+
               {pendingHiveAuthRequest ? (
                 <HiveAuthPendingRequest request={pendingHiveAuthRequest} />
               ) : null}
@@ -102,8 +120,7 @@ export default function AccountConnectDialog({
           </Dialog.Body>
           <Dialog.Footer gap={2} asChild>
             <Stack>
-              <HStack w="full">
-                <Spacer />
+              <HStack w="full" justify="center" wrap="wrap">
                 <Button
                   colorPalette="gray"
                   size="md"
@@ -118,9 +135,9 @@ export default function AccountConnectDialog({
                   {m.account_connect_keychain_button()}
                 </Button>
                 <Button
-                  colorPalette="blue"
+                  colorPalette="gray"
                   size="md"
-                  variant="surface"
+                  variant="outline"
                   onClick={() => onConnect('hiveauth', username)}
                   loading={
                     connectingProvider === 'hiveauth' || isHiveAuthLoading

@@ -85,5 +85,8 @@ client-side discovery cache that supports fast everyday curation workflows.
 
 - The first chart is intentionally scoped to connected-account post rewards to
   ship a useful analytics foundation quickly.
+- Connected-account lifecycle and wallet-state ownership live in
+  `docs/wallet/WALLET_ACCOUNTS_ROADMAP.md`; analytics should build on that
+  model instead of redefining wallet behavior here.
 - Current build-size warnings are baseline and should not be treated as blockers
   unless this work materially worsens them.

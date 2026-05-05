@@ -19,6 +19,13 @@ export type WalletRequestResult =
       error?: string
     }
 
+export type ConnectedWalletAccount = {
+  account: string
+  expiresAt?: number
+  isActive: boolean
+  provider: WalletProvider
+}
+
 export type PendingHiveAuthRequest = {
   androidIntentLinks: {
     hiveAuth: string
@@ -47,6 +54,10 @@ export function normalizeWalletProvider(
   return value === 'keychain' || value === 'hiveauth' || value === 'hivesigner'
     ? value
     : undefined
+}
+
+export function normalizeWalletUsername(value: string) {
+  return value.trim().replace(/^@/, '').toLowerCase()
 }
 
 export function formatWalletProviderName(provider: WalletProvider | string) {

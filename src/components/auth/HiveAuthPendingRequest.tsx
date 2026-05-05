@@ -43,14 +43,14 @@ export default function HiveAuthPendingRequest({
   return (
     <Alert
       status="info"
-      colorPalette="blue"
+      colorPalette="gray"
       title={m.account_connect_pending_title()}
     >
-      <Stack gap={3} align="start">
+      <Stack gap={3} align="center" textAlign="center" w="full">
         <Text fontSize="sm">{m.account_connect_pending_description()}</Text>
 
-        <HStack gap={2} wrap="wrap">
-          <Button size="sm" colorPalette="blue" asChild>
+        <HStack gap={2} justify="center" wrap="wrap">
+          <Button size="sm" colorPalette="gray" asChild>
             <a href={request.deeplink}>
               {m.account_connect_open_wallet_button()}
             </a>
@@ -67,11 +67,11 @@ export default function HiveAuthPendingRequest({
         </HStack>
 
         <Show when={isAndroid}>
-          <Stack gap={2} align="start">
+          <Stack gap={2} align="center">
             <Text fontSize="xs" color="colorPalette.fg">
               {m.account_connect_android_hint()}
             </Text>
-            <HStack gap={2} wrap="wrap">
+            <HStack gap={2} justify="center" wrap="wrap">
               <Button size="sm" variant="outline" asChild>
                 <a href={request.androidIntentLinks.hiveAuth}>
                   {m.account_connect_open_hiveauth_button()}
