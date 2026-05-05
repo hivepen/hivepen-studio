@@ -9,20 +9,15 @@ import {
   Heading,
   Input,
   SimpleGrid,
-  Spinner,
   Stack,
   Text,
   Textarea,
 } from '@chakra-ui/react'
 import { useEffect, useMemo, useState } from 'react'
 
-import { useLocalStorageState } from '@/hooks/useLocalStorageState'
+import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
+import HiveAuthPendingRequest from '@/components/auth/HiveAuthPendingRequest'
 import { fetchAccount } from '@/lib/hive/client'
-import {
-  broadcastOperations,
-  getHiveKeychain,
-  signLogin,
-} from '@/lib/hive/keychain'
 import {
   buildCommentOperations,
   buildPostOperations,
@@ -46,13 +41,20 @@ type AccountProfile = {
 }
 
 function StudioHome() {
-  const [account, setAccount, accountReady] = useLocalStorageState<
-    string | null
-  >('hivepen.account', null)
+  const {
+    account,
+    connectWithHiveAuth,
+    connectWithKeychain,
+    disconnect,
+    isHiveAuthAvailable,
+    isHiveAuthLoading,
+    isKeychainAvailable,
+    pendingHiveAuthRequest,
+    signAndBroadcastOperations,
+  } = useHiveWallet()
   const [loginName, setLoginName] = useState('')
   const [status, setStatus] = useState<StatusState | null>(null)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [keychainDetected, setKeychainDetected] = useState(false)
   const [profile, setProfile] = useState<AccountProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(false)
 
@@ -84,10 +86,6 @@ function StudioHome() {
           : 'gray'
 
   useEffect(() => {
-    setKeychainDetected(Boolean(getHiveKeychain()))
-  }, [])
-
-  useEffect(() => {
     if (!account) {
       setProfile(null)
       return
@@ -112,7 +110,7 @@ function StudioHome() {
     }
   }, [account])
 
-  const handleLogin = async () => {
+  const handleLogin = async (provider: 'keychain' | 'hiveauth') => {
     if (!loginName.trim()) {
       setStatus({ type: 'error', message: m.prototype_enter_username() })
       return
@@ -121,11 +119,12 @@ function StudioHome() {
     setIsConnecting(true)
     setStatus(null)
 
-    const message = `Hivepen Studio login ${new Date().toISOString()}`
-    const response = await signLogin(loginName.trim(), message)
+    const response =
+      provider === 'hiveauth'
+        ? await connectWithHiveAuth(loginName.trim())
+        : await connectWithKeychain(loginName.trim())
 
     if (response.success) {
-      setAccount(loginName.trim())
       setLoginName('')
       setStatus({
         type: 'success',
@@ -134,15 +133,15 @@ function StudioHome() {
     } else {
       setStatus({
         type: 'error',
-        message: response.message ?? m.app_shell_login_rejected(),
+        message: response.error ?? m.app_shell_login_rejected(),
       })
     }
 
     setIsConnecting(false)
   }
 
-  const handleLogout = () => {
-    setAccount(null)
+  const handleLogout = async () => {
+    await disconnect()
     setStatus({ type: 'info', message: m.prototype_disconnected() })
   }
 
@@ -171,7 +170,7 @@ function StudioHome() {
       community: postPayload.community.trim() || undefined,
     })
 
-    const response = await broadcastOperations(account, operations, 'Posting')
+    const response = await signAndBroadcastOperations(operations, 'Posting')
 
     if (response.success) {
       setStatus({
@@ -182,7 +181,7 @@ function StudioHome() {
     } else {
       setStatus({
         type: 'error',
-        message: response.message ?? m.editor_status_post_broadcast_failed(),
+        message: response.error ?? m.editor_status_post_broadcast_failed(),
       })
     }
 
@@ -221,7 +220,7 @@ function StudioHome() {
       body: commentPayload.body.trim(),
     })
 
-    const response = await broadcastOperations(account, operations, 'Posting')
+    const response = await signAndBroadcastOperations(operations, 'Posting')
 
     if (response.success) {
       setStatus({
@@ -232,7 +231,7 @@ function StudioHome() {
     } else {
       setStatus({
         type: 'error',
-        message: response.message ?? m.prototype_comment_failed(),
+        message: response.error ?? m.prototype_comment_failed(),
       })
     }
 
@@ -274,11 +273,15 @@ function StudioHome() {
             </Text>
           </Stack>
 
-          {!keychainDetected && (
+          {!isKeychainAvailable && (
             <Alert status="warning" variant="subtle" colorPalette="orange">
               {m.prototype_keychain_missing()}
             </Alert>
           )}
+
+          {pendingHiveAuthRequest ? (
+            <HiveAuthPendingRequest request={pendingHiveAuthRequest} />
+          ) : null}
 
           {status && (
             <Alert
@@ -315,13 +318,21 @@ function StudioHome() {
                 />
                 <Button
                   colorPalette="orange"
-                  onClick={handleLogin}
+                  onClick={() => handleLogin('keychain')}
                   loading={isConnecting}
-                  disabled={!keychainDetected}
+                  disabled={!isKeychainAvailable}
                 >
                   {m.prototype_connect_button()}
                 </Button>
-                {accountReady && account && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleLogin('hiveauth')}
+                  loading={isConnecting || isHiveAuthLoading}
+                  disabled={!isHiveAuthAvailable}
+                >
+                  {m.account_connect_hiveauth_button()}
+                </Button>
+                {account ? (
                   <Box
                     bg="bg.muted"
                     borderRadius="16px"
@@ -351,7 +362,7 @@ function StudioHome() {
                       </Button>
                     </Flex>
                   </Box>
-                )}
+                ) : null}
               </Stack>
             </Box>
 
@@ -440,7 +451,7 @@ function StudioHome() {
                     colorPalette="orange"
                     onClick={handlePublish}
                     loading={isPublishing}
-                    disabled={!keychainDetected}
+                    disabled={!account}
                   >
                     {m.prototype_publish_button()}
                   </Button>
@@ -502,7 +513,7 @@ function StudioHome() {
                   borderColor="border"
                   onClick={handleComment}
                   loading={isCommenting}
-                  disabled={!keychainDetected}
+                  disabled={!account}
                 >
                   {m.prototype_comment_button()}
                 </Button>
@@ -524,7 +535,7 @@ function StudioHome() {
                   {m.prototype_keychain_status_description()}
                 </Text>
                 <Flex align="center" gap={3}>
-                  {keychainDetected ? (
+                  {isKeychainAvailable ? (
                     <Badge colorPalette="green" variant="subtle">
                       {m.prototype_keychain_detected()}
                     </Badge>
@@ -533,7 +544,6 @@ function StudioHome() {
                       {m.prototype_keychain_missing_badge()}
                     </Badge>
                   )}
-                  {!accountReady && <Spinner size="sm" color="fg.muted" />}
                 </Flex>
               </Stack>
             </Box>

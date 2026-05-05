@@ -30,19 +30,18 @@ import {
 import type {Editor as TiptapEditor} from '@tiptap/react';
 
 import CustomHeader from '@/components/CustomHeader'
+import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
 import EditorBubbleMenu from '@/components/editor/EditorBubbleMenu'
 import EditorBody from '@/components/editor/EditorBody'
 import EditorCollaborationUsers from '@/components/editor/EditorCollaborationUsers'
 import EditorSettingsPanel from '@/components/editor/EditorSettingsPanel'
 import EditorToolbar from '@/components/editor/EditorToolbar'
-import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { getEditorExtensions } from '@/lib/tiptap/extensions'
 import {
   getHiveSignerAuth,
   getHiveSignerLoginUrl,
   persistHiveSignerAuthFromUrl,
 } from '@/lib/hive/hivesigner'
-import { broadcastOperations, getHiveKeychain } from '@/lib/hive/keychain'
 import { buildPostOperations, parseTags } from '@/lib/hive/operations'
 import { uploadImageToHive } from '@/lib/hive/imageHoster'
 import { m } from '@/paraglide/messages'
@@ -62,10 +61,9 @@ type BeneficiaryEntry = {
 }
 
 function Editor() {
-  const [account] = useLocalStorageState<string | null>('hivepen.account', null)
+  const { account, signAndBroadcastOperations } = useHiveWallet()
   const [status, setStatus] = useState<StatusState | null>(null)
   const [isPublishing, setIsPublishing] = useState(false)
-  const [keychainDetected, setKeychainDetected] = useState(false)
   const [collaborationReady] = useState(true)
   const [hiveSignerAuth, setHiveSignerAuth] = useState(() =>
     getHiveSignerAuth(),
@@ -159,7 +157,7 @@ function Editor() {
   )
 
   const handleInsertImage = useCallback(
-    async (targetEditor: TiptapEditor | null) => {
+    (targetEditor: TiptapEditor | null) => {
       if (!targetEditor) return
       const fileInput = document.createElement('input')
       fileInput.type = 'file'
@@ -318,13 +316,12 @@ function Editor() {
     }),
     content: postPayload.body || '<p></p>',
     immediatelyRender: false,
-    onUpdate: ({ editor }) => {
-      setPostPayload((prev) => ({ ...prev, body: editor.getHTML() }))
+    onUpdate: ({ editor: currentEditor }) => {
+      setPostPayload((prev) => ({ ...prev, body: currentEditor.getHTML() }))
     },
   })
 
   useEffect(() => {
-    setKeychainDetected(Boolean(getHiveKeychain()))
     const auth = persistHiveSignerAuthFromUrl()
     if (auth) {
       setHiveSignerAuth(auth)
@@ -375,7 +372,7 @@ function Editor() {
       beneficiaries: filteredBeneficiaries,
     })
 
-    const response = await broadcastOperations(account, operations, 'Posting')
+    const response = await signAndBroadcastOperations(operations, 'Posting')
 
     if (response.success) {
       setStatus({
@@ -393,7 +390,7 @@ function Editor() {
     } else {
       setStatus({
         type: 'error',
-        message: response.message ?? m.editor_status_post_broadcast_failed(),
+        message: response.error ?? m.editor_status_post_broadcast_failed(),
       })
     }
 
@@ -433,7 +430,7 @@ function Editor() {
                 colorPalette="gray"
                 onClick={handlePublish}
                 loading={isPublishing}
-                disabled={!keychainDetected || !publishReady}
+                disabled={!account || !publishReady}
               >
                 {m.editor_publish_button()}
                 <SendIcon size={16} />
@@ -534,7 +531,7 @@ function Editor() {
                       publishForm={postPayload}
                       publishTags={tagPreview}
                       publishStatus={status}
-                      keychainAvailable={keychainDetected}
+                      keychainAvailable={Boolean(account)}
                       publishReady={publishReady}
                       beneficiaries={beneficiaries}
                       onSelectCommunity={handleSelectCommunity}
@@ -562,7 +559,7 @@ function Editor() {
                 </Box>
               </Tabs.Root>
             </ClientOnly>
-            {!keychainDetected && (
+            {!account && (
               <Text color="fg.muted" fontSize="sm" p={6}>
                 {m.editor_keychain_missing()}
               </Text>

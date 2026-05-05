@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { broadcastOperations } from '@/lib/hive/keychain'
+import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
 import { buildCommentOperations } from '@/lib/hive/operations'
-import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { m } from '@/paraglide/messages'
 
 export default function useCommentPost({
@@ -11,7 +10,7 @@ export default function useCommentPost({
   parentAuthor: string
   parentPermlink: string
 }) {
-  const [account] = useLocalStorageState<string | null>('hivepen.account', null)
+  const { account, signAndBroadcastOperations } = useHiveWallet()
   const [isCommenting, setIsCommenting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -38,9 +37,9 @@ export default function useCommentPost({
       body: body.trim(),
     })
 
-    const response = await broadcastOperations(account, operations, 'Posting')
+    const response = await signAndBroadcastOperations(operations, 'Posting')
     if (!response.success) {
-      setError(response.message ?? m.post_actions_comment_failed())
+      setError(response.error ?? m.post_actions_comment_failed())
     } else {
       setSuccess(true)
     }

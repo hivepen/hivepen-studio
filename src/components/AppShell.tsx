@@ -36,8 +36,8 @@ import AccountConnectDialog from './AccountConnectDialog'
 import AccountAvatar from './AccountAvatar'
 import type { Home } from 'lucide-react'
 
-import { useLocalStorageState } from '@/hooks/useLocalStorageState'
-import { getHiveKeychain, signLogin } from '@/lib/hive/keychain'
+import type { WalletProvider } from '@/lib/hive/walletAuth'
+import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
 import { CONNECT_ACCOUNT_DIALOG_EVENT } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
@@ -60,13 +60,19 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
     select: (state) => state.location.pathname,
   })
   const [collapsed, setCollapsed] = useState(true)
-  const [account, setAccount] = useLocalStorageState<string | null>(
-    'hivepen.account',
-    null,
-  )
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [keychainAvailable] = useState(() => Boolean(getHiveKeychain()))
   const [showConnectDialog, setShowConnectDialog] = useState(false)
+  const [connectingProvider, setConnectingProvider] =
+    useState<WalletProvider | null>(null)
+  const {
+    account,
+    connectWithHiveAuth,
+    connectWithKeychain,
+    disconnect,
+    isHiveAuthAvailable,
+    isHiveAuthLoading,
+    isKeychainAvailable,
+    pendingHiveAuthRequest,
+  } = useHiveWallet()
   const profileQuery = useProfileQuery(account)
   const locale = getLocale()
 
@@ -169,29 +175,32 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
     }
   }, [])
 
-  const handleConnect = async (username: string) => {
-    if (!keychainAvailable) {
-      return
-    }
-    setIsConnecting(true)
-    const message = `Hivepen Studio login ${new Date().toISOString()}`
-    const response = await signLogin(username.trim(), message)
+  const handleConnect = async (provider: WalletProvider, username: string) => {
+    if (!username.trim()) return
+
+    setConnectingProvider(provider)
+
+    const response =
+      provider === 'hiveauth'
+        ? await connectWithHiveAuth(username.trim())
+        : await connectWithKeychain(username.trim())
+
     if (response.success) {
-      setAccount(username.trim())
       setShowConnectDialog(false)
     } else {
-      window.alert(response.message ?? m.app_shell_login_rejected())
+      window.alert(response.error ?? m.app_shell_login_rejected())
     }
-    setIsConnecting(false)
+
+    setConnectingProvider(null)
   }
 
-  const handleLogout = () => {
-    setAccount(null)
+  const handleLogout = async () => {
+    await disconnect()
     router.navigate({ to: '/' })
   }
 
   const handleSwitchAccount = () => {
-    setAccount(null)
+    void disconnect()
     router.navigate({ to: '/' })
     setShowConnectDialog(true)
   }
@@ -306,12 +315,12 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
                   <Menu.Item
                     value="connect"
                     onSelect={() => setShowConnectDialog(true)}
-                    disabled={isConnecting}
+                    disabled={Boolean(connectingProvider)}
                   >
                     <HStack gap={2}>
                       <Icon as={UserPlus} boxSize={4} />
                       <Text>
-                        {isConnecting
+                        {connectingProvider
                           ? m.app_shell_menu_connecting()
                           : m.app_shell_menu_connect_account()}
                       </Text>
@@ -419,8 +428,12 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
         open={showConnectDialog}
         onClose={() => setShowConnectDialog(false)}
         onConnect={handleConnect}
-        isConnecting={isConnecting}
-        keychainAvailable={keychainAvailable}
+        isConnecting={Boolean(connectingProvider)}
+        isHiveAuthAvailable={isHiveAuthAvailable}
+        isHiveAuthLoading={isHiveAuthLoading}
+        keychainAvailable={isKeychainAvailable}
+        pendingHiveAuthRequest={pendingHiveAuthRequest}
+        connectingProvider={connectingProvider}
       />
     </Flex>
   )

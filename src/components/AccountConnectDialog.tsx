@@ -8,16 +8,19 @@ import {
   Input,
   InputGroup,
   Link,
-  Show,
   Spacer,
   Stack,
   Text,
 } from '@chakra-ui/react'
 import { useState } from 'react'
+import HiveAuthPendingRequest from './auth/HiveAuthPendingRequest'
+import HiveKeychainIcon from './hive/HiveKeychainIcon'
 import { Alert } from './ui/alert'
 import { Avatar } from './ui/avatar'
-import { Tooltip } from './ui/tooltip'
-import HiveKeychainIcon from './hive/HiveKeychainIcon'
+import type {
+  PendingHiveAuthRequest,
+  WalletProvider,
+} from '@/lib/hive/walletAuth'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { m } from '@/paraglide/messages'
 
@@ -26,13 +29,21 @@ export default function AccountConnectDialog({
   onClose,
   onConnect,
   isConnecting,
+  isHiveAuthAvailable,
+  isHiveAuthLoading,
   keychainAvailable,
+  pendingHiveAuthRequest,
+  connectingProvider,
 }: {
   open: boolean
   onClose: () => void
-  onConnect: (username: string) => void
+  onConnect: (provider: WalletProvider, username: string) => void
   isConnecting: boolean
+  isHiveAuthAvailable: boolean
+  isHiveAuthLoading: boolean
   keychainAvailable: boolean
+  pendingHiveAuthRequest: PendingHiveAuthRequest | null
+  connectingProvider: WalletProvider | null
 }) {
   const [username, setUsername] = useState('')
 
@@ -83,40 +94,46 @@ export default function AccountConnectDialog({
                   {m.account_connect_keychain_missing()}
                 </Alert>
               )}
+
+              {pendingHiveAuthRequest ? (
+                <HiveAuthPendingRequest request={pendingHiveAuthRequest} />
+              ) : null}
             </Stack>
           </Dialog.Body>
           <Dialog.Footer gap={2} asChild>
             <Stack>
               <HStack w="full">
-                {/* <Button variant="outline" onClick={onClose} disabled={isConnecting}>
-                  Cancel
-                </Button> */}
                 <Spacer />
-                <Tooltip
-                  content={
-                    <Text>
-                      {m.account_connect_tooltip()}{' '}
-                      <HiveKeychainIcon size="xs" />
-                    </Text>
+                <Button
+                  colorPalette="gray"
+                  size="md"
+                  variant="surface"
+                  onClick={() => onConnect('keychain', username)}
+                  loading={connectingProvider === 'keychain' && isConnecting}
+                  disabled={
+                    !keychainAvailable || !username.trim() || isConnecting
                   }
                 >
-                  <Show when={keychainAvailable}>
-                    <Button
-                      colorPalette="gray"
-                      size="md"
-                      variant="surface"
-                      onClick={() => onConnect(username)}
-                      loading={isConnecting}
-                      disabled={!keychainAvailable || !username.trim()}
-                    >
-                      <HiveKeychainIcon />
-                      {m.account_connect_button()}
-                    </Button>
-                  </Show>
-                </Tooltip>
+                  <HiveKeychainIcon />
+                  {m.account_connect_keychain_button()}
+                </Button>
+                <Button
+                  colorPalette="blue"
+                  size="md"
+                  variant="surface"
+                  onClick={() => onConnect('hiveauth', username)}
+                  loading={
+                    connectingProvider === 'hiveauth' || isHiveAuthLoading
+                  }
+                  disabled={
+                    !isHiveAuthAvailable || !username.trim() || isConnecting
+                  }
+                >
+                  {m.account_connect_hiveauth_button()}
+                </Button>
               </HStack>
 
-              <Show when={!keychainAvailable}>
+              {!keychainAvailable ? (
                 <Alert
                   title={<Text>{m.account_connect_missing_title()}</Text>}
                   status="warning"
@@ -140,7 +157,7 @@ export default function AccountConnectDialog({
                   </Link>{' '}
                   {m.account_connect_missing_suffix()}
                 </Alert>
-              </Show>
+              ) : null}
             </Stack>
           </Dialog.Footer>
           <Dialog.CloseTrigger />

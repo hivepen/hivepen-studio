@@ -8,13 +8,11 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import { ChakraProvider } from '@chakra-ui/react'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
-
-
 import appCss from '../styles.css?url'
-
 import { chakraSystem } from '../theme'
 import AppShell from '../components/AppShell'
 import type { QueryClient } from '@tanstack/react-query'
+import { HiveWalletProvider } from '@/components/auth/HiveWalletProvider'
 import { getLocale, shouldRedirect } from '@/paraglide/runtime'
 
 interface MyRouterContext {
@@ -22,7 +20,7 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  beforeLoad: async () => {
+  beforeLoad: () => {
     // Other redirect strategies are possible; see
     // https://github.com/TanStack/router/tree/main/examples/react/i18n-paraglide#offline-redirect
     if (typeof document !== 'undefined') {
@@ -62,7 +60,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ChakraProvider value={chakraSystem}>
-          <AppShell>{children}</AppShell>
+          <HiveWalletProvider>
+            <AppShell>{children}</AppShell>
+          </HiveWalletProvider>
         </ChakraProvider>
         <TanStackDevtools
           config={{
