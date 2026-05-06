@@ -36,6 +36,7 @@ import EditorBody from '@/components/editor/EditorBody'
 import EditorCollaborationUsers from '@/components/editor/EditorCollaborationUsers'
 import EditorSettingsPanel from '@/components/editor/EditorSettingsPanel'
 import EditorToolbar from '@/components/editor/EditorToolbar'
+import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import { getEditorExtensions } from '@/lib/tiptap/extensions'
 import {
   getHiveSignerAuth,

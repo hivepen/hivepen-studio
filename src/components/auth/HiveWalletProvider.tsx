@@ -66,8 +66,12 @@ function getInitialWalletState(): WalletState {
   if (typeof window === 'undefined') {
     return {
       account: null,
+      activeAccount: null,
+      activeProvider: null,
+      connectedAccounts: [],
       isHiveAuthAvailable: false,
       isKeychainAvailable: false,
+      isLoggedIn: false,
       provider: null,
     }
   }

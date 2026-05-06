@@ -80,6 +80,9 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
     pendingHiveAuthRequest,
     switchAccount,
   } = useHiveWallet()
+  const safeConnectedAccounts = Array.isArray(connectedAccounts)
+    ? connectedAccounts
+    : []
   const profileQuery = useProfileQuery(account)
   const locale = getLocale()
 
@@ -88,7 +91,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
     return profileQuery.data?.displayName || `@${account}`
   }, [account, locale, profileQuery.data?.displayName])
 
-  const hasConnectedAccounts = connectedAccounts.length > 0
+  const hasConnectedAccounts = safeConnectedAccounts.length > 0
 
   const navGroups: Array<NavGroup> = useMemo(
     () => [
@@ -231,7 +234,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
 
   const handleDisconnectAccount = async (username: string) => {
     const shouldNavigateHome =
-      username === account && connectedAccounts.length === 1
+      username === account && safeConnectedAccounts.length === 1
     setWalletActionKey(`disconnect:${username}`)
     const response = await disconnectAccount(username)
     if (!response.success) {
@@ -380,7 +383,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
                         {m.app_shell_menu_connected_accounts()}
                       </Text>
                     </Box>
-                    {connectedAccounts.map((connectedAccount) => (
+                    {safeConnectedAccounts.map((connectedAccount) => (
                       <Menu.Item
                         key={`switch-${connectedAccount.account}`}
                         value={`switch-${connectedAccount.account}`}
@@ -422,7 +425,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
                       </Menu.Item>
                     ))}
                     <Menu.Separator />
-                    {connectedAccounts.map((connectedAccount) => (
+                    {safeConnectedAccounts.map((connectedAccount) => (
                       <Menu.Item
                         key={`disconnect-${connectedAccount.account}`}
                         value={`disconnect-${connectedAccount.account}`}
