@@ -151,9 +151,11 @@ export default function PostPayoutBadge({
       <Popover.Trigger asChild>
         <Badge
           variant="subtle"
-          colorPalette="gray"
+          colorPalette="green"
           textTransform="uppercase"
           cursor="pointer"
+          size="lg"
+          fontWeight={900}
         >
           {pendingLabel}
         </Badge>

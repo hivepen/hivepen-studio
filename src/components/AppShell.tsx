@@ -9,6 +9,7 @@ import {
   IconButton,
   Image,
   Menu,
+  Portal,
   Show,
   Text,
   VStack,
@@ -178,6 +179,15 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
     setShowConnectDialog(true)
   }
 
+  const closeSidebarOnMobile = () => {
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 47.99em)').matches
+    ) {
+      setCollapsed(true)
+    }
+  }
+
   const closeConnectDialog = () => {
     setConnectError(null)
     setShowConnectDialog(false)
@@ -220,6 +230,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
 
   const handleLogout = async () => {
     await disconnectAll()
+    closeSidebarOnMobile()
     router.navigate({ to: '/' })
   }
 
@@ -228,6 +239,8 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
     const response = await switchAccount(username)
     if (!response.success) {
       window.alert(response.error ?? m.app_shell_login_rejected())
+    } else {
+      closeSidebarOnMobile()
     }
     setWalletActionKey(null)
   }
@@ -240,13 +253,24 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
     if (!response.success) {
       window.alert(response.error ?? m.app_shell_login_rejected())
     } else if (shouldNavigateHome) {
+      closeSidebarOnMobile()
       router.navigate({ to: '/' })
+    } else {
+      closeSidebarOnMobile()
     }
     setWalletActionKey(null)
   }
 
   return (
     <Flex minH="100vh" bg="bg">
+      <Box
+        display={{ base: collapsed ? 'none' : 'block', md: 'none' }}
+        position="fixed"
+        inset={0}
+        bg="blackAlpha.500"
+        zIndex={19}
+        onClick={() => setCollapsed(true)}
+      />
       <Box
         as="aside"
         w={{
@@ -262,10 +286,11 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
         top={0}
         zIndex={20}
         h="100vh"
-        overflowX="hidden"
+        overflow="hidden"
+        boxShadow={{ base: collapsed ? 'none' : 'xl', md: 'none' }}
       >
-        <Flex direction="column" h="100%" px={4} py={5} gap={6}>
-          <HStack justify="space-between" align="center">
+        <Flex direction="column" h="100%" px={4} py={5} gap={4}>
+          <HStack justify="space-between" align="center" flexShrink={0}>
             <HStack gap={3} overflow="hidden">
               <Box w={10} h={10} overflow="hidden">
                 <Image
@@ -294,37 +319,46 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
             </Show>
           </HStack>
 
-          <VStack align="stretch" gap={4} flex="1">
-            {navGroups.map((group) => (
-              <Box key={group.label}>
-                {!collapsed && (
-                  <Text
-                    fontSize="xs"
-                    textTransform="uppercase"
-                    letterSpacing="0.14em"
-                    color="fg.muted"
-                    px={2}
-                    mb={2}
-                  >
-                    {group.label}
-                  </Text>
-                )}
-                <VStack align="stretch" gap={1}>
-                  {group.items.map((item) => (
-                    <NavButton
-                      key={item.to}
-                      to={item.to}
-                      icon={item.icon}
-                      label={item.label}
-                      collapsed={collapsed}
-                    />
-                  ))}
-                </VStack>
-              </Box>
-            ))}
-          </VStack>
+          <Box flex="1" minH={0} overflowY="auto" overflowX="hidden" pe={1}>
+            <VStack align="stretch" gap={4}>
+              {navGroups.map((group) => (
+                <Box key={group.label}>
+                  {!collapsed && (
+                    <Text
+                      fontSize="xs"
+                      textTransform="uppercase"
+                      letterSpacing="0.14em"
+                      color="fg.muted"
+                      px={2}
+                      mb={2}
+                    >
+                      {group.label}
+                    </Text>
+                  )}
+                  <VStack align="stretch" gap={1}>
+                    {group.items.map((item) => (
+                      <NavButton
+                        key={item.to}
+                        to={item.to}
+                        icon={item.icon}
+                        label={item.label}
+                        collapsed={collapsed}
+                        onNavigate={closeSidebarOnMobile}
+                      />
+                    ))}
+                  </VStack>
+                </Box>
+              ))}
+            </VStack>
+          </Box>
 
-          <Menu.Root positioning={{ placement: 'top-start' }}>
+          <Menu.Root
+            positioning={{
+              placement: collapsed ? 'right-end' : 'top-start',
+              strategy: 'fixed',
+              gutter: 8,
+            }}
+          >
             <Menu.Trigger asChild>
               <Button
                 variant="ghost"
@@ -349,153 +383,166 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
                 )}
               </Button>
             </Menu.Trigger>
-            <Menu.Positioner>
-              <Menu.Content minW="280px" bg="bg.panel" borderColor="border">
-                <Menu.Item
-                  value="connect"
-                  onSelect={openConnectDialog}
-                  disabled={
-                    Boolean(connectingProvider) || walletActionKey !== null
-                  }
-                >
-                  <HStack gap={2}>
-                    <Icon as={UserPlus} boxSize={4} />
-                    <Text>
-                      {connectingProvider
-                        ? m.app_shell_menu_connecting()
-                        : hasConnectedAccounts
-                          ? m.app_shell_menu_connect_another_account()
-                          : m.app_shell_menu_connect_account()}
-                    </Text>
-                  </HStack>
-                </Menu.Item>
-
-                {hasConnectedAccounts ? (
-                  <>
-                    <Menu.Separator />
-                    <Box px={3} py={2}>
-                      <Text
-                        fontSize="xs"
-                        textTransform="uppercase"
-                        letterSpacing="0.08em"
-                        color="fg.muted"
-                      >
-                        {m.app_shell_menu_connected_accounts()}
+            <Portal>
+              <Menu.Positioner>
+                <Menu.Content minW="280px" bg="bg.panel" borderColor="border">
+                  <Menu.Item
+                    value="connect"
+                    onSelect={() => {
+                      closeSidebarOnMobile()
+                      openConnectDialog()
+                    }}
+                    disabled={
+                      Boolean(connectingProvider) || walletActionKey !== null
+                    }
+                  >
+                    <HStack gap={2}>
+                      <Icon as={UserPlus} boxSize={4} />
+                      <Text>
+                        {connectingProvider
+                          ? m.app_shell_menu_connecting()
+                          : hasConnectedAccounts
+                            ? m.app_shell_menu_connect_another_account()
+                            : m.app_shell_menu_connect_account()}
                       </Text>
-                    </Box>
-                    {safeConnectedAccounts.map((connectedAccount) => (
-                      <Menu.Item
-                        key={`switch-${connectedAccount.account}`}
-                        value={`switch-${connectedAccount.account}`}
-                        onSelect={() => {
-                          if (!connectedAccount.isActive) {
-                            void handleSwitchAccount(connectedAccount.account)
-                          }
-                        }}
-                        disabled={
-                          connectedAccount.isActive ||
-                          Boolean(connectingProvider) ||
-                          walletActionKey !== null
-                        }
-                      >
-                        <HStack w="full" justify="space-between" gap={3}>
-                          <HStack gap={3} minW={0}>
-                            <AccountAvatar
-                              size="xs"
-                              boxSize={6}
-                              username={connectedAccount.account}
-                            />
-                            <Box minW={0}>
-                              <Text fontSize="sm" lineClamp={1}>
-                                @{connectedAccount.account}
-                              </Text>
-                              <Text fontSize="xs" color="fg.muted">
-                                {formatWalletProviderName(
-                                  connectedAccount.provider,
-                                )}
-                              </Text>
-                            </Box>
-                          </HStack>
-                          {connectedAccount.isActive ? (
-                            <Badge colorPalette="green" variant="subtle">
-                              {m.app_shell_menu_active_badge()}
-                            </Badge>
-                          ) : null}
-                        </HStack>
-                      </Menu.Item>
-                    ))}
-                    <Menu.Separator />
-                    {safeConnectedAccounts.map((connectedAccount) => (
-                      <Menu.Item
-                        key={`disconnect-${connectedAccount.account}`}
-                        value={`disconnect-${connectedAccount.account}`}
-                        onSelect={() =>
-                          void handleDisconnectAccount(connectedAccount.account)
-                        }
-                        disabled={
-                          Boolean(connectingProvider) ||
-                          walletActionKey !== null
-                        }
-                      >
-                        <HStack gap={2}>
-                          <Icon
-                            as={connectedAccount.isActive ? LogOut : CircleOff}
-                            boxSize={4}
-                          />
-                          <Text>
-                            {connectedAccount.isActive
-                              ? m.app_shell_menu_disconnect_account({
-                                  account: connectedAccount.account,
-                                })
-                              : m.app_shell_menu_remove_account({
-                                  account: connectedAccount.account,
-                                })}
-                          </Text>
-                        </HStack>
-                      </Menu.Item>
-                    ))}
-                  </>
-                ) : null}
+                    </HStack>
+                  </Menu.Item>
 
-                <Menu.Item
-                  value="wallet"
-                  onSelect={() =>
-                    account
-                      ? router.navigate({
-                          to: '/$accountname/wallet',
-                          params: { accountname: `@${account}` },
-                        })
-                      : undefined
-                  }
-                  disabled={!account}
-                >
-                  <HStack gap={2}>
-                    <Icon as={Wallet} boxSize={4} />
-                    <Text>{m.app_shell_menu_wallet()}</Text>
-                  </HStack>
-                </Menu.Item>
-                <Menu.Item
-                  value="settings"
-                  onSelect={() => router.navigate({ to: '/settings' })}
-                  disabled={!account}
-                >
-                  <HStack gap={2}>
-                    <Icon as={Settings} boxSize={4} />
-                    <Text>{m.app_shell_menu_account_settings()}</Text>
-                  </HStack>
-                </Menu.Item>
-                <Menu.Item
-                  value="logout-all"
-                  onSelect={handleLogout}
-                  disabled={!account}
-                >
-                  <HStack gap={2}>
-                    <Icon as={LogOut} boxSize={4} />
-                    <Text>{m.app_shell_menu_logout()}</Text>
-                  </HStack>
-                </Menu.Item>
-              </Menu.Content>
-            </Menu.Positioner>
+                  {hasConnectedAccounts ? (
+                    <>
+                      <Menu.Separator />
+                      <Box px={3} py={2}>
+                        <Text
+                          fontSize="xs"
+                          textTransform="uppercase"
+                          letterSpacing="0.08em"
+                          color="fg.muted"
+                        >
+                          {m.app_shell_menu_connected_accounts()}
+                        </Text>
+                      </Box>
+                      {safeConnectedAccounts.map((connectedAccount) => (
+                        <Menu.Item
+                          key={`switch-${connectedAccount.account}`}
+                          value={`switch-${connectedAccount.account}`}
+                          onSelect={() => {
+                            if (!connectedAccount.isActive) {
+                              void handleSwitchAccount(connectedAccount.account)
+                            }
+                          }}
+                          disabled={
+                            connectedAccount.isActive ||
+                            Boolean(connectingProvider) ||
+                            walletActionKey !== null
+                          }
+                        >
+                          <HStack w="full" justify="space-between" gap={3}>
+                            <HStack gap={3} minW={0}>
+                              <AccountAvatar
+                                size="xs"
+                                boxSize={6}
+                                username={connectedAccount.account}
+                              />
+                              <Box minW={0}>
+                                <Text fontSize="sm" lineClamp={1}>
+                                  @{connectedAccount.account}
+                                </Text>
+                                <Text fontSize="xs" color="fg.muted">
+                                  {formatWalletProviderName(
+                                    connectedAccount.provider,
+                                  )}
+                                </Text>
+                              </Box>
+                            </HStack>
+                            {connectedAccount.isActive ? (
+                              <Badge colorPalette="green" variant="subtle">
+                                {m.app_shell_menu_active_badge()}
+                              </Badge>
+                            ) : null}
+                          </HStack>
+                        </Menu.Item>
+                      ))}
+                      <Menu.Separator />
+                      {safeConnectedAccounts.map((connectedAccount) => (
+                        <Menu.Item
+                          key={`disconnect-${connectedAccount.account}`}
+                          value={`disconnect-${connectedAccount.account}`}
+                          onSelect={() =>
+                            void handleDisconnectAccount(
+                              connectedAccount.account,
+                            )
+                          }
+                          disabled={
+                            Boolean(connectingProvider) ||
+                            walletActionKey !== null
+                          }
+                        >
+                          <HStack gap={2}>
+                            <Icon
+                              as={
+                                connectedAccount.isActive ? LogOut : CircleOff
+                              }
+                              boxSize={4}
+                            />
+                            <Text>
+                              {connectedAccount.isActive
+                                ? m.app_shell_menu_disconnect_account({
+                                    account: connectedAccount.account,
+                                  })
+                                : m.app_shell_menu_remove_account({
+                                    account: connectedAccount.account,
+                                  })}
+                            </Text>
+                          </HStack>
+                        </Menu.Item>
+                      ))}
+                    </>
+                  ) : null}
+
+                  <Menu.Item
+                    value="wallet"
+                    onSelect={() => {
+                      closeSidebarOnMobile()
+                      if (!account) return
+
+                      return router.navigate({
+                        to: '/$accountname/wallet',
+                        params: { accountname: `@${account}` },
+                      })
+                    }}
+                    disabled={!account}
+                  >
+                    <HStack gap={2}>
+                      <Icon as={Wallet} boxSize={4} />
+                      <Text>{m.app_shell_menu_wallet()}</Text>
+                    </HStack>
+                  </Menu.Item>
+                  <Menu.Item
+                    value="settings"
+                    onSelect={() => {
+                      closeSidebarOnMobile()
+                      return router.navigate({ to: '/settings' })
+                    }}
+                    disabled={!account}
+                  >
+                    <HStack gap={2}>
+                      <Icon as={Settings} boxSize={4} />
+                      <Text>{m.app_shell_menu_account_settings()}</Text>
+                    </HStack>
+                  </Menu.Item>
+                  <Menu.Item
+                    value="logout-all"
+                    onSelect={handleLogout}
+                    disabled={!account}
+                  >
+                    <HStack gap={2}>
+                      <Icon as={LogOut} boxSize={4} />
+                      <Text>{m.app_shell_menu_logout()}</Text>
+                    </HStack>
+                  </Menu.Item>
+                </Menu.Content>
+              </Menu.Positioner>
+            </Portal>
           </Menu.Root>
         </Flex>
       </Box>
@@ -566,11 +613,13 @@ function NavButton({
   icon,
   label,
   collapsed,
+  onNavigate,
 }: {
   to: string
   icon: typeof Home
   label: string
   collapsed: boolean
+  onNavigate?: () => void
 }) {
   return (
     <Box
@@ -586,6 +635,7 @@ function NavButton({
     >
       <Link
         to={to}
+        onClick={onNavigate}
         activeProps={{
           style: {
             background: 'var(--chakra-colors-bg-muted)',
