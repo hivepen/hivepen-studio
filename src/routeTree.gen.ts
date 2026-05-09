@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SearchRouteImport } from './routes/search'
-import { Route as PrototypeRouteImport } from './routes/prototype'
 import { Route as EngagementRouteImport } from './routes/engagement'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as DraftsRouteImport } from './routes/drafts'
@@ -40,11 +39,6 @@ const SettingsRoute = SettingsRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrototypeRoute = PrototypeRouteImport.update({
-  id: '/prototype',
-  path: '/prototype',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EngagementRoute = EngagementRouteImport.update({
@@ -122,7 +116,6 @@ export interface FileRoutesByFullPath {
   '/drafts': typeof DraftsRoute
   '/editor': typeof EditorRoute
   '/engagement': typeof EngagementRoute
-  '/prototype': typeof PrototypeRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
@@ -141,7 +134,6 @@ export interface FileRoutesByTo {
   '/drafts': typeof DraftsRoute
   '/editor': typeof EditorRoute
   '/engagement': typeof EngagementRoute
-  '/prototype': typeof PrototypeRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
@@ -161,7 +153,6 @@ export interface FileRoutesById {
   '/drafts': typeof DraftsRoute
   '/editor': typeof EditorRoute
   '/engagement': typeof EngagementRoute
-  '/prototype': typeof PrototypeRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
@@ -182,7 +173,6 @@ export interface FileRouteTypes {
     | '/drafts'
     | '/editor'
     | '/engagement'
-    | '/prototype'
     | '/search'
     | '/settings'
     | '/users'
@@ -201,7 +191,6 @@ export interface FileRouteTypes {
     | '/drafts'
     | '/editor'
     | '/engagement'
-    | '/prototype'
     | '/search'
     | '/settings'
     | '/users'
@@ -220,7 +209,6 @@ export interface FileRouteTypes {
     | '/drafts'
     | '/editor'
     | '/engagement'
-    | '/prototype'
     | '/search'
     | '/settings'
     | '/users'
@@ -240,7 +228,6 @@ export interface RootRouteChildren {
   DraftsRoute: typeof DraftsRoute
   EditorRoute: typeof EditorRoute
   EngagementRoute: typeof EngagementRoute
-  PrototypeRoute: typeof PrototypeRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   UsersRoute: typeof UsersRoute
@@ -271,13 +258,6 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/prototype': {
-      id: '/prototype'
-      path: '/prototype'
-      fullPath: '/prototype'
-      preLoaderRoute: typeof PrototypeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/engagement': {
@@ -395,7 +375,6 @@ const rootRouteChildren: RootRouteChildren = {
   DraftsRoute: DraftsRoute,
   EditorRoute: EditorRoute,
   EngagementRoute: EngagementRoute,
-  PrototypeRoute: PrototypeRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   UsersRoute: UsersRoute,

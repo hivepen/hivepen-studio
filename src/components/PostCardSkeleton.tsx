@@ -1,64 +1,69 @@
-import { Box, HStack, Skeleton, SkeletonText, Stack } from '@chakra-ui/react'
+import { Card, HStack, Skeleton, SkeletonText, Stack } from '@chakra-ui/react'
 
 export default function PostCardSkeleton() {
   return (
-    <Box
-      border="1px solid"
-      borderColor="border"
-      borderRadius="12px"
-      bg="bg.panel"
+    <Card.Root
+      variant="outline"
       overflow="hidden"
       flexDirection={{ base: 'column', lg: 'row' }}
-      display="flex"
+      bg="bg.panel"
+      borderColor="border"
+      borderWidth="1px"
+      borderRadius="12px"
     >
-      <Stack flex="1" minW={0} p={{ base: 3, md: 4 }} gap={3}>
-        <Skeleton
-          height={{ base: 'clamp(4rem,10vh,5.5rem)' }}
-          aspectRatio={4 / 3}
-          bg="bg.subtle"
-          position="relative"
-          overflow="hidden"
-          flexShrink={0}
-          borderRadius="md"
-        />
-        <HStack justify="space-between" align="start" gap={3}>
-          <HStack gap={3} align="start">
-            <Skeleton boxSize={10} borderRadius="full" />
-            <Stack gap={1}>
-              <Skeleton height="14px" width="80px" />
-              <Skeleton height="12px" width="60px" />
+      <Stack flex="1" minW={0} gap={0}>
+        <Card.Header pb={0} px={{ base: 3, md: 4 }} pt={{ base: 3, md: 4 }}>
+          <HStack justify="space-between" align="start" gap={3}>
+            <HStack gap={3} align="start" minW={0}>
+              <Skeleton boxSize={10} borderRadius="full" flexShrink={0} />
+              <Stack gap={1} minW={0}>
+                <Skeleton height="14px" width="88px" />
+                <HStack gap={2}>
+                  <Skeleton height="10px" width="56px" />
+                  <Skeleton height="10px" width="72px" />
+                  <Skeleton height="10px" width="44px" />
+                </HStack>
+              </Stack>
+            </HStack>
+            <HStack gap={2} display={{ base: 'none', sm: 'flex' }}>
+              <Skeleton height="28px" width="88px" borderRadius="lg" />
+              <Skeleton height="32px" width="32px" borderRadius="full" />
+            </HStack>
+          </HStack>
+        </Card.Header>
+
+        <Card.Body pt={2} px={{ base: 3, md: 4 }} pb={2}>
+          <HStack align="start">
+            <Skeleton
+              height={{ base: 'clamp(4rem,10vh,5.5rem)' }}
+              aspectRatio={4 / 3}
+              bg="bg.subtle"
+              position="relative"
+              overflow="hidden"
+              flexShrink={0}
+              borderRadius="md"
+            />
+            <Stack gap={3} flex="1" minW={0}>
+              <Stack gap={2}>
+                <Skeleton height="22px" width="88%" />
+                <Skeleton height="22px" width="64%" />
+              </Stack>
+              <SkeletonText noOfLines={2} gap="2" />
             </Stack>
           </HStack>
-          <Skeleton
-            height="24px"
-            width="80px"
-            borderRadius="lg"
-            display={{ base: 'none', sm: 'flex' }}
-          />
-        </HStack>
+        </Card.Body>
 
-        <Stack gap={2}>
-          <Skeleton height="20px" width="80%" />
-          <Skeleton height="16px" width="60%" />
-        </Stack>
-
-        <SkeletonText noOfLines={2} gap="2" />
-
-        <HStack gap={2} wrap="wrap">
-          <Skeleton height="18px" width="48px" borderRadius="full" />
-          <Skeleton height="18px" width="56px" borderRadius="full" />
-          <Skeleton height="18px" width="44px" borderRadius="full" />
-        </HStack>
-
-        <HStack justify="space-between" pt={2}>
-          <HStack gap={2}>
-            <Skeleton height="32px" width="32px" borderRadius="full" />
-            <Skeleton height="32px" width="32px" borderRadius="full" />
-            <Skeleton height="32px" width="32px" borderRadius="full" />
+        <Card.Footer pt={2} px={{ base: 3, md: 4 }} pb={{ base: 3, md: 4 }}>
+          <HStack justify="space-between" align="center" wrap="wrap" gap={2} w="full">
+            <HStack gap={2}>
+              <Skeleton height="32px" width="32px" borderRadius="full" />
+              <Skeleton height="32px" width="32px" borderRadius="full" />
+              <Skeleton height="32px" width="32px" borderRadius="full" />
+            </HStack>
+            <Skeleton height="24px" width="68px" borderRadius="full" />
           </HStack>
-          <Skeleton height="24px" width="60px" borderRadius="full" />
-        </HStack>
+        </Card.Footer>
       </Stack>
-    </Box>
+    </Card.Root>
   )
 }

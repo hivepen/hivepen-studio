@@ -11,6 +11,7 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import appCss from '../styles.css?url'
 import { chakraSystem } from '../theme'
 import AppShell from '../components/AppShell'
+import { Toaster } from '../components/ui/toaster'
 import type { QueryClient } from '@tanstack/react-query'
 import { HiveWalletProvider } from '@/components/auth/HiveWalletProvider'
 import { getLocale, shouldRedirect } from '@/paraglide/runtime'
@@ -62,6 +63,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <ChakraProvider value={chakraSystem}>
           <HiveWalletProvider>
             <AppShell>{children}</AppShell>
+            <Toaster />
           </HiveWalletProvider>
         </ChakraProvider>
         <TanStackDevtools
