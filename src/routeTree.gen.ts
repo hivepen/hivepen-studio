@@ -24,7 +24,11 @@ import { Route as AccountnameIndexRouteImport } from './routes/$accountname.inde
 import { Route as ProfileAccountnameRouteImport } from './routes/profile.$accountname'
 import { Route as CommunitiesCommunityIdRouteImport } from './routes/communities.$communityId'
 import { Route as AccountnameWalletRouteImport } from './routes/$accountname.wallet'
+import { Route as AccountnameWalletIndexRouteImport } from './routes/$accountname.wallet.index'
 import { Route as PostAuthorPermlinkRouteImport } from './routes/post.$author.$permlink'
+import { Route as AccountnameWalletHpRouteImport } from './routes/$accountname.wallet.hp'
+import { Route as AccountnameWalletHiveRouteImport } from './routes/$accountname.wallet.hive'
+import { Route as AccountnameWalletHbdRouteImport } from './routes/$accountname.wallet.hbd'
 
 const UsersRoute = UsersRouteImport.update({
   id: '/users',
@@ -101,10 +105,30 @@ const AccountnameWalletRoute = AccountnameWalletRouteImport.update({
   path: '/$accountname/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountnameWalletIndexRoute = AccountnameWalletIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AccountnameWalletRoute,
+} as any)
 const PostAuthorPermlinkRoute = PostAuthorPermlinkRouteImport.update({
   id: '/post/$author/$permlink',
   path: '/post/$author/$permlink',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AccountnameWalletHpRoute = AccountnameWalletHpRouteImport.update({
+  id: '/hp',
+  path: '/hp',
+  getParentRoute: () => AccountnameWalletRoute,
+} as any)
+const AccountnameWalletHiveRoute = AccountnameWalletHiveRouteImport.update({
+  id: '/hive',
+  path: '/hive',
+  getParentRoute: () => AccountnameWalletRoute,
+} as any)
+const AccountnameWalletHbdRoute = AccountnameWalletHbdRouteImport.update({
+  id: '/hbd',
+  path: '/hbd',
+  getParentRoute: () => AccountnameWalletRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -119,11 +143,15 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
-  '/$accountname/wallet': typeof AccountnameWalletRoute
+  '/$accountname/wallet': typeof AccountnameWalletRouteWithChildren
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
   '/$accountname/': typeof AccountnameIndexRoute
+  '/$accountname/wallet/hbd': typeof AccountnameWalletHbdRoute
+  '/$accountname/wallet/hive': typeof AccountnameWalletHiveRoute
+  '/$accountname/wallet/hp': typeof AccountnameWalletHpRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
+  '/$accountname/wallet/': typeof AccountnameWalletIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -137,11 +165,14 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
-  '/$accountname/wallet': typeof AccountnameWalletRoute
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
   '/$accountname': typeof AccountnameIndexRoute
+  '/$accountname/wallet/hbd': typeof AccountnameWalletHbdRoute
+  '/$accountname/wallet/hive': typeof AccountnameWalletHiveRoute
+  '/$accountname/wallet/hp': typeof AccountnameWalletHpRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
+  '/$accountname/wallet': typeof AccountnameWalletIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -156,11 +187,15 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
-  '/$accountname/wallet': typeof AccountnameWalletRoute
+  '/$accountname/wallet': typeof AccountnameWalletRouteWithChildren
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
   '/$accountname/': typeof AccountnameIndexRoute
+  '/$accountname/wallet/hbd': typeof AccountnameWalletHbdRoute
+  '/$accountname/wallet/hive': typeof AccountnameWalletHiveRoute
+  '/$accountname/wallet/hp': typeof AccountnameWalletHpRoute
   '/post/$author/$permlink': typeof PostAuthorPermlinkRoute
+  '/$accountname/wallet/': typeof AccountnameWalletIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -180,7 +215,11 @@ export interface FileRouteTypes {
     | '/communities/$communityId'
     | '/profile/$accountname'
     | '/$accountname/'
+    | '/$accountname/wallet/hbd'
+    | '/$accountname/wallet/hive'
+    | '/$accountname/wallet/hp'
     | '/post/$author/$permlink'
+    | '/$accountname/wallet/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -194,11 +233,14 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/users'
-    | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
     | '/$accountname'
+    | '/$accountname/wallet/hbd'
+    | '/$accountname/wallet/hive'
+    | '/$accountname/wallet/hp'
     | '/post/$author/$permlink'
+    | '/$accountname/wallet'
   id:
     | '__root__'
     | '/'
@@ -216,7 +258,11 @@ export interface FileRouteTypes {
     | '/communities/$communityId'
     | '/profile/$accountname'
     | '/$accountname/'
+    | '/$accountname/wallet/hbd'
+    | '/$accountname/wallet/hive'
+    | '/$accountname/wallet/hp'
     | '/post/$author/$permlink'
+    | '/$accountname/wallet/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -231,7 +277,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   UsersRoute: typeof UsersRoute
-  AccountnameWalletRoute: typeof AccountnameWalletRoute
+  AccountnameWalletRoute: typeof AccountnameWalletRouteWithChildren
   ProfileAccountnameRoute: typeof ProfileAccountnameRoute
   AccountnameIndexRoute: typeof AccountnameIndexRoute
   PostAuthorPermlinkRoute: typeof PostAuthorPermlinkRoute
@@ -344,12 +390,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountnameWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$accountname/wallet/': {
+      id: '/$accountname/wallet/'
+      path: '/'
+      fullPath: '/$accountname/wallet/'
+      preLoaderRoute: typeof AccountnameWalletIndexRouteImport
+      parentRoute: typeof AccountnameWalletRoute
+    }
     '/post/$author/$permlink': {
       id: '/post/$author/$permlink'
       path: '/post/$author/$permlink'
       fullPath: '/post/$author/$permlink'
       preLoaderRoute: typeof PostAuthorPermlinkRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$accountname/wallet/hp': {
+      id: '/$accountname/wallet/hp'
+      path: '/hp'
+      fullPath: '/$accountname/wallet/hp'
+      preLoaderRoute: typeof AccountnameWalletHpRouteImport
+      parentRoute: typeof AccountnameWalletRoute
+    }
+    '/$accountname/wallet/hive': {
+      id: '/$accountname/wallet/hive'
+      path: '/hive'
+      fullPath: '/$accountname/wallet/hive'
+      preLoaderRoute: typeof AccountnameWalletHiveRouteImport
+      parentRoute: typeof AccountnameWalletRoute
+    }
+    '/$accountname/wallet/hbd': {
+      id: '/$accountname/wallet/hbd'
+      path: '/hbd'
+      fullPath: '/$accountname/wallet/hbd'
+      preLoaderRoute: typeof AccountnameWalletHbdRouteImport
+      parentRoute: typeof AccountnameWalletRoute
     }
   }
 }
@@ -366,6 +440,23 @@ const CommunitiesRouteWithChildren = CommunitiesRoute._addFileChildren(
   CommunitiesRouteChildren,
 )
 
+interface AccountnameWalletRouteChildren {
+  AccountnameWalletHbdRoute: typeof AccountnameWalletHbdRoute
+  AccountnameWalletHiveRoute: typeof AccountnameWalletHiveRoute
+  AccountnameWalletHpRoute: typeof AccountnameWalletHpRoute
+  AccountnameWalletIndexRoute: typeof AccountnameWalletIndexRoute
+}
+
+const AccountnameWalletRouteChildren: AccountnameWalletRouteChildren = {
+  AccountnameWalletHbdRoute: AccountnameWalletHbdRoute,
+  AccountnameWalletHiveRoute: AccountnameWalletHiveRoute,
+  AccountnameWalletHpRoute: AccountnameWalletHpRoute,
+  AccountnameWalletIndexRoute: AccountnameWalletIndexRoute,
+}
+
+const AccountnameWalletRouteWithChildren =
+  AccountnameWalletRoute._addFileChildren(AccountnameWalletRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
@@ -378,7 +469,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   UsersRoute: UsersRoute,
-  AccountnameWalletRoute: AccountnameWalletRoute,
+  AccountnameWalletRoute: AccountnameWalletRouteWithChildren,
   ProfileAccountnameRoute: ProfileAccountnameRoute,
   AccountnameIndexRoute: AccountnameIndexRoute,
   PostAuthorPermlinkRoute: PostAuthorPermlinkRoute,
