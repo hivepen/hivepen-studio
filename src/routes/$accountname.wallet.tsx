@@ -7,6 +7,7 @@ import {
   HStack,
   Heading,
   Icon,
+  Progress,
   SimpleGrid,
   Skeleton,
   Stack,
@@ -18,8 +19,12 @@ import {
   Activity,
   Coins,
   ExternalLink,
+  Gauge,
+  PieChart,
   RefreshCw,
   ShieldCheck,
+  Sparkles,
+  Vote,
   WalletCards,
 } from 'lucide-react'
 import { useMemo } from 'react'
@@ -164,8 +169,8 @@ function WalletPage() {
       onRefresh={() => walletQuery.refetch()}
       fetchedAt={wallet.fetchedAt}
     >
+      <OverviewHero wallet={wallet} />
       <SummaryBand wallet={wallet} />
-      <AssetHighlights wallet={wallet} />
 
       <Grid
         templateColumns={{ base: '1fr', xl: 'minmax(0, 1fr) 360px' }}
@@ -178,6 +183,7 @@ function WalletPage() {
 
         <Stack gap={5} minW={0}>
           <ResourcesPanel wallet={wallet} />
+          <WalletSignalsPanel wallet={wallet} />
           <DelegationsPanel wallet={wallet} />
         </Stack>
       </Grid>
@@ -229,7 +235,7 @@ function WalletPageFrame({
           {onRefresh ? (
             <Button
               variant="subtle"
-              colorPalette="red"
+              colorPalette="gray"
               loading={isRefreshing}
               onClick={onRefresh}
             >
@@ -237,7 +243,7 @@ function WalletPageFrame({
               Refresh
             </Button>
           ) : null}
-          <Button asChild variant="subtle" colorPalette="orange">
+          <Button asChild variant="subtle" colorPalette="gray">
             <a
               href={`https://hiveblocks.com/@${username}`}
               target="_blank"
@@ -254,123 +260,183 @@ function WalletPageFrame({
   )
 }
 
+function OverviewHero({ wallet }: { wallet: HiveWalletOverview }) {
+  const { account, metrics } = wallet
+  const liquidValue =
+    metrics.liquidHbd +
+    estimateHiveValue(metrics.liquidHive, metrics.hivePriceHbd)
+  const savingsValue =
+    metrics.savingsHbd +
+    estimateHiveValue(metrics.savingsHive, metrics.hivePriceHbd)
+  const stakedValue = estimateHiveValue(metrics.hivePower, metrics.hivePriceHbd)
+  const rewardsValue =
+    metrics.rewardHbd +
+    estimateHiveValue(
+      metrics.rewardHive + metrics.rewardHivePower,
+      metrics.hivePriceHbd,
+    )
+  const mixItems = [
+    {
+      label: 'Liquid reserves',
+      value: liquidValue,
+      detail: [
+        formatTokenAmount(metrics.liquidHive, 'HIVE'),
+        formatTokenAmount(metrics.liquidHbd, 'HBD'),
+      ].join(' + '),
+      palette: 'red' as const,
+    },
+    {
+      label: 'Savings parked',
+      value: savingsValue,
+      detail: `${formatTokenAmount(metrics.savingsHbd, 'HBD')} at ${formatPercent(metrics.hbdInterestRate)}`,
+      palette: 'green' as const,
+    },
+    {
+      label: 'Owned stake',
+      value: stakedValue,
+      detail: `${formatTokenAmount(metrics.hivePower, 'HP')} owned`,
+      palette: 'purple' as const,
+    },
+    {
+      label: 'Pending rewards',
+      value: rewardsValue,
+      detail:
+        rewardsValue > 0
+          ? [
+              formatTokenAmount(metrics.rewardHive, 'HIVE'),
+              formatTokenAmount(metrics.rewardHbd, 'HBD'),
+              formatTokenAmount(metrics.rewardHivePower, 'HP'),
+            ].join(' + ')
+          : 'Nothing waiting to be claimed',
+      palette: 'orange' as const,
+    },
+  ]
+  const dominantMix = [...mixItems].sort(
+    (left, right) => right.value - left.value,
+  )[0]
+  const powerDownRate = vestsToHivePower(
+    account.vesting_withdraw_rate,
+    wallet.dynamicGlobalProperties,
+  )
+
+  return (
+    <Grid
+      templateColumns={{
+        base: '1fr',
+        xl: 'minmax(0, 1.35fr) minmax(320px, 0.85fr)',
+      }}
+      gap={4}
+    >
+      <SectionPanel colorPalette="red" title="Overview" accentSymbol="HIVE">
+        <Stack gap={4}>
+          <HStack align="start" justify="space-between" gap={4} wrap="wrap">
+            <Stack gap={1}>
+              <Heading size="2xl" lineHeight="0.95" letterSpacing="-0.03em">
+                {formatHbdEstimate(metrics.estimatedHbdValue)}
+              </Heading>
+              <Text color="fg" fontSize="sm">
+                @{wallet.username} wallet
+              </Text>
+            </Stack>
+            <HStack gap={2} wrap="wrap">
+              <Badge colorPalette="gray" variant="subtle">
+                {dominantMix.label}
+              </Badge>
+              <Badge colorPalette="gray" variant="subtle">
+                {wallet.hiveEngineBalances.length} engine
+              </Badge>
+              {powerDownRate > 0 ? (
+                <Badge colorPalette="gray" variant="subtle">
+                  Power down active
+                </Badge>
+              ) : null}
+            </HStack>
+          </HStack>
+
+          <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
+            <HeroMetricCard
+              colorPalette="gray"
+              icon={WalletCards}
+              label="Liquid"
+              value={formatHbdEstimate(liquidValue)}
+              detail={`${formatNumber(safePercent(liquidValue, metrics.estimatedHbdValue), 1)}%`}
+            />
+            <HeroMetricCard
+              colorPalette="gray"
+              icon={ShieldCheck}
+              label="Effective HP"
+              value={formatTokenAmount(metrics.effectiveHivePower, 'HP')}
+              detail={formatTokenAmount(metrics.delegatedHivePower, 'HP')}
+            />
+            <HeroMetricCard
+              colorPalette="gray"
+              icon={Sparkles}
+              label="Savings"
+              value={formatTokenAmount(metrics.savingsHbd, 'HBD')}
+              detail={`APR ${formatPercent(metrics.hbdInterestRate)}`}
+            />
+          </SimpleGrid>
+        </Stack>
+      </SectionPanel>
+
+      <SectionPanel colorPalette="red" title="Mix" accentSymbol="ENGINE">
+        <Stack gap={3}>
+          {mixItems.map((item) => (
+            <PortfolioMixRow
+              key={item.label}
+              colorPalette="gray"
+              label={item.label}
+              value={item.value}
+              detail={item.detail}
+              share={safePercent(item.value, metrics.estimatedHbdValue)}
+            />
+          ))}
+        </Stack>
+      </SectionPanel>
+    </Grid>
+  )
+}
+
 function SummaryBand({ wallet }: { wallet: HiveWalletOverview }) {
   const { metrics } = wallet
 
   return (
     <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} gap={{ base: 3, md: 4 }}>
       <CompactStat
-        label="Estimated value"
-        value={formatHbdEstimate(metrics.estimatedHbdValue)}
-        help={`HIVE at ${formatHbdEstimate(metrics.hivePriceHbd)}`}
+        label="Liquid"
+        value={formatHbdEstimate(
+          estimateHiveValue(metrics.liquidHive, metrics.hivePriceHbd) +
+            metrics.liquidHbd,
+        )}
+        help={formatTokenAmount(metrics.liquidHive, 'HIVE')}
         icon={WalletCards}
-        palette="red"
+        palette="gray"
         symbol="HIVE"
       />
       <CompactStat
-        label="Hive Power"
-        value={formatTokenAmount(metrics.hivePower, 'HP')}
-        help={`${formatTokenAmount(metrics.effectiveHivePower, 'HP')} effective`}
+        label="HP"
+        value={formatTokenAmount(metrics.effectiveHivePower, 'HP')}
+        help={formatTokenAmount(metrics.hivePower, 'HP')}
         icon={ShieldCheck}
-        palette="purple"
+        palette="gray"
         symbol="HP"
       />
       <CompactStat
         label="Savings"
         value={formatTokenAmount(metrics.savingsHbd, 'HBD')}
-        help={`${formatTokenAmount(metrics.savingsHive, 'HIVE')} saved`}
+        help={formatPercent(metrics.hbdInterestRate)}
         icon={Coins}
-        palette="green"
+        palette="gray"
         symbol="HBD"
       />
       <CompactStat
-        label="Resource credits"
+        label="RC"
         value={formatNullablePercent(metrics.rcPercent)}
-        help="Available RC"
+        help={formatCompactRc(wallet.rcAccount?.max_rc)}
         icon={Activity}
-        palette="blue"
+        palette="gray"
         symbol="RC"
       />
-    </SimpleGrid>
-  )
-}
-
-function AssetHighlights({ wallet }: { wallet: HiveWalletOverview }) {
-  const { metrics } = wallet
-
-  return (
-    <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
-      <SectionPanel
-        colorPalette="red"
-        title="Core assets"
-        accentSymbol="HIVE"
-        description="Public balances available on-chain right now."
-      >
-        <Stack gap={3}>
-          <AssetMetricTile
-            symbol="HIVE"
-            label="Liquid + savings"
-            value={formatTokenAmount(
-              metrics.liquidHive + metrics.savingsHive,
-              'HIVE',
-            )}
-            detail={formatHbdEstimate(
-              (metrics.liquidHive + metrics.savingsHive) * metrics.hivePriceHbd,
-            )}
-          />
-          <AssetMetricTile
-            symbol="HBD"
-            label="Liquid + savings"
-            value={formatTokenAmount(
-              metrics.liquidHbd + metrics.savingsHbd,
-              'HBD',
-            )}
-            detail={`APR ${formatPercent(metrics.hbdInterestRate)}`}
-          />
-        </Stack>
-      </SectionPanel>
-      <SectionPanel
-        colorPalette="purple"
-        title="Powered stake"
-        accentSymbol="HP"
-        description="Ownership, delegation, and governance weight."
-      >
-        <Stack gap={3}>
-          <AssetMetricTile
-            symbol="HP"
-            label="Effective Hive Power"
-            value={formatTokenAmount(metrics.effectiveHivePower, 'HP')}
-            detail={`${formatTokenAmount(metrics.receivedHivePower, 'HP')} received`}
-          />
-          <AssetMetricTile
-            symbol="HP"
-            label="Delegated out"
-            value={formatTokenAmount(metrics.delegatedHivePower, 'HP')}
-            detail={`${formatTokenAmount(metrics.hivePower, 'HP')} owned`}
-          />
-        </Stack>
-      </SectionPanel>
-      <SectionPanel
-        colorPalette="orange"
-        title="Activity edge"
-        accentSymbol="ENGINE"
-        description="A quick read on rewards, RC, and side balances."
-      >
-        <Stack gap={3}>
-          <AssetMetricTile
-            symbol="RC"
-            label="Resource credits"
-            value={formatNullablePercent(metrics.rcPercent)}
-            detail={formatCompactRc(wallet.rcAccount?.max_rc)}
-          />
-          <AssetMetricTile
-            symbol="ENGINE"
-            label="Hive Engine tokens"
-            value={String(wallet.hiveEngineBalances.length)}
-            detail="Distinct balances"
-          />
-        </Stack>
-      </SectionPanel>
     </SimpleGrid>
   )
 }
@@ -387,29 +453,29 @@ function CompactStat({
   value: string
   help: string
   icon: typeof WalletCards
-  palette: WalletColorPalette
+  palette: WalletColorPalette | 'gray'
   symbol: string
 }) {
   return (
     <Stat.Root
-      bg="colorPalette.subtle"
+      bg="bg.panel"
       border="1px solid"
-      borderColor="colorPalette.muted"
+      borderColor="border"
       borderRadius="16px"
       colorPalette={palette}
-      gap={4}
+      gap={3}
       justifyContent="space-between"
-      minH="132px"
+      minH="116px"
       px={{ base: 4, md: 5 }}
-      py={{ base: 4, md: 4.5 }}
+      py={{ base: 4, md: 4 }}
     >
       <HStack align="start" justify="space-between">
         <Stack gap={1}>
-          <Stat.Label color="colorPalette.fg">{label}</Stat.Label>
+          <Stat.Label color="fg.muted">{label}</Stat.Label>
           <Badge
             alignSelf="start"
-            colorPalette={palette}
-            fontWeight="600"
+            colorPalette="gray"
+            fontWeight="500"
             size="sm"
             variant="subtle"
           >
@@ -418,11 +484,11 @@ function CompactStat({
         </Stack>
         <Box
           alignItems="center"
-          bg="bg.panel"
+          bg="bg.muted"
           border="1px solid"
-          borderColor="colorPalette.muted"
+          borderColor="border"
           borderRadius="full"
-          color="colorPalette.fg"
+          color="fg.muted"
           display="inline-flex"
           justifyContent="center"
           p="2"
@@ -433,62 +499,14 @@ function CompactStat({
       <Stat.ValueText fontSize={{ base: '2xl', md: '3xl' }} lineHeight="1.05">
         {value}
       </Stat.ValueText>
-      <Stat.HelpText color="colorPalette.muted">{help}</Stat.HelpText>
+      <Stat.HelpText color="fg">{help}</Stat.HelpText>
     </Stat.Root>
-  )
-}
-
-function AssetMetricTile({
-  symbol,
-  label,
-  value,
-  detail,
-}: {
-  symbol: string
-  label: string
-  value: string
-  detail: string
-}) {
-  const asset = getWalletAssetMeta(symbol)
-
-  return (
-    <HStack
-      align="start"
-      bg="colorPalette.subtle"
-      border="1px solid"
-      borderColor="colorPalette.muted"
-      borderRadius="14px"
-      colorPalette={asset.colorPalette}
-      justify="space-between"
-      p={3}
-      gap={4}
-    >
-      <WalletAssetBadge symbol={symbol} label={label} />
-      <Stack gap={0.5} textAlign="end">
-        <Text
-          color="colorPalette.fg"
-          fontSize="lg"
-          fontWeight="700"
-          lineHeight="1.1"
-        >
-          {value}
-        </Text>
-        <Text color="colorPalette.muted" fontSize="sm">
-          {detail}
-        </Text>
-      </Stack>
-    </HStack>
   )
 }
 
 function BalancesTable({ rows }: { rows: Array<BalanceRow> }) {
   return (
-    <SectionPanel
-      colorPalette="red"
-      title="Balances"
-      accentSymbol="HIVE"
-      description="Liquid, savings, stake, and pending rewards."
-    >
+    <SectionPanel colorPalette="gray" title="Balances" accentSymbol="HIVE">
       <Table.ScrollArea>
         <Table.Root size="sm" minW="620px">
           <Table.Header>
@@ -505,15 +523,11 @@ function BalancesTable({ rows }: { rows: Array<BalanceRow> }) {
                 <Table.Cell>
                   <WalletAssetBadge symbol={row.symbol} label={row.label} />
                 </Table.Cell>
-                <Table.Cell color="fg.muted">{row.description}</Table.Cell>
+                <Table.Cell color="fg">{row.description}</Table.Cell>
                 <Table.Cell textAlign="end" whiteSpace="nowrap">
                   {row.amount}
                 </Table.Cell>
-                <Table.Cell
-                  textAlign="end"
-                  color="fg.muted"
-                  whiteSpace="nowrap"
-                >
+                <Table.Cell textAlign="end" color="fg" whiteSpace="nowrap">
                   {row.estimate ?? '—'}
                 </Table.Cell>
               </Table.Row>
@@ -530,24 +544,22 @@ function ResourcesPanel({ wallet }: { wallet: HiveWalletOverview }) {
   const witnessCount = account.witness_votes?.length ?? 0
 
   return (
-    <SectionPanel
-      colorPalette="blue"
-      title="Resources"
-      accentSymbol="RC"
-      description="Voting power, witness capacity, and savings settings."
-    >
+    <SectionPanel colorPalette="gray" title="Resources" accentSymbol="RC">
       <Stack gap={4}>
-        <MetricLine
+        <ResourceMeter
           label="Voting mana"
-          value={formatNullablePercent(metrics.votingManaPercent)}
+          value={metrics.votingManaPercent}
+          valueText={formatNullablePercent(metrics.votingManaPercent)}
         />
-        <MetricLine
+        <ResourceMeter
           label="Downvote mana"
-          value={formatNullablePercent(metrics.downvoteManaPercent)}
+          value={metrics.downvoteManaPercent}
+          valueText={formatNullablePercent(metrics.downvoteManaPercent)}
         />
-        <MetricLine
+        <ResourceMeter
           label="Resource credits"
-          value={formatNullablePercent(metrics.rcPercent)}
+          value={metrics.rcPercent}
+          valueText={formatNullablePercent(metrics.rcPercent)}
         />
         <MetricLine
           label="RC delegated"
@@ -579,41 +591,200 @@ function ResourcesPanel({ wallet }: { wallet: HiveWalletOverview }) {
   )
 }
 
+function WalletSignalsPanel({ wallet }: { wallet: HiveWalletOverview }) {
+  const { account, activity, metrics } = wallet
+  const witnessCount = account.witness_votes?.length ?? 0
+  const delegatedShare =
+    metrics.hivePower > 0
+      ? safePercent(metrics.delegatedHivePower, metrics.hivePower)
+      : 0
+  const rewardValue =
+    metrics.rewardHbd +
+    estimateHiveValue(
+      metrics.rewardHive + metrics.rewardHivePower,
+      metrics.hivePriceHbd,
+    )
+  const powerDownRate = vestsToHivePower(
+    account.vesting_withdraw_rate,
+    wallet.dynamicGlobalProperties,
+  )
+  const lastActivity = activity.at(0)
+
+  return (
+    <SectionPanel colorPalette="gray" title="Signals" accentSymbol="ENGINE">
+      <SimpleGrid columns={{ base: 1, sm: 2 }} gap={3}>
+        <SignalTile
+          colorPalette="gray"
+          icon={PieChart}
+          label="Delegated out"
+          value={`${formatNumber(delegatedShare, 1)}%`}
+          detail={formatTokenAmount(metrics.delegatedHivePower, 'HP')}
+        />
+        <SignalTile
+          colorPalette="green"
+          icon={Sparkles}
+          label="Pending rewards"
+          value={rewardValue > 0 ? formatHbdEstimate(rewardValue) : 'Clear'}
+          detail={rewardValue > 0 ? 'Rewards pending' : 'Clear'}
+        />
+        <SignalTile
+          colorPalette="gray"
+          icon={Vote}
+          label="Witness reach"
+          value={`${witnessCount} / ${MAX_WITNESS_VOTES}`}
+          detail={
+            account.proxy
+              ? `Proxy @${account.proxy}`
+              : `${MAX_WITNESS_VOTES - witnessCount} open`
+          }
+        />
+        <SignalTile
+          colorPalette="gray"
+          icon={Gauge}
+          label="Power down"
+          value={
+            powerDownRate > 0
+              ? formatTokenAmount(powerDownRate, 'HP')
+              : 'Inactive'
+          }
+          detail={
+            powerDownRate > 0
+              ? formatDate(account.next_vesting_withdrawal)
+              : 'Not active'
+          }
+        />
+        <SignalTile
+          colorPalette="gray"
+          icon={Activity}
+          label="Last activity"
+          value={
+            lastActivity ? formatActivityType(lastActivity.type) : 'No activity'
+          }
+          detail={
+            lastActivity
+              ? `${formatDate(lastActivity.timestamp)}`
+              : 'No recent activity'
+          }
+        />
+        <SignalTile
+          colorPalette="orange"
+          icon={Coins}
+          label="Sidechain footprint"
+          value={String(wallet.hiveEngineBalances.length)}
+          detail="Balances"
+        />
+      </SimpleGrid>
+    </SectionPanel>
+  )
+}
+
 function MetricLine({ label, value, detail }: MetricLineProps) {
   return (
     <HStack justify="space-between" gap={4} align="start">
       <Stack gap={0} minW={0}>
-        <Text fontSize="sm" color="colorPalette.muted">
+        <Text fontSize="sm" color="fg.muted">
           {label}
         </Text>
         {detail ? (
-          <Text fontSize="xs" color="fg.subtle">
+          <Text fontSize="xs" color="fg.muted">
             {detail}
           </Text>
         ) : null}
       </Stack>
-      <Text
-        color="colorPalette.fg"
-        fontSize="sm"
-        fontWeight="600"
-        textAlign="end"
-      >
+      <Text color="fg" fontSize="sm" fontWeight="600" textAlign="end">
         {value}
       </Text>
     </HStack>
   )
 }
 
-function DelegationsPanel({ wallet }: { wallet: HiveWalletOverview }) {
+function ResourceMeter({
+  label,
+  value,
+  valueText,
+  detail,
+}: {
+  detail?: string
+  label: string
+  value: number | null
+  valueText: string
+}) {
   return (
-    <SectionPanel
-      colorPalette="purple"
-      title="Outgoing HP"
-      accentSymbol="HP"
-      description="Stake currently delegated to other Hive accounts."
-    >
+    <Box>
+      <Stack gap={2.5}>
+        <HStack justify="space-between" gap={3}>
+          <Stack gap={0.5}>
+            <Text color="fg" fontSize="sm" fontWeight="600">
+              {label}
+            </Text>
+            {detail ? (
+              <Text color="fg.muted" fontSize="xs">
+                {detail}
+              </Text>
+            ) : null}
+          </Stack>
+          <Text color="fg" fontSize="sm" fontWeight="700">
+            {valueText}
+          </Text>
+        </HStack>
+        <Progress.Root
+          colorPalette="gray"
+          size="sm"
+          value={value === null ? 0 : clampPercent(value)}
+          variant="subtle"
+        >
+          <Progress.Track>
+            <Progress.Range />
+          </Progress.Track>
+        </Progress.Root>
+      </Stack>
+    </Box>
+  )
+}
+
+function DelegationsPanel({ wallet }: { wallet: HiveWalletOverview }) {
+  const totalDelegated = wallet.outgoingDelegations.reduce(
+    (sum, delegation) => {
+      return (
+        sum +
+        vestsToHivePower(
+          delegation.vesting_shares,
+          wallet.dynamicGlobalProperties,
+        )
+      )
+    },
+    0,
+  )
+
+  return (
+    <SectionPanel colorPalette="gray" title="Delegations" accentSymbol="HP">
       {wallet.outgoingDelegations.length > 0 ? (
         <Stack gap={3}>
+          <HStack
+            bg="bg.muted"
+            border="1px solid"
+            borderColor="border"
+            borderRadius="14px"
+            justify="space-between"
+            px={3.5}
+            py={3}
+          >
+            <Stack gap={0.5}>
+              <Text color="fg" fontSize="sm" fontWeight="600">
+                {wallet.outgoingDelegations.length} active delegates
+              </Text>
+              <Text color="fg.muted" fontSize="xs">
+                {formatNumber(
+                  safePercent(totalDelegated, wallet.metrics.hivePower),
+                  1,
+                )}
+                % of owned Hive Power is delegated out
+              </Text>
+            </Stack>
+            <Text color="fg" fontSize="sm" fontWeight="700">
+              {formatTokenAmount(totalDelegated, 'HP')}
+            </Text>
+          </HStack>
           {wallet.outgoingDelegations.map((delegation) => (
             <DelegationRow
               key={`${delegation.delegatee}-${delegation.vesting_shares}`}
@@ -646,19 +817,14 @@ function DelegationRow({
   return (
     <HStack justify="space-between" gap={4} align="start">
       <Stack gap={0} minW={0}>
-        <Text color="colorPalette.fg" fontSize="sm" fontWeight="600">
+        <Text color="fg" fontSize="sm" fontWeight="600">
           @{delegation.delegatee}
         </Text>
-        <Text fontSize="xs" color="colorPalette.muted">
-          Available after {formatDate(delegation.min_delegation_time)}
+        <Text fontSize="xs" color="fg.muted">
+          {formatDate(delegation.min_delegation_time)}
         </Text>
       </Stack>
-      <Text
-        color="colorPalette.fg"
-        fontSize="sm"
-        fontWeight="600"
-        whiteSpace="nowrap"
-      >
+      <Text color="fg" fontSize="sm" fontWeight="600" whiteSpace="nowrap">
         {formatTokenAmount(hp, 'HP')}
       </Text>
     </HStack>
@@ -667,12 +833,7 @@ function DelegationRow({
 
 function HiveEngineTable({ balances }: { balances: Array<HiveEngineBalance> }) {
   return (
-    <SectionPanel
-      colorPalette="orange"
-      title="Hive Engine"
-      accentSymbol="ENGINE"
-      description="Public sidechain balances from Tribaldex token metadata."
-    >
+    <SectionPanel colorPalette="gray" title="Hive Engine" accentSymbol="ENGINE">
       {balances.length > 0 ? (
         <Table.ScrollArea>
           <Table.Root size="sm" minW="620px">
@@ -692,13 +853,13 @@ function HiveEngineTable({ balances }: { balances: Array<HiveEngineBalance> }) {
                   <Table.Cell>
                     <WalletAssetBadge symbol={balance.symbol} />
                   </Table.Cell>
-                  <Table.Cell color="colorPalette.fg" textAlign="end">
+                  <Table.Cell color="fg" textAlign="end">
                     {formatEngineAmount(balance.balance)}
                   </Table.Cell>
-                  <Table.Cell color="colorPalette.fg" textAlign="end">
+                  <Table.Cell color="fg" textAlign="end">
                     {formatEngineAmount(balance.stake)}
                   </Table.Cell>
-                  <Table.Cell textAlign="end" color="colorPalette.muted">
+                  <Table.Cell textAlign="end" color="fg.muted">
                     {formatEngineDelegations(balance)}
                   </Table.Cell>
                 </Table.Row>
@@ -717,12 +878,7 @@ function HiveEngineTable({ balances }: { balances: Array<HiveEngineBalance> }) {
 
 function ActivityTable({ activity }: { activity: Array<HiveWalletActivity> }) {
   return (
-    <SectionPanel
-      colorPalette="orange"
-      title="Recent activity"
-      accentSymbol="ENGINE"
-      description="The last public wallet and governance operations we can read."
-    >
+    <SectionPanel colorPalette="gray" title="Activity" accentSymbol="ENGINE">
       {activity.length > 0 ? (
         <Table.ScrollArea>
           <Table.Root size="sm" minW="760px">
@@ -761,6 +917,158 @@ function ActivityTable({ activity }: { activity: Array<HiveWalletActivity> }) {
   )
 }
 
+function HeroMetricCard({
+  colorPalette,
+  detail,
+  icon,
+  label,
+  value,
+}: {
+  colorPalette: WalletColorPalette | 'gray'
+  detail: string
+  icon: typeof WalletCards
+  label: string
+  value: string
+}) {
+  return (
+    <Box
+      bg="bg.panel"
+      border="1px solid"
+      borderColor="border"
+      borderRadius="16px"
+      colorPalette={colorPalette}
+      minH="102px"
+      px={4}
+      py={3.5}
+    >
+      <Stack gap={3} h="full" justify="space-between">
+        <HStack justify="space-between" align="start">
+          <Text color="fg.muted" fontSize="sm" fontWeight="600">
+            {label}
+          </Text>
+          <Box
+            alignItems="center"
+            bg="bg.muted"
+            borderRadius="full"
+            color="fg.muted"
+            display="inline-flex"
+            justifyContent="center"
+            p="1.5"
+          >
+            <Icon as={icon} boxSize={4} />
+          </Box>
+        </HStack>
+        <Stack gap={0.5}>
+          <Text
+            color="fg"
+            fontSize={{ base: 'xl', md: '2xl' }}
+            fontWeight="800"
+            lineHeight="1.05"
+          >
+            {value}
+          </Text>
+          <Text color="fg" fontSize="sm">
+            {detail}
+          </Text>
+        </Stack>
+      </Stack>
+    </Box>
+  )
+}
+
+function PortfolioMixRow({
+  colorPalette,
+  detail,
+  label,
+  share,
+  value,
+}: {
+  colorPalette: WalletColorPalette | 'gray'
+  detail: string
+  label: string
+  share: number
+  value: number
+}) {
+  return (
+    <Box>
+      <HStack justify="space-between" gap={4} mb={2}>
+        <Stack gap={0.5}>
+          <Text color="fg" fontSize="sm" fontWeight="600">
+            {label}
+          </Text>
+          <Text color="fg.muted" fontSize="xs">
+            {detail}
+          </Text>
+        </Stack>
+        <Stack gap={0.5} align="end">
+          <Text color="fg" fontSize="sm" fontWeight="700">
+            {formatHbdEstimate(value)}
+          </Text>
+          <Text color="fg.muted" fontSize="xs">
+            {formatNumber(share, 1)}%
+          </Text>
+        </Stack>
+      </HStack>
+      <Progress.Root
+        colorPalette="gray"
+        size="sm"
+        value={clampPercent(share)}
+        variant="subtle"
+      >
+        <Progress.Track>
+          <Progress.Range />
+        </Progress.Track>
+      </Progress.Root>
+    </Box>
+  )
+}
+
+function SignalTile({
+  colorPalette,
+  detail,
+  icon,
+  label,
+  value,
+}: {
+  colorPalette: WalletColorPalette | 'gray'
+  detail: string
+  icon: typeof WalletCards
+  label: string
+  value: string
+}) {
+  return (
+    <Box
+      bg="bg.panel"
+      border="1px solid"
+      borderColor="border"
+      borderRadius="14px"
+      colorPalette={colorPalette}
+      px={3.5}
+      py={3}
+    >
+      <Stack gap={2.5}>
+        <HStack justify="space-between" gap={3} align="start">
+          <Text color="fg.muted" fontSize="sm" fontWeight="600">
+            {label}
+          </Text>
+          <Icon as={icon} boxSize={4} color="colorPalette.solid" />
+        </HStack>
+        <Text
+          color="fg"
+          fontSize={{ base: 'md', md: 'lg' }}
+          fontWeight="800"
+          lineHeight="1.1"
+        >
+          {value}
+        </Text>
+        <Text color="fg" fontSize="xs">
+          {detail}
+        </Text>
+      </Stack>
+    </Box>
+  )
+}
+
 function SectionPanel({
   colorPalette,
   title,
@@ -768,7 +1076,7 @@ function SectionPanel({
   description,
   children,
 }: {
-  colorPalette: WalletColorPalette
+  colorPalette: WalletColorPalette | 'gray'
   title: string
   accentSymbol?: string
   description?: string
@@ -778,7 +1086,7 @@ function SectionPanel({
     <Box
       bg="bg.panel"
       border="1px solid"
-      borderColor="colorPalette.muted"
+      borderColor="border"
       borderRadius="16px"
       colorPalette={colorPalette}
       p={{ base: 4, md: 5 }}
@@ -790,12 +1098,12 @@ function SectionPanel({
               {accentSymbol ? (
                 <WalletAssetIcon symbol={accentSymbol} size="8" />
               ) : null}
-              <Heading color="colorPalette.fg" size="sm">
+              <Heading color="fg" size="sm">
                 {title}
               </Heading>
             </HStack>
             {description ? (
-              <Text color="colorPalette.muted" fontSize="sm">
+              <Text color="fg.muted" fontSize="sm">
                 {description}
               </Text>
             ) : null}
@@ -894,6 +1202,14 @@ const formatEngineDelegations = (balance: HiveEngineBalance) => {
   }
   return parts.length > 0 ? parts.join(' / ') : '—'
 }
+
+const estimateHiveValue = (value: number, hivePriceHbd: number) =>
+  value * hivePriceHbd
+
+const safePercent = (value: number, total: number) =>
+  total > 0 ? (value / total) * 100 : 0
+
+const clampPercent = (value: number) => Math.min(100, Math.max(0, value))
 
 const formatActivityType = (type: string) =>
   type
