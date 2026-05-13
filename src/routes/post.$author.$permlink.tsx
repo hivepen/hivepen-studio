@@ -170,9 +170,14 @@ function PostDetailPage() {
           author={author}
           createdAt={post.created}
           community={post.communityTitle}
+          style={{ viewTransitionName: `post-head-${permlink}` }}
         />
 
-        <Text fontSize={{ base: 'xl', md: '2xl' }} fontWeight="600">
+        <Text
+          fontSize={{ base: 'xl', md: '2xl' }}
+          fontWeight="600"
+          style={{ viewTransitionName: `post-title-${permlink}` }}
+        >
           {post.title || m.post_untitled()}
         </Text>
         {post.tags.length > 0 ? (
@@ -306,6 +311,7 @@ function PostDetailPage() {
           author={post.author}
           permlink={post.permlink}
           voteCount={post.votesCount}
+          voteDetails={post.voteDetails}
           commentCount={commentsQuery.data?.length}
           onCommentSuccess={() => commentsQuery.refetch()}
         />

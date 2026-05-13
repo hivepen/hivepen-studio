@@ -1,5 +1,5 @@
 import { SimpleGrid, Stack, Text } from '@chakra-ui/react'
-import type { PostCardProps } from '@/components/PostCard';
+import type { PostCardProps } from '@/components/PostCard'
 import PostCard from '@/components/PostCard'
 import PostCardSkeleton from '@/components/PostCardSkeleton'
 import { m } from '@/paraglide/messages'
@@ -8,12 +8,10 @@ export default function PostsListSection({
   posts,
   loading,
   emptyMessage = m.posts_empty_default(),
-  renderActions,
 }: {
   posts: Array<PostCardProps>
   loading: boolean
   emptyMessage?: string
-  renderActions?: (post: PostCardProps) => React.ReactNode
 }) {
   return (
     <Stack gap={3}>
@@ -26,7 +24,6 @@ export default function PostsListSection({
               <PostCard
                 key={`${post.author}-${post.permlink ?? post.title}`}
                 {...post}
-                actions={renderActions ? renderActions(post) : undefined}
               />
             ))}
       </SimpleGrid>

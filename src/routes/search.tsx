@@ -23,7 +23,6 @@ import { getLocale } from '@/paraglide/runtime'
 import CommunityCombobox from '@/components/CommunityCombobox'
 import AccountCombobox from '@/components/AccountCombobox'
 import PostsListSection from '@/features/posts/PostsListSection'
-import PostActions from '@/features/posts/PostActions'
 import usePostsListState from '@/features/posts/usePostsListState'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import { Field } from '@/components/ui/field'
@@ -108,14 +107,12 @@ function Search() {
 
   const [filters, setFilters] = useState<SearchFilters>(() => {
     const fromQuery: SearchFilters = {
-      sort:
-        (searchParams.sort) ??
-        defaultFilters.sort,
-      tag: (searchParams.tag) ?? '',
-      community: (searchParams.community) ?? '',
-      author: (searchParams.author) ?? '',
-      dateFrom: (searchParams.dateFrom) ?? '',
-      dateTo: (searchParams.dateTo) ?? '',
+      sort: searchParams.sort ?? defaultFilters.sort,
+      tag: searchParams.tag ?? '',
+      community: searchParams.community ?? '',
+      author: searchParams.author ?? '',
+      dateFrom: searchParams.dateFrom ?? '',
+      dateTo: searchParams.dateTo ?? '',
     }
     if (hasQueryParams) {
       return { ...defaultFilters, ...fromQuery }
@@ -194,13 +191,12 @@ function Search() {
   useEffect(() => {
     if (!hasQueryParams) return
     const nextFilters: SearchFilters = {
-      sort:
-        (searchParams.sort) ?? 'trending',
-      tag: (searchParams.tag) ?? '',
-      community: (searchParams.community) ?? '',
-      author: (searchParams.author) ?? '',
-      dateFrom: (searchParams.dateFrom) ?? '',
-      dateTo: (searchParams.dateTo) ?? '',
+      sort: searchParams.sort ?? 'trending',
+      tag: searchParams.tag ?? '',
+      community: searchParams.community ?? '',
+      author: searchParams.author ?? '',
+      dateFrom: searchParams.dateFrom ?? '',
+      dateTo: searchParams.dateTo ?? '',
     }
     setFilters((prev) =>
       JSON.stringify(prev) === JSON.stringify(nextFilters) ? prev : nextFilters,
@@ -315,9 +311,6 @@ function Search() {
       ? authorSuggestionsQuery.data
       : cachedAuthorSuggestions.results
 
-  const [localStats, setLocalStats] = useState<
-    Record<string, { votes?: number; comments?: number }>
-  >({})
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -358,7 +351,9 @@ function Search() {
   )
 
   const cardResults = useMemo(() => {
-    const pages = (postsQuery.data?.pages ?? []) as Array<Array<PostSearchResult>>
+    const pages = (postsQuery.data?.pages ?? []) as Array<
+      Array<PostSearchResult>
+    >
     const flattened = pages.flat()
     const unique = new Map<string, PostSearchResult>()
     flattened.forEach((post) => {
@@ -369,8 +364,6 @@ function Search() {
     })
 
     return Array.from(unique.values()).map((post) => {
-      const key = `${post.author}/${post.permlink}`
-      const overrides = localStats[key] ?? {}
       return {
         title: post.title || m.post_untitled(),
         author: post.author,
@@ -382,12 +375,13 @@ function Search() {
         app: post.app,
         createdAt: new Date(post.created).toLocaleDateString(),
         permlink: post.permlink,
-        votes: overrides.votes ?? post.votes,
-        comments: overrides.comments ?? post.comments,
+        votes: post.votes,
+        voteDetails: post.voteDetails,
+        comments: post.comments,
         payout: post.payout,
       }
     })
-  }, [postsQuery.data?.pages, localStats])
+  }, [postsQuery.data?.pages])
 
   return (
     <Stack
@@ -631,37 +625,6 @@ function Search() {
           activeTag || hasAuthor
             ? m.search_empty_no_results()
             : m.search_status_select_prompt()
-        }
-        renderActions={(post) =>
-          post.permlink ? (
-            <PostActions
-              author={post.author}
-              permlink={post.permlink}
-              voteCount={post.votes}
-              commentCount={post.comments}
-              variant="card"
-              onVoteSuccess={() =>
-                setLocalStats((prev) => {
-                  const key = `${post.author}/${post.permlink}`
-                  const current = prev[key]?.votes ?? post.votes ?? 0
-                  return {
-                    ...prev,
-                    [key]: { ...prev[key], votes: current + 1 },
-                  }
-                })
-              }
-              onCommentSuccess={() =>
-                setLocalStats((prev) => {
-                  const key = `${post.author}/${post.permlink}`
-                  const current = prev[key]?.comments ?? post.comments ?? 0
-                  return {
-                    ...prev,
-                    [key]: { ...prev[key], comments: current + 1 },
-                  }
-                })
-              }
-            />
-          ) : null
         }
       />
       <Box ref={loadMoreRef} minH="1px" />

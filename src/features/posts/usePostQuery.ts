@@ -1,8 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
-import {  getPostQueryOptions } from '@ecency/sdk'
-import {resolveApp, resolveTags, resolveImages, resolveCoverImageUrl } from './postMetadataUtils'
-import type {Entry} from '@ecency/sdk';
+import { getPostQueryOptions } from '@ecency/sdk'
+import {
+  resolveApp,
+  resolveTags,
+  resolveImages,
+  resolveCoverImageUrl,
+} from './postMetadataUtils'
+import type { Entry } from '@ecency/sdk'
 import { sumAssetStrings } from '@/lib/hive/payouts'
+import type { VoteDetail } from '@/lib/posts/votes'
+import { extractVoteDetails } from '@/lib/hive/votes'
 
 type PostPayoutSummary = {
   pending: string
@@ -33,8 +40,8 @@ export type PostViewModel = {
   payout: PostPayoutSummary
   coverImageUrl?: string
   images: Array<string>
+  voteDetails?: Array<VoteDetail>
 }
-
 
 const buildPayoutSummary = (entry: Entry): PostPayoutSummary => {
   const totalFromPayouts = sumAssetStrings(
@@ -77,6 +84,9 @@ const mapEntryToPost = (entry: Entry): PostViewModel => {
     payout: buildPayoutSummary(entry),
     coverImageUrl: resolveCoverImageUrl(entry.json_metadata),
     images: resolveImages(entry.json_metadata),
+    voteDetails: Array.isArray(entry.active_votes)
+      ? extractVoteDetails({ active_votes: entry.active_votes })
+      : undefined,
   }
 }
 

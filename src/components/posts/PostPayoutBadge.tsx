@@ -8,19 +8,17 @@ import {
   Stack,
   Text,
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  
-  getDynamicPropsQueryOptions,
-  getPostQueryOptions
-} from '@ecency/sdk'
-import type {Entry} from '@ecency/sdk';
+import { getDynamicPropsQueryOptions, getPostQueryOptions } from '@ecency/sdk'
+import type { Entry } from '@ecency/sdk'
 import { parseAssetAmount, sumAssetStrings } from '@/lib/hive/payouts'
 import { m } from '@/paraglide/messages'
 
 type PostPayoutBadgeProps = {
   author: string
+  celebrateKey?: number
   permlink?: string
   payout?: {
     pending: string
@@ -72,12 +70,16 @@ const formatPercent = (weight: number) => {
 
 export default function PostPayoutBadge({
   author,
+  celebrateKey = 0,
   permlink,
   payout,
 }: PostPayoutBadgeProps) {
   const [open, setOpen] = useState(false)
   const [hasOpened, setHasOpened] = useState(false)
+  const [isCelebrating, setIsCelebrating] = useState(false)
+  const celebrationTimeoutRef = useRef<number | null>(null)
   const shouldFetch = hasOpened && Boolean(permlink)
+  const prefersReducedMotion = useReducedMotion()
   const postQuery = useQuery({
     ...getPostQueryOptions(author, permlink),
     enabled: shouldFetch,
@@ -137,6 +139,28 @@ export default function PostPayoutBadge({
   const showPaidOut = isPaidOut && (authorPayout || curatorPayout)
   const showCountdown = !isPaidOut
 
+  useEffect(() => {
+    if (celebrateKey <= 0) return
+
+    setIsCelebrating(true)
+    if (celebrationTimeoutRef.current !== null) {
+      window.clearTimeout(celebrationTimeoutRef.current)
+    }
+
+    celebrationTimeoutRef.current = window.setTimeout(() => {
+      setIsCelebrating(false)
+      celebrationTimeoutRef.current = null
+    }, 650)
+  }, [celebrateKey])
+
+  useEffect(() => {
+    return () => {
+      if (celebrationTimeoutRef.current !== null) {
+        window.clearTimeout(celebrationTimeoutRef.current)
+      }
+    }
+  }, [])
+
   return (
     <Popover.Root
       open={open}
@@ -149,16 +173,33 @@ export default function PostPayoutBadge({
       positioning={{ placement: 'top-start' }}
     >
       <Popover.Trigger asChild>
-        <Badge
-          variant="subtle"
-          colorPalette="green"
-          textTransform="uppercase"
-          cursor="pointer"
-          size="lg"
-          fontWeight={900}
-        >
-          {pendingLabel}
-        </Badge>
+        <Box asChild display="inline-flex">
+          <motion.div
+            animate={{
+              scale:
+                prefersReducedMotion || !isCelebrating ? 1 : [1, 1.08, 0.98, 1],
+              y: prefersReducedMotion || !isCelebrating ? 0 : [0, -2, 0],
+            }}
+            transition={{
+              duration: 0.5,
+              ease: 'easeOut',
+              type: 'spring',
+              stiffness: 300,
+              damping: 18,
+            }}
+          >
+            <Badge
+              variant="subtle"
+              colorPalette="green"
+              textTransform="uppercase"
+              cursor="pointer"
+              size="lg"
+              fontWeight={900}
+            >
+              {pendingLabel}
+            </Badge>
+          </motion.div>
+        </Box>
       </Popover.Trigger>
       <Portal>
         <Popover.Positioner>

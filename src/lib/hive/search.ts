@@ -1,4 +1,5 @@
-import type { CommunityId } from "@/features/posts/usePostQuery"
+import type { CommunityId } from '@/features/posts/usePostQuery'
+import type { VoteDetail } from '@/lib/posts/votes'
 
 export type PostSearchResult = {
   author: string
@@ -19,6 +20,7 @@ export type PostSearchResult = {
     pending: string
     total: string
   }
+  voteDetails?: Array<VoteDetail>
 }
 
 export type RankedSort =

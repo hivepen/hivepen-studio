@@ -1,11 +1,10 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { Box, Button, HStack, Heading, Stack, Text } from '@chakra-ui/react'
 import { ArrowLeft } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { PostSearchResult } from '@/lib/hive/search'
 import useCommunityQuery from '@/features/communities/useCommunityQuery'
 import PostsListSection from '@/features/posts/PostsListSection'
-import PostActions from '@/features/posts/PostActions'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
@@ -24,10 +23,6 @@ function CommunityPage() {
     limit: 20,
   })
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
-
-  const [localStats, setLocalStats] = useState<
-    Record<string, { votes?: number; comments?: number }>
-  >({})
 
   useEffect(() => {
     const node = loadMoreRef.current
@@ -53,7 +48,9 @@ function CommunityPage() {
   ])
 
   const posts = useMemo(() => {
-    const pages = (postsQuery.data?.pages ?? []) as Array<Array<PostSearchResult>>
+    const pages = (postsQuery.data?.pages ?? []) as Array<
+      Array<PostSearchResult>
+    >
     const flattened = pages.flat()
     const unique = new Map<string, PostSearchResult>()
     flattened.forEach((post) => {
@@ -64,8 +61,6 @@ function CommunityPage() {
     })
 
     return Array.from(unique.values()).map((post) => {
-      const key = `${post.author}/${post.permlink}`
-      const overrides = localStats[key] ?? {}
       return {
         title: post.title || m.post_untitled(),
         author: post.author,
@@ -77,12 +72,13 @@ function CommunityPage() {
         app: post.app,
         createdAt: new Date(post.created).toLocaleDateString(),
         permlink: post.permlink,
-        votes: overrides.votes ?? post.votes,
-        comments: overrides.comments ?? post.comments,
+        votes: post.votes,
+        voteDetails: post.voteDetails,
+        comments: post.comments,
         payout: post.payout,
       }
     })
-  }, [postsQuery.data, localStats])
+  }, [postsQuery.data])
 
   return (
     <Stack gap={6} p={6}>
@@ -150,37 +146,6 @@ function CommunityPage() {
         posts={posts}
         loading={postsQuery.isLoading}
         emptyMessage={m.community_empty_posts()}
-        renderActions={(post) =>
-          post.permlink ? (
-            <PostActions
-              author={post.author}
-              permlink={post.permlink}
-              voteCount={post.votes}
-              commentCount={post.comments}
-              variant="card"
-              onVoteSuccess={() =>
-                setLocalStats((prev) => {
-                  const key = `${post.author}/${post.permlink}`
-                  const current = prev[key]?.votes ?? post.votes ?? 0
-                  return {
-                    ...prev,
-                    [key]: { ...prev[key], votes: current + 1 },
-                  }
-                })
-              }
-              onCommentSuccess={() =>
-                setLocalStats((prev) => {
-                  const key = `${post.author}/${post.permlink}`
-                  const current = prev[key]?.comments ?? post.comments ?? 0
-                  return {
-                    ...prev,
-                    [key]: { ...prev[key], comments: current + 1 },
-                  }
-                })
-              }
-            />
-          ) : null
-        }
       />
       <Box ref={loadMoreRef} minH="1px" />
       {postsQuery.hasNextPage ? (
@@ -208,7 +173,6 @@ function CommunityPage() {
           postsPreview: posts.slice(0, 5),
           isFetching: postsQuery.isFetching,
           isError: postsQuery.isError,
-          localStats,
         }}
       />
     </Stack>

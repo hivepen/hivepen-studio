@@ -10,14 +10,19 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Link } from '@tanstack/react-router'
-import { InfoIcon, MessageSquare, MessageSquareIcon, MoreVertical, Wallet } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  InfoIcon,
+  MessageSquare,
+  MessageSquareIcon,
+  MoreVertical,
+  Wallet,
+} from 'lucide-react'
+import { useEffect, useMemo, useRef } from 'react'
 
 import type { PostSearchResult } from '@/lib/hive/search'
 import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import ProfileBanner from '@/components/ProfileBanner'
-import PostActions from '@/features/posts/PostActions'
 import PostsListSection from '@/features/posts/PostsListSection'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import useProfileQuery from '@/features/profile/useProfileQuery'
@@ -34,10 +39,6 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
     limit: 20,
   })
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
-
-  const [localStats, setLocalStats] = useState<
-    Partial<Record<string, { comments?: number; votes?: number }>>
-  >({})
 
   useEffect(() => {
     const node = loadMoreRef.current
@@ -79,13 +80,10 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
     })
 
     return Array.from(unique.values()).map((post) => {
-      const key = `${post.author}/${post.permlink}`
-      const overrides = localStats[key] ?? {}
-
       return {
         app: post.app,
         author: post.author,
-        comments: overrides.comments ?? post.comments,
+        comments: post.comments,
         community: post.communityTitle ?? post.communityId,
         communityId: post.communityId,
         coverUrl: post.coverUrl,
@@ -95,10 +93,11 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
         summary: post.summary,
         tags: post.tags,
         title: post.title || m.post_untitled(),
-        votes: overrides.votes ?? post.votes,
+        votes: post.votes,
+        voteDetails: post.voteDetails,
       }
     })
-  }, [localStats, postsQuery.data])
+  }, [postsQuery.data])
 
   const profileMeta = (
     <HStack gap={4} mt={1} color="fg.muted" fontSize="sm" wrap="wrap">
@@ -124,16 +123,10 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
     <Stack gap={6} p={6}>
       <ProfileBanner
         actions={
-          <Group
-            bg="bg.panel"
-            gap={2}
-            p={1}
-            rounded="md"
-          >
+          <Group bg="bg.panel" gap={2} p={1} rounded="md">
             <Button variant="ghost">{m.profile_follow_button()}</Button>
             <IconButton title={m.profile_message_button()} variant="ghost">
-                <Icon as={MessageSquare} strokeWidth={2.5} />
-
+              <Icon as={MessageSquare} strokeWidth={2.5} />
             </IconButton>
             <IconButton asChild variant="ghost">
               <Link
@@ -154,8 +147,8 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
         meta={profileMeta}
         subtitle={profileQuery.data?.displayName ? `@${username}` : undefined}
         title={profileQuery.data?.displayName || `@${username}`}
-          />
-          <DevOnly json={profileQuery.data} />
+      />
+      <DevOnly json={profileQuery.data} />
 
       <InfiniteDebugBanner
         hasNextPage={postsQuery.hasNextPage}
@@ -180,37 +173,6 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
           emptyMessage={m.profile_empty_posts()}
           loading={postsQuery.isLoading}
           posts={posts}
-          renderActions={(post) =>
-            post.permlink ? (
-              <PostActions
-                author={post.author}
-                commentCount={post.comments}
-                onCommentSuccess={() =>
-                  setLocalStats((prev) => {
-                    const key = `${post.author}/${post.permlink}`
-                    const current = prev[key]?.comments ?? post.comments
-                    return {
-                      ...prev,
-                      [key]: { ...prev[key], comments: current + 1 },
-                    }
-                  })
-                }
-                onVoteSuccess={() =>
-                  setLocalStats((prev) => {
-                    const key = `${post.author}/${post.permlink}`
-                    const current = prev[key]?.votes ?? post.votes
-                    return {
-                      ...prev,
-                      [key]: { ...prev[key], votes: current + 1 },
-                    }
-                  })
-                }
-                permlink={post.permlink}
-                variant="card"
-                voteCount={post.votes}
-              />
-            ) : null
-          }
         />
         <Box minH="1px" ref={loadMoreRef} />
         {postsQuery.hasNextPage ? (
@@ -232,7 +194,6 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
           accountname,
           isError: postsQuery.isError,
           isFetching: postsQuery.isFetching,
-          localStats,
           postsCount: posts.length,
           postsPreview: posts.slice(0, 5),
           profile: profileQuery.data,

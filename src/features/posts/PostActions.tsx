@@ -16,7 +16,14 @@ import {
   Textarea,
   Wrap,
 } from '@chakra-ui/react'
-import { useEffect, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import {
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import {
   ChevronUp,
   MessageCircle,
@@ -26,29 +33,50 @@ import {
   ThumbsUp,
 } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
+import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
 import useVotePost from '@/features/posts/useVotePost'
 import useCommentPost from '@/features/posts/useCommentPost'
 import usePostVoteDetails from '@/hooks/usePostVoteDetails'
 import { Tooltip } from '@/components/ui/tooltip'
+import type { VoteDetail } from '@/lib/posts/votes'
 import { formatVotePercent, sortVoteDetailsByPercent } from '@/lib/posts/votes'
 import { m } from '@/paraglide/messages'
 import AccountAvatar from '@/components/AccountAvatar'
+
+export type VoteFeedbackOrigin = {
+  clientX: number
+  clientY: number
+}
 
 export default function PostActions({
   author,
   permlink,
   voteCount,
+  voteDetails,
   commentCount,
   onVoteSuccess,
   onCommentSuccess,
+  onVotePressStart,
+  onVotePressEnd,
+  onVoteError,
+  cardVoteState,
   variant = 'detail',
 }: {
   author: string
   permlink: string
   voteCount?: number
+  voteDetails?: Array<VoteDetail>
   commentCount?: number
   onVoteSuccess?: () => void
   onCommentSuccess?: () => void
+  onVotePressStart?: (origin: VoteFeedbackOrigin) => void
+  onVotePressEnd?: () => void
+  onVoteError?: (message: string) => void
+  cardVoteState?: {
+    celebrateKey: number
+    isCelebrating: boolean
+    isPressing: boolean
+  }
   variant?: 'detail' | 'card'
 }) {
   const DEFAULT_VOTE_PERCENT = 10
@@ -63,19 +91,27 @@ export default function PostActions({
     useState(DEFAULT_VOTE_PERCENT)
   const [customVoteStep, setCustomVoteStep] = useState<1 | 5>(DEFAULT_VOTE_STEP)
   const [shouldFetchVotes, setShouldFetchVotes] = useState(false)
+  const [isVoteButtonCelebrating, setIsVoteButtonCelebrating] = useState(false)
+  const celebrationTimeoutRef = useRef<number | null>(null)
   const holdTimerRef = useRef<number | null>(null)
   const preventQuickVoteRef = useRef(false)
   const voteSliderThumbRef = useRef<HTMLDivElement | null>(null)
+  const voteButtonRef = useRef<HTMLButtonElement | null>(null)
   const voteController = useVotePost({ author, permlink })
+  const { activeAccount } = useHiveWallet()
+  const prefersReducedMotion = useReducedMotion()
+  const [didVoteLocally, setDidVoteLocally] = useState(false)
   const comment = useCommentPost({
     parentAuthor: author,
     parentPermlink: permlink,
   })
+  const normalizedActiveAccount = activeAccount?.trim().toLowerCase() ?? null
   const { voteDetails: resolvedVoteDetails, loading: voteDetailsLoading } =
     usePostVoteDetails({
       author,
       permlink,
-      enabled: shouldFetchVotes,
+      enabled: shouldFetchVotes || Boolean(normalizedActiveAccount),
+      initialVoteDetails: voteDetails,
     })
   const sortedVoteDetails = resolvedVoteDetails.length
     ? sortVoteDetailsByPercent(resolvedVoteDetails)
@@ -89,6 +125,26 @@ export default function PostActions({
         : 0
   const resolvedCommentCount =
     typeof commentCount === 'number' ? commentCount : 0
+  const hasActiveUserVoted = Boolean(
+    normalizedActiveAccount &&
+    (didVoteLocally ||
+      resolvedVoteDetails.some(
+        (voteEntry) =>
+          voteEntry.account.trim().toLowerCase() === normalizedActiveAccount &&
+          voteEntry.percent > 0,
+      )),
+  )
+
+  const resolveVoteOrigin = (element?: HTMLElement | null) => {
+    const target = element ?? voteButtonRef.current
+    if (!target) return
+
+    const bounds = target.getBoundingClientRect()
+    return {
+      clientX: bounds.left + bounds.width / 2,
+      clientY: bounds.top + bounds.height / 2,
+    } satisfies VoteFeedbackOrigin
+  }
 
   const handleComment = async () => {
     const response = await comment.comment(commentBody)
@@ -102,8 +158,13 @@ export default function PostActions({
   const submitVote = async (weightPercent: number) => {
     const response = await voteController.vote(weightPercent)
     if (response.success) {
+      setDidVoteLocally(true)
       setCustomVoteOpen(false)
+      onVotePressEnd?.()
       onVoteSuccess?.()
+    } else {
+      onVotePressEnd?.()
+      onVoteError?.(response.error ?? m.post_actions_vote_failed())
     }
   }
 
@@ -117,13 +178,22 @@ export default function PostActions({
   const openCustomVote = () => {
     clearHoldTimer()
     preventQuickVoteRef.current = true
+    onVotePressEnd?.()
     setCustomVoteOpen(true)
   }
 
-  const handleVotePointerDown = () => {
+  const handleVotePointerDown = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
     if (voteController.isVoting || customVoteOpen) return
     clearHoldTimer()
     preventQuickVoteRef.current = false
+    onVotePressStart?.(
+      resolveVoteOrigin(event.currentTarget) ?? {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      },
+    )
     holdTimerRef.current = window.setTimeout(() => {
       openCustomVote()
     }, HOLD_TO_OPEN_DELAY_MS)
@@ -131,18 +201,29 @@ export default function PostActions({
 
   const handleVotePointerEnd = () => {
     clearHoldTimer()
+    onVotePressEnd?.()
   }
 
-  const handleQuickVote = async () => {
+  const handleQuickVote = async (event: ReactMouseEvent<HTMLButtonElement>) => {
     if (customVoteOpen) {
       setCustomVoteOpen(false)
       preventQuickVoteRef.current = false
+      onVotePressEnd?.()
       return
     }
 
     if (preventQuickVoteRef.current) {
       preventQuickVoteRef.current = false
       return
+    }
+
+    if (!cardVoteState?.isPressing) {
+      onVotePressStart?.(
+        resolveVoteOrigin(event.currentTarget) ?? {
+          clientX: event.clientX,
+          clientY: event.clientY,
+        },
+      )
     }
 
     await submitVote(DEFAULT_VOTE_PERCENT)
@@ -165,6 +246,43 @@ export default function PostActions({
   useEffect(() => {
     return () => clearHoldTimer()
   }, [])
+
+  useEffect(() => {
+    setDidVoteLocally(false)
+  }, [author, permlink, normalizedActiveAccount])
+
+  useEffect(() => {
+    if (!cardVoteState?.celebrateKey) return
+
+    setIsVoteButtonCelebrating(true)
+    if (celebrationTimeoutRef.current !== null) {
+      window.clearTimeout(celebrationTimeoutRef.current)
+    }
+
+    celebrationTimeoutRef.current = window.setTimeout(() => {
+      setIsVoteButtonCelebrating(false)
+      celebrationTimeoutRef.current = null
+    }, 450)
+  }, [cardVoteState?.celebrateKey])
+
+  useEffect(() => {
+    return () => {
+      if (celebrationTimeoutRef.current !== null) {
+        window.clearTimeout(celebrationTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const voteButtonScale = prefersReducedMotion
+    ? 1
+    : isVoteButtonCelebrating
+      ? [1, 1.16, 0.96, 1]
+      : cardVoteState?.isPressing
+        ? 0.92
+        : 1
+
+  const voteButtonRotate =
+    prefersReducedMotion || !isVoteButtonCelebrating ? 0 : [0, -8, 6, 0]
 
   const commentForm = (
     <Stack gap={3}>
@@ -190,16 +308,14 @@ export default function PostActions({
           </IconButton>
         </Tooltip>
       </HStack>
-      {isCard && (voteController.error || comment.error) && (
+      {isCard && comment.error && (
         <Text fontSize="xs" color="fg.error">
-          {voteController.error ?? comment.error}
+          {comment.error}
         </Text>
       )}
-      {isCard && (voteController.success || comment.success) && (
+      {isCard && comment.success && (
         <Text fontSize="xs" color="fg.muted">
-          {voteController.success
-            ? m.post_actions_vote_sent()
-            : m.post_actions_comment_published()}
+          {m.post_actions_comment_published()}
         </Text>
       )}
     </Stack>
@@ -223,23 +339,41 @@ export default function PostActions({
             positioning={{ placement: 'top-start', offset: { mainAxis: 8 } }}
           >
             <Popover.Anchor asChild>
-              <IconButton
-                size="md"
-                variant="ghost"
-                rounded="full"
-                onPointerDown={handleVotePointerDown}
-                onPointerUp={handleVotePointerEnd}
-                onPointerCancel={handleVotePointerEnd}
-                onClick={handleQuickVote}
-                onContextMenu={(event) => {
-                  event.preventDefault()
-                  openCustomVote()
-                }}
-                loading={voteController.isVoting}
-                aria-label={m.post_actions_upvote()}
-              >
-                <Icon as={ChevronUp} strokeWidth={3} />
-              </IconButton>
+              <Box asChild display="inline-flex">
+                <motion.div
+                  animate={{
+                    rotate: voteButtonRotate,
+                    scale: voteButtonScale,
+                  }}
+                  transition={{
+                    duration: isVoteButtonCelebrating ? 0.45 : 0.18,
+                    ease: isVoteButtonCelebrating ? 'easeOut' : 'easeInOut',
+                    type: 'spring',
+                    stiffness: 360,
+                    damping: 22,
+                  }}
+                >
+                  <IconButton
+                    ref={voteButtonRef}
+                    size="md"
+                    variant={hasActiveUserVoted ? 'solid' : 'ghost'}
+                    colorPalette="gray"
+                    rounded="full"
+                    onPointerDown={handleVotePointerDown}
+                    onPointerUp={handleVotePointerEnd}
+                    onPointerCancel={handleVotePointerEnd}
+                    onClick={handleQuickVote}
+                    onContextMenu={(event) => {
+                      event.preventDefault()
+                      openCustomVote()
+                    }}
+                    loading={voteController.isVoting}
+                    aria-label={m.post_actions_upvote()}
+                  >
+                    <Icon as={ChevronUp} strokeWidth={3} />
+                  </IconButton>
+                </motion.div>
+              </Box>
             </Popover.Anchor>
             <Portal>
               <Popover.Positioner>

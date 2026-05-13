@@ -26,7 +26,7 @@ const toNumber = (
   return 0
 }
 
-const extractVoteDetails = (post: BridgePost | null | undefined) => {
+export const extractVoteDetails = (post: BridgePost | null | undefined) => {
   const activeVotes = Array.isArray(post?.active_votes) ? post.active_votes : []
 
   const voteDetails = activeVotes

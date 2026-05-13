@@ -4,27 +4,27 @@ import {
   Card,
   HStack,
   IconButton,
-  ScrollArea,
   Show,
-  Spacer,
   Stack,
   Text,
 } from '@chakra-ui/react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from '@tanstack/react-router'
-import type {
-  StackProps} from '@chakra-ui/react';
-import type { ReactNode } from 'react'
+import type { StackProps } from '@chakra-ui/react'
+import { useEffect, useRef, useState } from 'react'
 import type { VoteDetail } from '@/lib/posts/votes'
-import type { CommunityInfo } from '@/features/posts/usePostQuery';
+import type { CommunityInfo } from '@/features/posts/usePostQuery'
 import useTitleMeta from '@/hooks/useTitleMeta'
-import PostTag from '@/components/PostTag'
 import PostPayoutBadge from '@/components/posts/PostPayoutBadge'
+import { toaster } from '@/components/ui/toaster'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
-import { isCommunityId } from '@/lib/hive/community'
 import AccountAvatar from '@/components/AccountAvatar'
-import PostActions from '@/features/posts/PostActions'
+import PostActions, {
+  type VoteFeedbackOrigin,
+} from '@/features/posts/PostActions'
+import { m } from '@/paraglide/messages'
 
-export type PostCardProps  = {
+export type PostCardProps = {
   title: string
   author: string
   community?: string
@@ -42,42 +42,169 @@ export type PostCardProps  = {
   voteDetails?: Array<VoteDetail>
   coverUrl?: string
   permlink?: string
-  actions?: ReactNode
 }
 
 export default function PostCard({
   title,
   author,
   community,
-  communityId,
   summary,
-  tags = [],
   createdAt,
   coverUrl,
   payout,
   permlink,
   comments,
+  voteDetails,
   votes,
 }: PostCardProps) {
   const titleMeta = useTitleMeta(title)
-  const filteredTags = tags.filter((tag) => !isCommunityId(tag))
-  const tagItems = filteredTags
   const hasPayout = Boolean(payout?.pending || payout?.total)
+  const [isVotePressing, setIsVotePressing] = useState(false)
+  const [isVoteCelebrating, setIsVoteCelebrating] = useState(false)
+  const [localVoteDelta, setLocalVoteDelta] = useState(0)
+  const [rippleOrigin, setRippleOrigin] = useState<{
+    x: number
+    y: number
+  } | null>(null)
+  const [voteCelebrationKey, setVoteCelebrationKey] = useState(0)
+  const cardRef = useRef<HTMLDivElement | null>(null)
+  const celebrationTimeoutRef = useRef<number | null>(null)
+  const prefersReducedMotion = useReducedMotion()
+  const resolvedVotes = (votes ?? 0) + localVoteDelta
+
+  useEffect(() => {
+    return () => {
+      if (celebrationTimeoutRef.current !== null) {
+        window.clearTimeout(celebrationTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const resolveRippleOrigin = ({ clientX, clientY }: VoteFeedbackOrigin) => {
+    const bounds = cardRef.current?.getBoundingClientRect()
+    if (!bounds) return
+
+    setRippleOrigin({
+      x: clientX - bounds.left,
+      y: clientY - bounds.top,
+    })
+  }
+
+  const handleVotePressStart = (origin: VoteFeedbackOrigin) => {
+    resolveRippleOrigin(origin)
+    setIsVotePressing(true)
+  }
+
+  const handleVotePressEnd = () => {
+    setIsVotePressing(false)
+  }
+
+  const handleVoteSuccess = () => {
+    setIsVotePressing(false)
+    setLocalVoteDelta((current) => current + 1)
+    setVoteCelebrationKey((current) => current + 1)
+    setIsVoteCelebrating(true)
+
+    if (celebrationTimeoutRef.current !== null) {
+      window.clearTimeout(celebrationTimeoutRef.current)
+    }
+
+    celebrationTimeoutRef.current = window.setTimeout(() => {
+      setIsVoteCelebrating(false)
+      celebrationTimeoutRef.current = null
+    }, 700)
+  }
+
+  const handleVoteError = (message: string) => {
+    setIsVotePressing(false)
+    setIsVoteCelebrating(false)
+    toaster.error({
+      closable: true,
+      description: message || m.post_actions_vote_failed(),
+    })
+  }
 
   return (
     <Card.Root
+      ref={cardRef}
       variant="outline"
       overflow="hidden"
+      position="relative"
       flexDirection={{ base: 'column', lg: 'row' }}
       bg="bg.panel"
       borderColor="border"
       borderWidth="1px"
       borderRadius="12px"
     >
-      <Stack flex="1" minW={0} gap={0}>
+      <AnimatePresence>
+        {isVoteCelebrating && rippleOrigin ? (
+          <Box
+            key={voteCelebrationKey}
+            asChild
+            position="absolute"
+            inset={0}
+            pointerEvents="none"
+            zIndex={0}
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+            >
+              <Box
+                asChild
+                position="absolute"
+                inset={0}
+                bg="colorPalette.subtle"
+                colorPalette="green"
+              >
+                <motion.div
+                  animate={{
+                    opacity: prefersReducedMotion ? [0, 0.12, 0] : [0, 0.18, 0],
+                  }}
+                  transition={{ duration: 0.55, ease: 'easeOut' }}
+                />
+              </Box>
+              {!prefersReducedMotion ? (
+                <Box asChild position="absolute" left={0} top={0}>
+                  <motion.div
+                    initial={{
+                      height: 18,
+                      opacity: 0.32,
+                      width: 18,
+                      x: rippleOrigin.x - 9,
+                      y: rippleOrigin.y - 9,
+                    }}
+                    animate={{
+                      height: 420,
+                      opacity: 0,
+                      width: 420,
+                      x: rippleOrigin.x - 210,
+                      y: rippleOrigin.y - 210,
+                    }}
+                    exit={{ opacity: 0 }}
+                    style={{
+                      background:
+                        'radial-gradient(circle, rgba(34,197,94,0.28) 0%, rgba(34,197,94,0.14) 38%, rgba(34,197,94,0) 72%)',
+                      borderRadius: '9999px',
+                    }}
+                    transition={{ duration: 0.7, ease: 'easeOut' }}
+                  />
+                </Box>
+              ) : null}
+            </motion.div>
+          </Box>
+        ) : null}
+      </AnimatePresence>
+
+      <Stack flex="1" minW={0} gap={0} position="relative" zIndex={1}>
         <Card.Header pb={0} px={{ base: 3, md: 4 }} pt={{ base: 3, md: 4 }}>
           <HStack gap={3} align="start">
-            <PostHeadInfo {...{ author, createdAt, community }} />
+            <PostHeadInfo
+              {...{ author, createdAt, community }}
+              style={{ viewTransitionName: `post-head-${permlink}` }}
+            />
           </HStack>
         </Card.Header>
 
@@ -100,6 +227,7 @@ export default function PostCard({
                     fontSize={{ base: 'lg', md: 'xl' }}
                     lineClamp={2}
                     _hover={{ textDecoration: 'underline' }}
+                    style={{ viewTransitionName: `post-title-${permlink}` }}
                   >
                     {title}
                   </Text>
@@ -125,13 +253,13 @@ export default function PostCard({
 
         {/* for reference only, the tags should be visible in the post details, not all tags in the post card as Badges <Card.Body pt={0} px={{ base: 3, md: 4 }} pb={2}>
           {tagItems.length > 0 ? (
-            <ScrollArea.Root>
+            <Badge>
               <HStack gap={2} maxH={10} wrap="wrap" overflowX="auto">
                 {tagItems.map((tag) => (
                   <PostTag key={tag} tag={tag} />
                 ))}
               </HStack>
-            </ScrollArea.Root>
+            </Badge>
           ) : null}
         </Card.Body> */}
 
@@ -140,9 +268,19 @@ export default function PostCard({
             author={author}
             permlink={permlink}
             comments={comments}
-            votes={votes}
+            voteDetails={voteDetails}
+            votes={resolvedVotes}
             hasPayout={hasPayout}
             payout={payout}
+            cardVoteState={{
+              celebrateKey: voteCelebrationKey,
+              isCelebrating: isVoteCelebrating,
+              isPressing: isVotePressing,
+            }}
+            onVoteError={handleVoteError}
+            onVotePressEnd={handleVotePressEnd}
+            onVotePressStart={handleVotePressStart}
+            onVoteSuccess={handleVoteSuccess}
           />
         </Card.Footer>
       </Stack>
@@ -154,13 +292,21 @@ export function PostHeadInfo({
   author,
   createdAt,
   community,
+  ...props
 }: {
   author: string
   createdAt?: string
-  community?: CommunityInfo
-}) {
+  community?: CommunityInfo | string
+} & StackProps) {
   return (
-    <HStack flex="1" justify="space-between" align="start" gap={3} wrap="wrap">
+    <HStack
+      flex="1"
+      justify="space-between"
+      align="start"
+      gap={3}
+      wrap="wrap"
+      {...props}
+    >
       <HStack gap={3} align="start" minW={0}>
         <AccountAvatar
           username={author}
@@ -316,20 +462,36 @@ function PostCardActions({
   author,
   permlink,
   comments,
+  voteDetails,
   votes,
   hasPayout,
   payout,
+  cardVoteState,
+  onVoteError,
+  onVotePressEnd,
+  onVotePressStart,
+  onVoteSuccess,
   ...props
 }: {
   author: string
   permlink?: string
   comments?: number
+  voteDetails?: Array<VoteDetail>
   votes?: number
   hasPayout: boolean
   payout?: {
     pending: string
     total: string
   }
+  cardVoteState: {
+    celebrateKey: number
+    isCelebrating: boolean
+    isPressing: boolean
+  }
+  onVoteError: (message: string) => void
+  onVotePressEnd: () => void
+  onVotePressStart: (origin: VoteFeedbackOrigin) => void
+  onVoteSuccess: () => void
 } & StackProps) {
   return (
     <HStack
@@ -345,6 +507,12 @@ function PostCardActions({
           author={author}
           permlink={permlink ?? ''}
           commentCount={comments}
+          voteDetails={voteDetails}
+          cardVoteState={cardVoteState}
+          onVoteError={onVoteError}
+          onVotePressEnd={onVotePressEnd}
+          onVotePressStart={onVotePressStart}
+          onVoteSuccess={onVoteSuccess}
           voteCount={votes}
           variant="card"
         />
@@ -353,6 +521,7 @@ function PostCardActions({
         {hasPayout && (
           <PostPayoutBadge
             author={author}
+            celebrateKey={cardVoteState.celebrateKey}
             permlink={permlink}
             payout={payout}
           />

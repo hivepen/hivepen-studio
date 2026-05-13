@@ -17,8 +17,9 @@ export default function useVotePost({
 
   const vote = async (weightPercent: number) => {
     if (!account) {
-      setError(m.editor_status_keychain_required())
-      return { success: false }
+      const error = m.editor_status_keychain_required()
+      setError(error)
+      return { success: false as const, error }
     }
 
     setIsVoting(true)
@@ -37,7 +38,10 @@ export default function useVotePost({
 
     const response = await signAndBroadcastOperations(operations, 'Posting')
     if (!response.success) {
-      setError(response.error ?? m.post_actions_vote_failed())
+      const error = response.error ?? m.post_actions_vote_failed()
+      setError(error)
+      setIsVoting(false)
+      return { success: false as const, error }
     } else {
       setSuccess(true)
     }

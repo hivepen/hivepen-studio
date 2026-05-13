@@ -1,7 +1,14 @@
-import { resolveMetadata, resolveTags, resolveApp, resolveImages, resolveCoverImageUrl } from './postMetadataUtils'
-import type {Entry} from '@ecency/sdk';
-import type {PostSearchResult} from '@/lib/hive/search';
+import {
+  resolveMetadata,
+  resolveTags,
+  resolveApp,
+  resolveImages,
+  resolveCoverImageUrl,
+} from './postMetadataUtils'
+import type { Entry } from '@ecency/sdk'
+import type { PostSearchResult } from '@/lib/hive/search'
 import { sumAssetStrings } from '@/lib/hive/payouts'
+import { extractVoteDetails } from '@/lib/hive/votes'
 
 export const mapEntryToSearchResult = (entry: Entry): PostSearchResult => {
   const metadata = resolveMetadata(entry.json_metadata)
@@ -49,6 +56,9 @@ export const mapEntryToSearchResult = (entry: Entry): PostSearchResult => {
     images,
     app,
     payout,
+    voteDetails: Array.isArray(entry.active_votes)
+      ? extractVoteDetails({ active_votes: entry.active_votes })
+      : undefined,
     votes:
       typeof entry.total_votes === 'number'
         ? entry.total_votes
