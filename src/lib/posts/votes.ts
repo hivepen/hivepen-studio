@@ -1,6 +1,7 @@
 export type VoteDetail = {
   account: string
   percent: number
+  rshares: number
 }
 
 const percentFormatter = new Intl.NumberFormat('en-US', {
@@ -16,12 +17,15 @@ const normalizeVotePercent = (percent: number) => {
   return percent
 }
 
+const getVoteSortValue = (vote: VoteDetail) => {
+  if (vote.rshares) return Math.abs(vote.rshares)
+  return Math.abs(normalizeVotePercent(vote.percent))
+}
+
 export const formatVotePercent = (percent: number) => {
   const normalized = normalizeVotePercent(percent)
   return `${percentFormatter.format(normalized)}%`
 }
 
 export const sortVoteDetailsByPercent = (votes: Array<VoteDetail>) =>
-  [...votes].sort(
-    (a, b) => normalizeVotePercent(b.percent) - normalizeVotePercent(a.percent),
-  )
+  [...votes].sort((a, b) => getVoteSortValue(b) - getVoteSortValue(a))

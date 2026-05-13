@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { getPostQueryOptions } from '@ecency/sdk'
+import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
 import {
   resolveApp,
   resolveTags,
@@ -99,8 +100,11 @@ export default function usePostQuery({
   author: string
   permlink: string
 }) {
+  const { activeAccount } = useHiveWallet()
+  const observer = activeAccount?.trim() || undefined
+
   return useQuery({
-    ...getPostQueryOptions(author, permlink),
+    ...getPostQueryOptions(author, permlink, observer),
     enabled: Boolean(author && permlink),
     select: (entry) => (entry ? mapEntryToPost(entry) : null),
     staleTime: 2 * 60 * 1000,

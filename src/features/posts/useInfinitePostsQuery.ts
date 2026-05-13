@@ -1,17 +1,20 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import {
-  
   getAccountPostsInfiniteQueryOptions,
-  getPostsRankedInfiniteQueryOptions
+  getPostsRankedInfiniteQueryOptions,
 } from '@ecency/sdk'
-import type {Entry} from '@ecency/sdk';
-import type {PostSearchResult} from '@/lib/hive/search';
+import type { Entry } from '@ecency/sdk'
+import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
+import type { PostSearchResult } from '@/lib/hive/search'
 import type { PostsQueryParams } from '@/features/posts/usePostsQuery'
 import { mapEntryToSearchResult } from '@/features/posts/postMapping'
 
 export type PostsPage = Array<PostSearchResult>
 
-const filterPosts = (posts: Array<PostSearchResult>, params: PostsQueryParams) => {
+const filterPosts = (
+  posts: Array<PostSearchResult>,
+  params: PostsQueryParams,
+) => {
   const author = params.author?.trim()
   const dateFrom = params.dateFrom ? new Date(params.dateFrom) : null
   const dateTo = params.dateTo ? new Date(params.dateTo) : null
@@ -25,9 +28,11 @@ const filterPosts = (posts: Array<PostSearchResult>, params: PostsQueryParams) =
 }
 
 export default function useInfinitePostsQuery(params: PostsQueryParams) {
+  const { activeAccount } = useHiveWallet()
   const source = params.source ?? 'ranked'
   const tag = (params.tag ?? '').trim()
   const author = params.author?.trim()
+  const observer = activeAccount?.trim() || undefined
   const pageSize = Math.min(params.limit ?? 20, 20)
   const enabled = source === 'account' ? Boolean(author) : tag.length > 0
 
@@ -37,14 +42,14 @@ export default function useInfinitePostsQuery(params: PostsQueryParams) {
           author,
           'posts',
           pageSize,
-          undefined,
+          observer,
           enabled,
         )
       : getPostsRankedInfiniteQueryOptions(
           params.sort,
           tag,
           pageSize,
-          undefined,
+          observer,
           enabled,
         )
 

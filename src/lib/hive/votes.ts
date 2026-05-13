@@ -33,20 +33,15 @@ export const extractVoteDetails = (post: BridgePost | null | undefined) => {
     .map((vote) => {
       const account = typeof vote.voter === 'string' ? vote.voter : ''
       if (!account) return null
-      const percent = toNumber(vote.percent)
-      const weight = toNumber(vote.weight)
-      const rshares = toNumber(vote.rshares)
+
       return {
         account,
-        percent,
-        weight,
-        rshares,
+        percent: toNumber(vote.percent),
+        weight: toNumber(vote.weight),
+        rshares: toNumber(vote.rshares),
       }
     })
-    .filter(
-      (vote): vote is VoteDetail & { weight?: number; rshares?: number } =>
-        Boolean(vote),
-    )
+    .filter((vote): vote is NonNullable<typeof vote> => Boolean(vote))
 
   const totalAbsRshares = voteDetails.reduce((total, vote) => {
     const rshares = vote.rshares ?? 0
@@ -55,16 +50,28 @@ export const extractVoteDetails = (post: BridgePost | null | undefined) => {
 
   return voteDetails.map((vote) => {
     if (vote.percent) {
-      return { account: vote.account, percent: vote.percent }
+      return {
+        account: vote.account,
+        percent: vote.percent,
+        rshares: vote.rshares,
+      }
     }
     if (vote.weight) {
-      return { account: vote.account, percent: vote.weight }
+      return {
+        account: vote.account,
+        percent: vote.weight,
+        rshares: vote.rshares,
+      }
     }
     if (vote.rshares && totalAbsRshares > 0) {
       const ratio = (vote.rshares / totalAbsRshares) * 100
-      return { account: vote.account, percent: ratio }
+      return {
+        account: vote.account,
+        percent: ratio,
+        rshares: vote.rshares,
+      }
     }
-    return { account: vote.account, percent: 0 }
+    return { account: vote.account, percent: 0, rshares: vote.rshares }
   })
 }
 

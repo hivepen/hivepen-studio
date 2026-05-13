@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import {
-  
   getAccountPostsQueryOptions,
-  getPostsRankedQueryOptions
+  getPostsRankedQueryOptions,
 } from '@ecency/sdk'
-import type {Entry} from '@ecency/sdk';
-import type {RankedSort, PostSearchResult} from '@/lib/hive/search';
+import type { Entry } from '@ecency/sdk'
+import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
+import type { RankedSort, PostSearchResult } from '@/lib/hive/search'
 import { mapEntryToSearchResult } from '@/features/posts/postMapping'
 
 export type PostsQueryParams = {
@@ -18,7 +18,10 @@ export type PostsQueryParams = {
   limit?: number
 }
 
-const filterPosts = (posts: Array<PostSearchResult>, params: PostsQueryParams) => {
+const filterPosts = (
+  posts: Array<PostSearchResult>,
+  params: PostsQueryParams,
+) => {
   const author = params.author?.trim()
   const dateFrom = params.dateFrom ? new Date(params.dateFrom) : null
   const dateTo = params.dateTo ? new Date(params.dateTo) : null
@@ -32,9 +35,11 @@ const filterPosts = (posts: Array<PostSearchResult>, params: PostsQueryParams) =
 }
 
 export default function usePostsQuery(params: PostsQueryParams) {
+  const { activeAccount } = useHiveWallet()
   const source = params.source ?? 'ranked'
   const tag = (params.tag ?? '').trim()
   const author = params.author?.trim()
+  const observer = activeAccount?.trim() || undefined
   const pageSize = Math.min(params.limit ?? 20, 20)
   const enabled = source === 'account' ? Boolean(author) : tag.length > 0
 
@@ -45,6 +50,7 @@ export default function usePostsQuery(params: PostsQueryParams) {
       params.sort,
       tag,
       author,
+      observer,
       params.dateFrom,
       params.dateTo,
       params.limit,
@@ -56,7 +62,7 @@ export default function usePostsQuery(params: PostsQueryParams) {
           undefined,
           undefined,
           pageSize,
-          undefined,
+          observer,
           enabled,
         ) as object)
       : (getPostsRankedQueryOptions(
@@ -65,7 +71,7 @@ export default function usePostsQuery(params: PostsQueryParams) {
           undefined,
           pageSize,
           tag,
-          undefined,
+          observer,
           enabled,
         ) as object)),
     enabled,

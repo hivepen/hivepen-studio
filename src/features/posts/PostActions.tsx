@@ -106,11 +106,12 @@ export default function PostActions({
     parentPermlink: permlink,
   })
   const normalizedActiveAccount = activeAccount?.trim().toLowerCase() ?? null
+  const shouldResolveVoteDetailsFromNetwork = !isCard && shouldFetchVotes
   const { voteDetails: resolvedVoteDetails, loading: voteDetailsLoading } =
     usePostVoteDetails({
       author,
       permlink,
-      enabled: shouldFetchVotes || Boolean(normalizedActiveAccount),
+      enabled: shouldResolveVoteDetailsFromNetwork,
       initialVoteDetails: voteDetails,
     })
   const sortedVoteDetails = resolvedVoteDetails.length
@@ -125,13 +126,15 @@ export default function PostActions({
         : 0
   const resolvedCommentCount =
     typeof commentCount === 'number' ? commentCount : 0
+  const hasPositiveVoteWeight = (voteEntry: VoteDetail) =>
+    voteEntry.rshares > 0 || voteEntry.percent > 0
   const hasActiveUserVoted = Boolean(
     normalizedActiveAccount &&
     (didVoteLocally ||
       resolvedVoteDetails.some(
         (voteEntry) =>
           voteEntry.account.trim().toLowerCase() === normalizedActiveAccount &&
-          voteEntry.percent > 0,
+          hasPositiveVoteWeight(voteEntry),
       )),
   )
 
@@ -321,6 +324,11 @@ export default function PostActions({
     </Stack>
   )
 
+  const requestVoteDetails = () => {
+    if (isCard) return
+    setShouldFetchVotes(true)
+  }
+
   return (
     <Stack>
       <HStack gap={2} wrap="wrap" justify="end">
@@ -478,9 +486,9 @@ export default function PostActions({
                 size="sm"
                 px={2}
                 aria-label={m.post_actions_see_voters()}
-                onMouseEnter={() => setShouldFetchVotes(true)}
-                onFocus={() => setShouldFetchVotes(true)}
-                onClick={() => setShouldFetchVotes(true)}
+                onMouseEnter={requestVoteDetails}
+                onFocus={requestVoteDetails}
+                onClick={requestVoteDetails}
                 fontSize="sm"
                 fontWeight="600"
               >
@@ -510,6 +518,11 @@ export default function PostActions({
                     >
                       {m.post_actions_voters()}
                     </Text>
+                    {hasVoteDetails ? (
+                      <Text fontSize="xs" color="fg.muted">
+                        Relative vote share
+                      </Text>
+                    ) : null}
                     {voteDetailsLoading ? (
                       <Stack gap={2}>
                         <Skeleton height="12px" />
@@ -606,7 +619,7 @@ export default function PostActions({
                         <HStack align="center">
                           <Box h={0.5} bg="colorPalette.subtle" flex="1"></Box>
                           <Text color="fg.muted" fontSize="xs">
-                            0 - 0.1%
+                            Below 0.1% share
                           </Text>
                         </HStack>
                         <Wrap>
