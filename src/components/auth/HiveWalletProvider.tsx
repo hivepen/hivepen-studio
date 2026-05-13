@@ -29,6 +29,7 @@ import {
   switchAiohaAccount,
   syncLegacyWalletStorage,
 } from '@/lib/hive/aioha'
+import { broadcastOperations } from '@/lib/hive/keychain'
 
 type WalletContextValue = {
   account: string | null
@@ -272,6 +273,33 @@ export function HiveWalletProvider({
     keyType: 'Posting' | 'Active' = 'Posting',
   ) => {
     try {
+      if (
+        walletState.activeProvider === 'keychain' &&
+        walletState.activeAccount
+      ) {
+        const result = await broadcastOperations(
+          walletState.activeAccount,
+          operations,
+          keyType,
+        )
+
+        if (result.success) {
+          return {
+            success: true,
+            result:
+              typeof result.result === 'string' ? result.result : undefined,
+          } satisfies WalletRequestResult
+        }
+
+        return {
+          success: false,
+          error: normalizeWalletError(
+            result.error ?? result.message,
+            'Broadcast rejected by Hive Keychain.',
+          ),
+        } satisfies WalletRequestResult
+      }
+
       const result = await signAndBroadcastOperationsWithAioha(
         operations,
         keyType,
