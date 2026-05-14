@@ -14,7 +14,7 @@ import AppShell from '../components/AppShell'
 import { Toaster } from '../components/ui/toaster'
 import type { QueryClient } from '@tanstack/react-query'
 import { HiveWalletProvider } from '@/components/auth/HiveWalletProvider'
-import { getLocale, shouldRedirect } from '@/paraglide/runtime'
+import { getLocale } from '@/paraglide/runtime'
 
 interface MyRouterContext {
   queryClient: QueryClient

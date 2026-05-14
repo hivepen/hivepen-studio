@@ -54,6 +54,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { ComponentProps, ReactNode } from 'react'
+import type { Payload as RechartsTooltipPayload } from 'recharts/types/component/DefaultTooltipContent'
 import type {
   DashboardHistoricalOverview,
   DashboardRange,
@@ -68,6 +69,9 @@ import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { formatFullDateTime, formatRelativeTime } from '@/lib/i18n/relativeTime'
 import { getLocale } from '@/paraglide/runtime'
 import { m } from '@/paraglide/messages'
+import { PostCardMedia } from '@/components/PostCard'
+import { getTitleMeta } from '@/lib/posts/titleMeta'
+import { resolvePostCommunity } from '@/features/posts/postCardMapping'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -98,7 +102,6 @@ const CHART_SERIES = {
   posts: { color: 'blue.solid', label: 'Posts', key: 'posts' },
 } as const
 
-type TrendDirection = 'up' | 'down' | 'flat'
 type DashboardFocus = 'all' | 'rewards' | 'publishing' | 'account'
 
 const PAGE_MAX_WIDTH = '1240px'
@@ -194,7 +197,15 @@ function Dashboard() {
   const followingCount = profile?.followingCount ?? null
   const totalPosts = profile?.postCount ?? null
 
-  const statCards = [
+  const statCards: Array<{
+    category: Exclude<DashboardFocus, 'all'>
+    label: string
+    palette: string
+    icon: typeof Crown
+    value: string | null
+    suffix: string
+    description: string
+  }> = [
     {
       category: 'account',
       label: 'Hive Power',
@@ -205,7 +216,6 @@ function Dashboard() {
           ? formatTokenAmount(wallet.metrics.effectiveHivePower, 2)
           : null,
       suffix: ' HP',
-      trend: null,
       description:
         wallet?.metrics.delegatedHivePower != null
           ? `${formatTokenAmount(wallet.metrics.hivePower, 2)} owned · ${formatTokenAmount(wallet.metrics.delegatedHivePower, 2)} delegated out`
@@ -221,7 +231,6 @@ function Dashboard() {
           ? formatTokenAmount(wallet.metrics.savingsHbd, 3)
           : null,
       suffix: ' HBD',
-      trend: null,
       description:
         wallet?.metrics.hbdInterestRate != null
           ? `${formatPercent(wallet.metrics.hbdInterestRate / 100, 1)} APR on savings`
@@ -237,7 +246,6 @@ function Dashboard() {
           ? formatTokenAmount(overview.summary.totalRewards, 2)
           : null,
       suffix: ' HBD',
-      trend: overview?.summary.totalRewardsChange ?? null,
       description: `${rangeToDescription(range)} across author, curation, and interest income`,
     },
     {
@@ -250,7 +258,6 @@ function Dashboard() {
           ? formatTokenAmount(wallet.metrics.votingManaPercent, 1)
           : null,
       suffix: '%',
-      trend: null,
       description:
         wallet?.metrics.downvoteManaPercent != null
           ? `${formatTokenAmount(wallet.metrics.downvoteManaPercent, 1)}% downvote mana available`
@@ -263,7 +270,6 @@ function Dashboard() {
       icon: WalletCards,
       value: totalPosts != null ? String(totalPosts) : null,
       suffix: '',
-      trend: null,
       description:
         overview?.summary.publishedPosts != null
           ? `${overview.summary.publishedPosts} published in ${rangeToDescription(range)}`
@@ -276,7 +282,6 @@ function Dashboard() {
       icon: UserRound,
       value: followerCount != null ? formatInteger(followerCount) : null,
       suffix: '',
-      trend: null,
       description:
         followingCount != null
           ? `Following ${formatInteger(followingCount)} accounts`
@@ -292,7 +297,6 @@ function Dashboard() {
           ? formatTokenAmount(overview.summary.averagePostReward, 2)
           : null,
       suffix: ' HBD',
-      trend: overview?.summary.averagePostRewardChange ?? null,
       description: `Average total payout per post in ${rangeToDescription(range)}`,
     },
     {
@@ -300,134 +304,124 @@ function Dashboard() {
       label: 'Account age',
       palette: 'gray',
       icon: Activity,
-      value: wallet?.account.created ? formatAccountAge(wallet.account.created) : null,
+      value: wallet?.account.created
+        ? formatAccountAge(wallet.account.created)
+        : null,
       suffix: '',
-      trend: null,
       description: wallet?.account.created
-        ? `Member since ${new Date(wallet.account.created).toLocaleDateString(undefined, {
-            month: 'long',
-            year: 'numeric',
-          })}`
+        ? `Member since ${new Date(wallet.account.created).toLocaleDateString(
+            undefined,
+            {
+              month: 'long',
+              year: 'numeric',
+            },
+          )}`
         : 'Age based on on-chain account creation time',
     },
   ]
 
   return (
-    <Stack gap={3} p={{ base: 3, md: 4 }} mx="auto" maxW={PAGE_MAX_WIDTH}>
-      <Card.Root
-        variant="outline"
-        bg="bg.panel"
-        borderRadius={SURFACE_RADIUS}
-        overflow="hidden"
-      >
-        <Card.Body p={{ base: 4, md: 5 }}>
-          <Stack gap={3}>
-            <HStack justify="space-between" align="start" wrap="wrap" gap={4}>
-              <Stack gap={2}>
-                <HStack
-                  gap={3}
-                  px={3}
-                  py={2}
-                  border="1px solid"
-                  borderColor="border.muted"
-                  borderRadius="12px"
-                  bg="bg.subtle"
-                  minW={{ md: '220px' }}
-                >
-                  <Avatar
-                    size="sm"
-                    name={account}
-                    src={profile?.profileImage ?? getHiveAvatarUrl(account)}
-                  />
-                  <Stack gap={0} flex="1">
-                    <Text fontWeight="600" lineClamp={1} fontSize="sm">
-                      {accountLabel}
-                    </Text>
-                    <Text fontSize="xs" color="fg.muted">
-                      @{account}
-                    </Text>
-                  </Stack>
-                  {dashboardQuery.isRefreshing || walletQuery.isFetching ? (
-                    <Badge colorPalette="blue" variant="subtle">
-                      Syncing
-                    </Badge>
-                  ) : null}
-                </HStack>
-              </Stack>
-
-              <HStack gap={3} wrap="wrap" justify="flex-end">
-                <Stack gap={1}>
-                  <Text fontSize="xs" color="fg.muted" textTransform="uppercase" letterSpacing="0.14em">
-                    Focus
-                  </Text>
-                  <SegmentGroup.Root
-                    size="sm"
-                    value={focus}
-                    onValueChange={(event) =>
-                      setFocus(event.value as DashboardFocus)
-                    }
-                  >
-                    <SegmentGroup.Indicator />
-                    <SegmentGroup.Items items={FOCUS_OPTIONS} />
-                  </SegmentGroup.Root>
-                </Stack>
-                <Stack gap={1}>
-                  <Text fontSize="xs" color="fg.muted" textTransform="uppercase" letterSpacing="0.14em">
-                    Range
-                  </Text>
-                  <SegmentGroup.Root
-                    size="sm"
-                    value={range}
-                    onValueChange={(event) =>
-                      setRange(event.value as DashboardRange)
-                    }
-                  >
-                    <SegmentGroup.Indicator />
-                    <SegmentGroup.Items items={RANGE_OPTIONS} />
-                  </SegmentGroup.Root>
-                </Stack>
-              </HStack>
-            </HStack>
-
-            <HStack gap={3} wrap="wrap" color="fg.muted" fontSize="xs">
-              <Text>
-                {lastSyncedAt > 0
-                  ? `Last sync ${formatRelativeTime(
-                      new Date(lastSyncedAt),
-                      locale,
-                    )}`
-                  : 'Preparing dashboard snapshot'}
-              </Text>
-              {lastSyncedAt > 0 ? (
-                <Text title={formatFullDateTime(new Date(lastSyncedAt), locale)}>
-                  {formatFullDateTime(new Date(lastSyncedAt), locale)}
+    <Stack gap={3} px={{ base: 3, md: 4 }} pt={3} pb="20vh" mx="auto" maxW={PAGE_MAX_WIDTH}>
+      <Stack p={{ base: 4, md: 5 }} gap={3}>
+        <HStack justify="space-between" align="start" wrap="wrap" gap={4}>
+          <Stack gap={2}>
+            <HStack gap={3} px={3} py={2} minW={{ md: '220px' }}>
+              <Avatar
+                size="sm"
+                name={account}
+                src={profile?.profileImage ?? getHiveAvatarUrl(account)}
+              />
+              <Stack gap={0} flex="1">
+                <Text fontWeight="600" lineClamp={1} fontSize="sm">
+                  {accountLabel}
                 </Text>
-              ) : null}
+                <Text fontSize="xs" color="fg.muted">
+                  @{account}
+                </Text>
+              </Stack>
             </HStack>
           </Stack>
-        </Card.Body>
-      </Card.Root>
+
+          <HStack gap={3} wrap="wrap" justify="flex-end">
+            <Stack gap={1}>
+              <Text
+                fontSize="xs"
+                color="fg.muted"
+                textTransform="uppercase"
+                letterSpacing="0.14em"
+              >
+                Focus
+              </Text>
+              <SegmentGroup.Root
+                size="sm"
+                value={focus}
+                onValueChange={(event) =>
+                  setFocus(event.value as DashboardFocus)
+                }
+              >
+                <SegmentGroup.Indicator />
+                <SegmentGroup.Items items={FOCUS_OPTIONS} />
+              </SegmentGroup.Root>
+            </Stack>
+            <Stack gap={1}>
+              <Text
+                fontSize="xs"
+                color="fg.muted"
+                textTransform="uppercase"
+                letterSpacing="0.14em"
+              >
+                Range
+              </Text>
+              <SegmentGroup.Root
+                size="sm"
+                value={range}
+                onValueChange={(event) =>
+                  setRange(event.value as DashboardRange)
+                }
+              >
+                <SegmentGroup.Indicator />
+                <SegmentGroup.Items items={RANGE_OPTIONS} />
+              </SegmentGroup.Root>
+            </Stack>
+          </HStack>
+        </HStack>
+
+        <HStack gap={3} wrap="wrap" color="fg.muted" fontSize="xs">
+          <Text>
+            {lastSyncedAt > 0
+              ? `Last sync ${formatRelativeTime(
+                  new Date(lastSyncedAt),
+                  locale,
+                )}`
+              : 'Preparing dashboard snapshot'}
+          </Text>
+          {lastSyncedAt > 0 ? (
+            <Text title={formatFullDateTime(new Date(lastSyncedAt), locale)}>
+              {formatFullDateTime(new Date(lastSyncedAt), locale)}
+            </Text>
+          ) : null}
+        </HStack>
+      </Stack>
 
       <SimpleGrid columns={{ base: 1, sm: 2, lg: 4, xl: 5 }} gap={2.5}>
         {statCards
           .filter((card) => matchesDashboardFocus(card.category, focus))
           .map((card) => (
-          <MetricCard
-            key={card.label}
-            label={card.label}
-            palette={card.palette}
-            icon={card.icon}
-            value={card.value}
-            suffix={card.suffix}
-            description={card.description}
-            trend={card.trend}
-            isLoading={
-              dashboardQuery.isLoading ||
-              walletQuery.isLoading ||
-              profileQuery.isLoading
-            }
-          />
-        ))}
+            <MetricCard
+              key={card.label}
+              label={card.label}
+              palette={card.palette}
+              icon={card.icon}
+              value={card.value}
+              suffix={card.suffix}
+              description={card.description}
+              isLoading={
+                dashboardQuery.isLoading ||
+                walletQuery.isLoading ||
+                profileQuery.isLoading
+              }
+            />
+          ))}
       </SimpleGrid>
 
       {matchesDashboardFocus('rewards', focus) ? (
@@ -450,7 +444,7 @@ function Dashboard() {
         </SimpleGrid>
       ) : null}
 
-      {(focus === 'all' || focus === 'rewards' || focus === 'publishing') ? (
+      {focus === 'all' || focus === 'rewards' || focus === 'publishing' ? (
         <SimpleGrid columns={{ base: 1, lg: 2 }} gap={2.5}>
           {matchesDashboardFocus('rewards', focus) ? (
             <ChartPanel
@@ -463,55 +457,52 @@ function Dashboard() {
           ) : null}
           {matchesDashboardFocus('publishing', focus) ? (
             <ChartPanel
-              title="Author rewards"
-              subtitle="Weekly HBD payout"
+              title="Engagement trend"
+              subtitle="Votes · comments · posts"
               isLoading={dashboardQuery.isLoading}
             >
-              <AuthorRewardsChart overview={overview} />
+              <EngagementChart overview={overview} />
             </ChartPanel>
           ) : null}
         </SimpleGrid>
       ) : null}
 
-      {matchesDashboardFocus('publishing', focus) ? (
-        <ChartPanel
-          title="Engagement trend"
-          subtitle="Votes · comments · posts"
-          isLoading={dashboardQuery.isLoading}
-        >
-          <EngagementChart overview={overview} />
-        </ChartPanel>
-      ) : null}
-
       <SimpleGrid columns={{ base: 1, lg: 2 }} gap={2.5}>
-        {(focus === 'all' || focus === 'publishing' || focus === 'rewards') ? (
+        {focus === 'all' || focus === 'publishing' || focus === 'rewards' ? (
           <Card.Root variant="outline" borderRadius={SURFACE_RADIUS}>
-          <Card.Body>
-            <Stack gap={4}>
-              <Stack gap={1}>
-                <Text fontWeight="600">Top posts</Text>
-                <Text fontSize="sm" color="fg.muted">
-                  Ranked by total reward in {rangeToDescription(range)}
-                </Text>
-              </Stack>
-              <Separator />
-              <Stack gap={1}>
-                {dashboardQuery.isLoading
-                  ? Array.from({ length: 5 }).map((_, index) => (
+            <Card.Body>
+              <Stack gap={4}>
+                <Stack gap={1}>
+                  <Text fontWeight="600">Top posts</Text>
+                  <Text fontSize="sm" color="fg.muted">
+                    Ranked by total reward in {rangeToDescription(range)}
+                  </Text>
+                </Stack>
+                <Separator />
+                <Stack gap={1}>
+                  {dashboardQuery.isLoading ? (
+                    Array.from({ length: 5 }).map((_, index) => (
                       <Skeleton
                         key={`post-skeleton-${index}`}
                         height="60px"
                         borderRadius="16px"
                       />
                     ))
-                  : overview?.topPosts.length
-                    ? overview.topPosts.map((post, index) => (
+                  ) : overview?.topPosts.length ? (
+                    overview.topPosts.map((post, index) => {
+                      const community = resolvePostCommunity(post)
+
+                      return (
                         <HStack
                           key={post.id}
                           gap={3}
                           align="start"
                           py={2}
-                          borderBottom={index === overview.topPosts.length - 1 ? 'none' : '1px solid'}
+                          borderBottom={
+                            index === overview.topPosts.length - 1
+                              ? 'none'
+                              : '1px solid'
+                          }
                           borderColor="border.subtle"
                         >
                           <Box
@@ -528,6 +519,11 @@ function Dashboard() {
                           >
                             {index + 1}
                           </Box>
+                          <PostCardMedia
+                            author={post.author}
+                            coverUrl={post.coverUrl}
+                            shortTitle={getTitleMeta(post.title).shortTitle}
+                          />
                           <Stack gap={1} flex="1" minW={0}>
                             <Link
                               to="/post/$author/$permlink"
@@ -542,6 +538,22 @@ function Dashboard() {
                             </Link>
                             <Text fontSize="sm" color="fg.muted" lineClamp={1}>
                               {post.votes} votes · {post.comments} comments
+                              {community ? ' · on ' : ''}
+                              {community?.id ? (
+                                <Link
+                                  to="/communities/$communityId"
+                                  params={{ communityId: community.id }}
+                                >
+                                  <Text
+                                    as="span"
+                                    _hover={{ textDecoration: 'underline' }}
+                                  >
+                                    {community.label}
+                                  </Text>
+                                </Link>
+                              ) : community ? (
+                                community.label
+                              ) : null}
                               {post.primaryTag ? ` · ${post.primaryTag}` : ''}
                             </Text>
                           </Stack>
@@ -554,97 +566,100 @@ function Dashboard() {
                             {formatTokenAmount(post.totalReward, 2)} HBD
                           </Text>
                         </HStack>
-                      ))
-                    : (
-                        <EmptyStateMessage message="No rewarded posts were found for this period." />
-                      )}
+                      )
+                    })
+                  ) : (
+                    <EmptyStateMessage message="No rewarded posts were found for this period." />
+                  )}
+                </Stack>
               </Stack>
-            </Stack>
-          </Card.Body>
+            </Card.Body>
           </Card.Root>
         ) : null}
 
-        {(focus === 'all' || focus === 'account') ? (
+        {focus === 'all' || focus === 'account' ? (
           <Card.Root variant="outline" borderRadius={SURFACE_RADIUS}>
-          <Card.Body>
-            <Stack gap={4}>
-              <Stack gap={1}>
-                <Text fontWeight="600">Recent activity</Text>
-                <Text fontSize="sm" color="fg.muted">
-                  Latest wallet and reward events from the connected account
-                </Text>
-              </Stack>
-              <Separator />
-              {walletQuery.isLoading ? (
+            <Card.Body>
+              <Stack gap={4}>
                 <Stack gap={1}>
-                  {Array.from({ length: 6 }).map((_, index) => (
-                    <Skeleton
-                      key={`activity-skeleton-${index}`}
-                      height="54px"
-                      borderRadius="16px"
-                    />
-                  ))}
+                  <Text fontWeight="600">Recent activity</Text>
+                  <Text fontSize="sm" color="fg.muted">
+                    Latest wallet and reward events from the connected account
+                  </Text>
                 </Stack>
-              ) : wallet?.activity.length ? (
-                <Timeline.Root size="sm" variant="subtle">
-                  {wallet.activity.slice(0, 6).map((item, index, items) => {
-                    const palette = getActivityPalette(item.type)
+                <Separator />
+                {walletQuery.isLoading ? (
+                  <Stack gap={1}>
+                    {Array.from({ length: 6 }).map((_, index) => (
+                      <Skeleton
+                        key={`activity-skeleton-${index}`}
+                        height="54px"
+                        borderRadius="16px"
+                      />
+                    ))}
+                  </Stack>
+                ) : wallet?.activity.length ? (
+                  <Timeline.Root size="sm" variant="subtle">
+                    {wallet.activity.slice(0, 6).map((item, index, items) => {
+                      const palette = getActivityPalette(item.type)
 
-                    return (
-                      <Timeline.Item key={item.id}>
-                        <Timeline.Connector>
-                          {index < items.length - 1 ? <Timeline.Separator /> : null}
-                          <Timeline.Indicator
-                            bg={`${palette}.solid`}
-                            color={`${palette}.contrast`}
-                          >
-                            <Icon as={getActivityIcon(item.type)} boxSize={3} />
-                          </Timeline.Indicator>
-                        </Timeline.Connector>
-                        <Timeline.Content>
-                          <HStack justify="space-between" align="start" gap={3}>
-                            <Stack gap={1} flex="1">
-                              <Timeline.Title>{item.description}</Timeline.Title>
-                              <Timeline.Description>
-                                {formatRelativeTime(
-                                  new Date(item.timestamp),
-                                  locale,
-                                )}
-                              </Timeline.Description>
-                            </Stack>
-                            <Text
-                              fontSize="sm"
-                              fontFamily="mono"
-                              color={
-                                item.amount ? `${palette}.fg` : 'fg.muted'
-                              }
-                              whiteSpace="nowrap"
+                      return (
+                        <Timeline.Item key={item.id}>
+                          <Timeline.Connector>
+                            {index < items.length - 1 ? (
+                              <Timeline.Separator />
+                            ) : null}
+                            <Timeline.Indicator
+                              bg={`${palette}.solid`}
+                              color={`${palette}.contrast`}
                             >
-                              {item.amount || 'Event'}
-                            </Text>
-                          </HStack>
-                        </Timeline.Content>
-                      </Timeline.Item>
-                    )
-                  })}
-                </Timeline.Root>
-              ) : (
-                <EmptyStateMessage message="No recent account activity was returned by the Hive API." />
-              )}
-            </Stack>
-          </Card.Body>
+                              <Icon
+                                as={getActivityIcon(item.type)}
+                                boxSize={3}
+                              />
+                            </Timeline.Indicator>
+                          </Timeline.Connector>
+                          <Timeline.Content>
+                            <HStack
+                              justify="space-between"
+                              align="start"
+                              gap={3}
+                            >
+                              <Stack gap={1} flex="1">
+                                <Timeline.Title>
+                                  {item.description}
+                                </Timeline.Title>
+                                <Timeline.Description>
+                                  {formatRelativeTime(
+                                    new Date(item.timestamp),
+                                    locale,
+                                  )}
+                                </Timeline.Description>
+                              </Stack>
+                              <Text
+                                fontSize="sm"
+                                fontFamily="mono"
+                                color={
+                                  item.amount ? `${palette}.fg` : 'fg.muted'
+                                }
+                                whiteSpace="nowrap"
+                              >
+                                {item.amount || 'Event'}
+                              </Text>
+                            </HStack>
+                          </Timeline.Content>
+                        </Timeline.Item>
+                      )
+                    })}
+                  </Timeline.Root>
+                ) : (
+                  <EmptyStateMessage message="No recent account activity was returned by the Hive API." />
+                )}
+              </Stack>
+            </Card.Body>
           </Card.Root>
         ) : null}
       </SimpleGrid>
-
-      <HStack justify="space-between" wrap="wrap" color="fg.muted" fontSize="sm">
-        <Text>Hive dashboard · data via public Hive APIs</Text>
-        <Text fontFamily="mono">
-          {dashboardQuery.isRefreshing || walletQuery.isFetching
-            ? 'sync status: refreshing'
-            : 'sync status: idle'}
-        </Text>
-      </HStack>
     </Stack>
   )
 }
@@ -656,7 +671,6 @@ function MetricCard({
   description,
   palette,
   icon,
-  trend,
   isLoading,
 }: {
   label: string
@@ -665,7 +679,6 @@ function MetricCard({
   description: string
   palette: string
   icon: typeof Crown
-  trend: number | null
   isLoading: boolean
 }) {
   return (
@@ -679,8 +692,25 @@ function MetricCard({
     >
       <Card.Body p={{ base: 4, md: 4.5 }}>
         <Stat.Root>
-          <Stack gap={2.5}>
-            <HStack justify="space-between" align="start">
+          <Stack gap={4}>
+            <HStack justify="space-between" align="center">
+              <Stack gap={4}>
+                <Stat.Label color="fg.muted" fontSize="xs">
+                  {label}
+                </Stat.Label>
+                {isLoading ? (
+                  <Skeleton height="32px" width="70%" />
+                ) : (
+                  <Stat.ValueText fontSize="xl" lineHeight="1.05">
+                    {value ?? '—'}
+                    {suffix ? (
+                      <Stat.ValueUnit color="fg.muted" fontSize="xs">
+                        {suffix}
+                      </Stat.ValueUnit>
+                    ) : null}
+                  </Stat.ValueText>
+                )}
+              </Stack>
               <Box
                 boxSize="8"
                 borderRadius="9px"
@@ -692,26 +722,7 @@ function MetricCard({
               >
                 <Icon as={icon} boxSize={4} />
               </Box>
-              {trend !== null ? <TrendBadge change={trend} /> : <Box boxSize="6" />}
             </HStack>
-
-            <Stack gap={1}>
-              <Stat.Label color="fg.muted" fontSize="xs">
-                {label}
-              </Stat.Label>
-              {isLoading ? (
-                <Skeleton height="32px" width="70%" />
-              ) : (
-                <Stat.ValueText fontSize="xl" lineHeight="1.05">
-                  {value ?? '—'}
-                  {suffix ? (
-                    <Stat.ValueUnit color="fg.muted" fontSize="xs">
-                      {suffix}
-                    </Stat.ValueUnit>
-                  ) : null}
-                </Stat.ValueText>
-              )}
-            </Stack>
 
             <Text fontSize="xs" color="fg.muted" lineClamp={2}>
               {description}
@@ -720,21 +731,6 @@ function MetricCard({
         </Stat.Root>
       </Card.Body>
     </Card.Root>
-  )
-}
-
-function TrendBadge({ change }: { change: number }) {
-  const direction: TrendDirection =
-    change > 0 ? 'up' : change < 0 ? 'down' : 'flat'
-  const palette =
-    direction === 'up' ? 'green' : direction === 'down' ? 'red' : 'gray'
-  const prefix = direction === 'down' ? '' : '+'
-
-  return (
-    <Badge colorPalette={palette} variant="subtle" borderRadius="full">
-      {prefix}
-      {formatPercent(change, 1)}
-    </Badge>
   )
 }
 
@@ -773,7 +769,11 @@ function ChartPanel({
               {subtitle}
             </Text>
           </Stack>
-          {isLoading ? <Skeleton height="220px" borderRadius="16px" /> : children}
+          {isLoading ? (
+            <Skeleton height="220px" borderRadius="16px" />
+          ) : (
+            children
+          )}
         </Stack>
       </Card.Body>
     </Card.Root>
@@ -820,8 +820,16 @@ function RewardIncomeChart({
     <Stack gap={3}>
       <Chart.Root height="13rem" chart={chart}>
         {overview.rewardIncomeChartKind === 'bar' ? (
-          <BarChart data={chart.data} barGap={10} margin={BAR_CHART_MARGIN} responsive>
-            <CartesianGrid stroke={chart.color('border.muted')} vertical={false} />
+          <BarChart
+            data={chart.data}
+            barGap={10}
+            margin={BAR_CHART_MARGIN}
+            responsive
+          >
+            <CartesianGrid
+              stroke={chart.color('border.muted')}
+              vertical={false}
+            />
             <XAxis
               axisLine={false}
               tickLine={false}
@@ -839,13 +847,21 @@ function RewardIncomeChart({
               tick={{ fontSize: 11 }}
               domain={[0, upperBound]}
               tickFormatter={(value) =>
-                formatCompactCurrency(typeof value === 'number' ? value : Number(value))
+                formatCompactCurrency(
+                  typeof value === 'number' ? value : Number(value),
+                )
               }
             />
             <Tooltip
               animationDuration={100}
               cursor={false}
-              content={<Chart.Tooltip formatter={(value) => `${formatTokenAmount(Number(value), 2)} HBD`} />}
+              content={
+                <Chart.Tooltip
+                  formatter={(value) =>
+                    `${formatTokenAmount(Number(value), 2)} HBD`
+                  }
+                />
+              }
             />
             {chart.series.map((item) => (
               <Bar
@@ -859,7 +875,10 @@ function RewardIncomeChart({
           </BarChart>
         ) : (
           <AreaChart data={chart.data} margin={CHART_MARGIN} responsive>
-            <CartesianGrid stroke={chart.color('border.muted')} vertical={false} />
+            <CartesianGrid
+              stroke={chart.color('border.muted')}
+              vertical={false}
+            />
             <XAxis
               axisLine={false}
               tickLine={false}
@@ -877,13 +896,21 @@ function RewardIncomeChart({
               tick={{ fontSize: 11 }}
               domain={[0, upperBound]}
               tickFormatter={(value) =>
-                formatCompactCurrency(typeof value === 'number' ? value : Number(value))
+                formatCompactCurrency(
+                  typeof value === 'number' ? value : Number(value),
+                )
               }
             />
             <Tooltip
               animationDuration={100}
               cursor={false}
-              content={<Chart.Tooltip formatter={(value) => `${formatTokenAmount(Number(value), 2)} HBD`} />}
+              content={
+                <Chart.Tooltip
+                  formatter={(value) =>
+                    `${formatTokenAmount(Number(value), 2)} HBD`
+                  }
+                />
+              }
             />
             {chart.series.map((item) => (
               <defs key={`reward-gradient-${item.name}`}>
@@ -943,6 +970,34 @@ function RewardBreakdownChart({
     })),
   })
 
+  const renderBreakdownTooltip = (
+    item: RechartsTooltipPayload<string, string>,
+  ): ReactNode => {
+    const data = item as unknown as Record<string, unknown>
+    const label = String(data.label ?? '')
+    const value = Number(data.value ?? 0)
+    const valuePercent = Number(data.valuePercent ?? 0) / 100
+
+    return (
+      <Stack gap={0.5}>
+        <Text fontWeight="medium">{label}</Text>
+        <HStack gap={2} justify="space-between">
+          <Text color="fg.muted" fontSize="xs">
+            {formatPercent(valuePercent, 1)}
+          </Text>
+          <Text
+            fontFamily="mono"
+            fontSize="sm"
+            fontVariantNumeric="tabular-nums"
+            fontWeight="medium"
+          >
+            {`${formatTokenAmount(value, 2)} HBD`}
+          </Text>
+        </HStack>
+      </Stack>
+    )
+  }
+
   return (
     <Stack gap={3}>
       <Chart.Root height="13rem" chart={chart}>
@@ -952,7 +1007,10 @@ function RewardBreakdownChart({
             cursor={false}
             content={
               <Chart.Tooltip
-                formatter={(value) => `${formatTokenAmount(Number(value), 2)} HBD`}
+                hideLabel
+                fitContent
+                hideIndicator
+                render={renderBreakdownTooltip}
               />
             }
           />
@@ -966,7 +1024,10 @@ function RewardBreakdownChart({
             paddingAngle={4}
             cornerRadius={6}
             shape={(props) => (
-              <Sector {...props} fill={chart.color(props.payload!.colorToken)} />
+              <Sector
+                {...props}
+                fill={chart.color(props.payload!.colorToken)}
+              />
             )}
           />
         </PieChart>
@@ -992,7 +1053,9 @@ function RewardTrendChart({
   overview: DashboardHistoricalOverview | null
 }) {
   if (!overview) {
-    return <EmptyStateMessage message="No reward trend data is available yet." />
+    return (
+      <EmptyStateMessage message="No reward trend data is available yet." />
+    )
   }
 
   const chart = useChart({
@@ -1006,7 +1069,10 @@ function RewardTrendChart({
     <Chart.Root height="11.5rem" chart={chart}>
       {overview.rewardTrendChartKind === 'bar' ? (
         <BarChart data={chart.data} margin={BAR_CHART_MARGIN} responsive>
-          <CartesianGrid stroke={chart.color('border.muted')} vertical={false} />
+          <CartesianGrid
+            stroke={chart.color('border.muted')}
+            vertical={false}
+          />
           <XAxis
             axisLine={false}
             tickLine={false}
@@ -1024,13 +1090,21 @@ function RewardTrendChart({
             tick={{ fontSize: 11 }}
             domain={[0, upperBound]}
             tickFormatter={(value) =>
-              formatCompactCurrency(typeof value === 'number' ? value : Number(value))
+              formatCompactCurrency(
+                typeof value === 'number' ? value : Number(value),
+              )
             }
           />
           <Tooltip
             animationDuration={100}
             cursor={false}
-            content={<Chart.Tooltip formatter={(value) => `${formatTokenAmount(Number(value), 2)} HBD`} />}
+            content={
+              <Chart.Tooltip
+                formatter={(value) =>
+                  `${formatTokenAmount(Number(value), 2)} HBD`
+                }
+              />
+            }
           />
           <Bar
             isAnimationActive={false}
@@ -1041,7 +1115,10 @@ function RewardTrendChart({
         </BarChart>
       ) : (
         <AreaChart data={chart.data} margin={CHART_MARGIN} responsive>
-          <CartesianGrid stroke={chart.color('border.muted')} vertical={false} />
+          <CartesianGrid
+            stroke={chart.color('border.muted')}
+            vertical={false}
+          />
           <XAxis
             axisLine={false}
             tickLine={false}
@@ -1059,20 +1136,36 @@ function RewardTrendChart({
             tick={{ fontSize: 11 }}
             domain={[0, upperBound]}
             tickFormatter={(value) =>
-              formatCompactCurrency(typeof value === 'number' ? value : Number(value))
+              formatCompactCurrency(
+                typeof value === 'number' ? value : Number(value),
+              )
             }
           />
           <Tooltip
             animationDuration={100}
             cursor={false}
-            content={<Chart.Tooltip formatter={(value) => `${formatTokenAmount(Number(value), 2)} HBD`} />}
+            content={
+              <Chart.Tooltip
+                formatter={(value) =>
+                  `${formatTokenAmount(Number(value), 2)} HBD`
+                }
+              />
+            }
           />
           <defs>
             <Chart.Gradient
               id="reward-trend-gradient"
               stops={[
-                { offset: '0%', color: CHART_SERIES.total.color, opacity: 0.28 },
-                { offset: '100%', color: CHART_SERIES.total.color, opacity: 0.04 },
+                {
+                  offset: '0%',
+                  color: CHART_SERIES.total.color,
+                  opacity: 0.28,
+                },
+                {
+                  offset: '100%',
+                  color: CHART_SERIES.total.color,
+                  opacity: 0.04,
+                },
               ]}
             />
           </defs>
@@ -1094,69 +1187,6 @@ function RewardTrendChart({
           />
         </AreaChart>
       )}
-    </Chart.Root>
-  )
-}
-
-function AuthorRewardsChart({
-  overview,
-}: {
-  overview: DashboardHistoricalOverview | null
-}) {
-  if (!overview) {
-    return <EmptyStateMessage message="No author reward data is available yet." />
-  }
-
-  const chart = useChart({
-    data: overview.buckets,
-    series: [
-      { name: CHART_SERIES.author.key, color: CHART_SERIES.author.color },
-    ],
-  })
-  const maxValue = getChartMax(overview.buckets, [CHART_SERIES.author.key])
-  const upperBound = getPaddedUpperBound(maxValue, 0.15, 0.4)
-
-  return (
-    <Chart.Root height="11.5rem" chart={chart}>
-      <BarChart
-        data={chart.data}
-        barCategoryGap="26%"
-        margin={BAR_CHART_MARGIN}
-        responsive
-      >
-        <CartesianGrid stroke={chart.color('border.muted')} vertical={false} />
-        <XAxis
-          axisLine={false}
-          tickLine={false}
-          dataKey={chart.key('shortLabel')}
-          stroke={chart.color('border')}
-          minTickGap={20}
-          tick={{ fontSize: 11 }}
-        />
-        <YAxis
-          axisLine={false}
-          tickLine={false}
-          tickMargin={8}
-          stroke={chart.color('border')}
-          width={30}
-          tick={{ fontSize: 11 }}
-          domain={[0, upperBound]}
-          tickFormatter={(value) =>
-            formatCompactCurrency(typeof value === 'number' ? value : Number(value))
-          }
-        />
-        <Tooltip
-          animationDuration={100}
-          cursor={false}
-          content={<Chart.Tooltip formatter={(value) => `${formatTokenAmount(Number(value), 2)} HBD`} />}
-        />
-        <Bar
-          isAnimationActive={false}
-          dataKey={chart.key(CHART_SERIES.author.key)}
-          fill={chart.color(CHART_SERIES.author.color)}
-          radius={6}
-        />
-      </BarChart>
     </Chart.Root>
   )
 }
@@ -1192,8 +1222,16 @@ function EngagementChart({
     <Stack gap={3}>
       <Chart.Root height="11.5rem" chart={chart}>
         {overview.engagementChartKind === 'bar' ? (
-          <BarChart data={chart.data} barGap={10} margin={BAR_CHART_MARGIN} responsive>
-            <CartesianGrid stroke={chart.color('border.muted')} vertical={false} />
+          <BarChart
+            data={chart.data}
+            barGap={10}
+            margin={BAR_CHART_MARGIN}
+            responsive
+          >
+            <CartesianGrid
+              stroke={chart.color('border.muted')}
+              vertical={false}
+            />
             <XAxis
               axisLine={false}
               tickLine={false}
@@ -1211,7 +1249,11 @@ function EngagementChart({
               tick={{ fontSize: 11 }}
               domain={[0, upperBound]}
             />
-            <Tooltip animationDuration={100} cursor={false} content={<Chart.Tooltip />} />
+            <Tooltip
+              animationDuration={100}
+              cursor={false}
+              content={<Chart.Tooltip />}
+            />
             {chart.series.map((item) => (
               <Bar
                 key={item.name}
@@ -1224,7 +1266,10 @@ function EngagementChart({
           </BarChart>
         ) : (
           <AreaChart data={chart.data} margin={CHART_MARGIN} responsive>
-            <CartesianGrid stroke={chart.color('border.muted')} vertical={false} />
+            <CartesianGrid
+              stroke={chart.color('border.muted')}
+              vertical={false}
+            />
             <XAxis
               axisLine={false}
               tickLine={false}
@@ -1242,7 +1287,11 @@ function EngagementChart({
               tick={{ fontSize: 11 }}
               domain={[0, upperBound]}
             />
-            <Tooltip animationDuration={100} cursor={false} content={<Chart.Tooltip />} />
+            <Tooltip
+              animationDuration={100}
+              cursor={false}
+              content={<Chart.Tooltip />}
+            />
             {chart.series.map((item) => (
               <defs key={`engagement-gradient-${item.name}`}>
                 <Chart.Gradient
@@ -1284,7 +1333,10 @@ function EngagementChart({
           color={CHART_SERIES.comments.color}
           label="Comments"
           value={String(
-            overview.buckets.reduce((total, bucket) => total + bucket.comments, 0),
+            overview.buckets.reduce(
+              (total, bucket) => total + bucket.comments,
+              0,
+            ),
           )}
         />
         <SeriesLegend
@@ -1431,7 +1483,11 @@ function formatAccountAge(value: string) {
 }
 
 function getActivityPalette(type: string) {
-  if (type === 'author_reward' || type === 'curation_reward' || type === 'interest') {
+  if (
+    type === 'author_reward' ||
+    type === 'curation_reward' ||
+    type === 'interest'
+  ) {
     return 'green'
   }
   if (type === 'transfer' || type === 'transfer_to_vesting') {

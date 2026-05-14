@@ -172,7 +172,9 @@ const readSnapshots = () => {
   try {
     const raw = storage.getItem(DASHBOARD_STORAGE_KEY)
     if (!raw) return {}
-    return JSON.parse(raw) as Partial<Record<string, DashboardHistoricalSnapshot>>
+    return JSON.parse(raw) as Partial<
+      Record<string, DashboardHistoricalSnapshot>
+    >
   } catch {
     return {}
   }
@@ -274,8 +276,7 @@ const getPostAuthorReward = (
     'total_vesting_fund_hive' | 'total_vesting_shares'
   >,
   hivePriceHbd: number,
-) =>
-  convertAssetToHbdEquivalent(post.authorPayout, properties, hivePriceHbd)
+) => convertAssetToHbdEquivalent(post.authorPayout, properties, hivePriceHbd)
 
 export const selectHistoricalChartKind = (
   buckets: Array<DashboardBucket>,
@@ -340,11 +341,11 @@ const fetchRewardHistory = async (username: string, range: DashboardRange) => {
   let from = -1
 
   for (let page = 0; page < HISTORY_MAX_PAGES; page += 1) {
-    const history = (await hiveClient.call('condenser_api', 'get_account_history', [
-      normalized,
-      from,
-      HISTORY_PAGE_SIZE,
-    ])) as Array<
+    const history = (await hiveClient.call(
+      'condenser_api',
+      'get_account_history',
+      [normalized, from, HISTORY_PAGE_SIZE],
+    )) as Array<
       [
         number,
         {
@@ -472,6 +473,10 @@ export const aggregateDashboardOverview = ({
         permlink: post.permlink,
         title: post.title,
         created: post.created,
+        coverUrl: post.coverUrl,
+        communityId: post.communityId,
+        communityTitle: post.communityTitle,
+        communityInfo: post.communityInfo,
         totalReward,
         authorReward,
         votes: post.votes ?? 0,

@@ -5,6 +5,8 @@ import { Select, createListCollection } from '@chakra-ui/react'
 import { getLocale, locales, setLocale } from '@/paraglide/runtime'
 import { m } from '@/paraglide/messages'
 
+type AppLocale = (typeof locales)[number]
+
 const resolveLocaleLabel = (locale: string) => {
   switch (locale) {
     case 'en':
@@ -42,7 +44,7 @@ export default function ParaglideLocaleSwitcher() {
       onValueChange={(details) => {
         const value = details.value[0]
         if (value && value !== currentLocale) {
-          setLocale(value)
+          setLocale(value as AppLocale)
         }
       }}
       size="sm"

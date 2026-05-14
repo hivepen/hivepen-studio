@@ -11,7 +11,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {  useEditor } from '@tiptap/react'
+import { useEditor } from '@tiptap/react'
 import {
   Code,
   Heading1,
@@ -27,9 +27,14 @@ import {
   SquarePen,
   Text as TextIcon,
 } from 'lucide-react'
-import type {Editor as TiptapEditor} from '@tiptap/react';
+import type { Range, Editor as TiptapCoreEditor } from '@tiptap/core'
+import type { Editor as TiptapEditor } from '@tiptap/react'
+import type {
+  SuggestionKeyDownProps,
+  SuggestionProps,
+} from '@tiptap/suggestion'
+import type { Operation } from '@hiveio/dhive'
 
-import CustomHeader from '@/components/CustomHeader'
 import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
 import EditorBubbleMenu from '@/components/editor/EditorBubbleMenu'
 import EditorBody from '@/components/editor/EditorBody'
@@ -61,6 +66,17 @@ type BeneficiaryEntry = {
   weight: string
 }
 
+type MentionSuggestionCommand = {
+  id: string
+}
+
+type MentionSuggestionProps = SuggestionProps<string, MentionSuggestionCommand>
+
+type SlashCommandContext = {
+  editor: TiptapCoreEditor
+  range: Range
+}
+
 function Editor() {
   const { account, signAndBroadcastOperations } = useHiveWallet()
   const [status, setStatus] = useState<StatusState | null>(null)
@@ -71,7 +87,7 @@ function Editor() {
   )
   const [hiveSignerLoginUrl] = useState(() => getHiveSignerLoginUrl())
   const hiveSignerAuthRef = useRef(hiveSignerAuth)
-  const [showBlockHandles, setShowBlockHandles] = useLocalStorageState(
+  const [showBlockHandles] = useLocalStorageState(
     'hivepen.editor.showBlockHandles',
     true,
   )
@@ -100,18 +116,14 @@ function Editor() {
 
   const mentionSuggestion = useMemo(
     () => ({
-      items: ({ query }) =>
+      items: ({ query }: { query: string }) =>
         mentionItems
           .filter((item) => item.toLowerCase().startsWith(query.toLowerCase()))
           .slice(0, 5),
       render: () => {
         let popup: HTMLDivElement | null = null
 
-        const renderItems = (props: {
-          items: Array<string>
-          command: (args: { id: string }) => void
-          clientRect?: () => DOMRect | null
-        }) => {
+        const renderItems = (props: MentionSuggestionProps) => {
           if (!popup) return
           const rect = props.clientRect?.()
           if (rect) {
@@ -129,17 +141,17 @@ function Editor() {
         }
 
         return {
-          onStart: (props) => {
+          onStart: (props: MentionSuggestionProps) => {
             popup = document.createElement('div')
             popup.className = 'mention-menu'
             popup.style.position = 'absolute'
             document.body.appendChild(popup)
             renderItems(props)
           },
-          onUpdate: (props) => {
+          onUpdate: (props: MentionSuggestionProps) => {
             renderItems(props)
           },
-          onKeyDown: ({ event }) => {
+          onKeyDown: ({ event }: SuggestionKeyDownProps) => {
             if (event.key === 'Escape') {
               popup?.remove()
               popup = null
@@ -214,7 +226,7 @@ function Editor() {
         description: m.editor_slash_text_description(),
         icon: <TextIcon size={18} />,
         shortcut: '↵',
-        command: ({ editor, range }) =>
+        command: ({ editor, range }: SlashCommandContext) =>
           editor.chain().focus().deleteRange(range).setParagraph().run(),
       },
       {
@@ -222,7 +234,7 @@ function Editor() {
         category: m.editor_slash_category_basic(),
         description: m.editor_slash_heading1_description(),
         icon: <Heading1 size={18} />,
-        command: ({ editor, range }) =>
+        command: ({ editor, range }: SlashCommandContext) =>
           editor
             .chain()
             .focus()
@@ -235,7 +247,7 @@ function Editor() {
         category: m.editor_slash_category_basic(),
         description: m.editor_slash_heading2_description(),
         icon: <Heading2 size={18} />,
-        command: ({ editor, range }) =>
+        command: ({ editor, range }: SlashCommandContext) =>
           editor
             .chain()
             .focus()
@@ -248,7 +260,7 @@ function Editor() {
         category: m.editor_slash_category_basic(),
         description: m.editor_slash_heading3_description(),
         icon: <Heading3 size={18} />,
-        command: ({ editor, range }) =>
+        command: ({ editor, range }: SlashCommandContext) =>
           editor
             .chain()
             .focus()
@@ -261,7 +273,7 @@ function Editor() {
         category: m.editor_slash_category_lists(),
         description: m.editor_slash_bullet_list_description(),
         icon: <List size={18} />,
-        command: ({ editor, range }) =>
+        command: ({ editor, range }: SlashCommandContext) =>
           editor.chain().focus().deleteRange(range).toggleBulletList().run(),
       },
       {
@@ -269,7 +281,7 @@ function Editor() {
         category: m.editor_slash_category_lists(),
         description: m.editor_slash_numbered_list_description(),
         icon: <ListOrdered size={18} />,
-        command: ({ editor, range }) =>
+        command: ({ editor, range }: SlashCommandContext) =>
           editor.chain().focus().deleteRange(range).toggleOrderedList().run(),
       },
       {
@@ -277,7 +289,7 @@ function Editor() {
         category: m.editor_slash_category_blocks(),
         description: m.editor_slash_quote_description(),
         icon: <Quote size={18} />,
-        command: ({ editor, range }) =>
+        command: ({ editor, range }: SlashCommandContext) =>
           editor.chain().focus().deleteRange(range).toggleBlockquote().run(),
       },
       {
@@ -285,7 +297,7 @@ function Editor() {
         category: m.editor_slash_category_blocks(),
         description: m.editor_slash_code_block_description(),
         icon: <Code size={18} />,
-        command: ({ editor, range }) =>
+        command: ({ editor, range }: SlashCommandContext) =>
           editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
       },
       {
@@ -293,7 +305,7 @@ function Editor() {
         category: m.editor_slash_category_blocks(),
         description: m.editor_slash_divider_description(),
         icon: <Minus size={18} />,
-        command: ({ editor, range }) =>
+        command: ({ editor, range }: SlashCommandContext) =>
           editor.chain().focus().deleteRange(range).setHorizontalRule().run(),
       },
       {
@@ -301,7 +313,7 @@ function Editor() {
         category: m.editor_slash_category_media(),
         description: m.editor_slash_image_description(),
         icon: <ImageIcon size={18} />,
-        command: ({ editor, range }) => {
+        command: ({ editor, range }: SlashCommandContext) => {
           editor.chain().focus().deleteRange(range).run()
           void handleInsertImage(editor)
         },
@@ -373,7 +385,10 @@ function Editor() {
       beneficiaries: filteredBeneficiaries,
     })
 
-    const response = await signAndBroadcastOperations(operations, 'Posting')
+    const response = await signAndBroadcastOperations(
+      operations as Array<Operation>,
+      'Posting',
+    )
 
     if (response.success) {
       setStatus({
@@ -532,7 +547,6 @@ function Editor() {
                       publishForm={postPayload}
                       publishTags={tagPreview}
                       publishStatus={status}
-                      keychainAvailable={Boolean(account)}
                       publishReady={publishReady}
                       beneficiaries={beneficiaries}
                       onSelectCommunity={handleSelectCommunity}
@@ -554,7 +568,6 @@ function Editor() {
                           { account: '', weight: '' },
                         ])
                       }
-                      onPublish={handlePublish}
                     />
                   </Tabs.Content>
                 </Box>

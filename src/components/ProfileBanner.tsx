@@ -24,7 +24,6 @@ const ProfileBanner = ({
   actions,
   meta,
   size = 'default',
-  ...props
 }: ProfileBannerProps & BoxProps) => {
   const isCompact = size === 'compact'
   const coverHeight = isCompact ? 120 : 160

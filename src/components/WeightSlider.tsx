@@ -39,10 +39,10 @@ export default function WeightSlider({
         onValueChange={(details) => onChange(details.value[0] * 100)}
       >
         <Slider.Control>
-          <Slider.Track bg="bg.subtle">
-            <Slider.Range bg="fg" />
-          </Slider.Track>
-          <Slider.Thumb />
+        <Slider.Track bg="bg.subtle">
+          <Slider.Range bg="fg" />
+        </Slider.Track>
+        <Slider.Thumb index={0} />
         </Slider.Control>
       </Slider.Root>
       <Text fontSize="xs" color="fg.muted" mt={2}>

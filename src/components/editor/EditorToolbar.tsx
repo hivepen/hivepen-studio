@@ -3,8 +3,6 @@ import { useEditorState } from '@tiptap/react'
 import {
   AtSign,
   Bold,
-  Code,
-  Code2,
   Heading2,
   Image as ImageIcon,
   Italic,

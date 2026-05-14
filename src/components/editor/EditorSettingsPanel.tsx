@@ -33,19 +33,16 @@ export default function EditorSettingsPanel({
   publishForm,
   publishTags,
   publishStatus,
-  keychainAvailable,
   publishReady,
   beneficiaries,
   onSelectCommunity,
   onChange,
   onBeneficiaryChange,
   onAddBeneficiary,
-  onPublish,
 }: {
   publishForm: PublishForm
   publishTags: Array<string>
   publishStatus: { type: 'success' | 'error' | 'info'; message: string } | null
-  keychainAvailable: boolean
   publishReady: boolean
   beneficiaries: Array<BeneficiaryEntry>
   onSelectCommunity: (value: string) => void
@@ -56,7 +53,6 @@ export default function EditorSettingsPanel({
     value: string,
   ) => void
   onAddBeneficiary: () => void
-  onPublish: () => void
 }) {
   const handleTagsChange = (nextTags: Array<string>) => {
     onChange('tags', nextTags.join(', '))
