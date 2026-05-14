@@ -33,6 +33,7 @@ describe('aggregateDashboardOverview', () => {
         title: 'Current top',
         created: '2026-04-10T12:00:00.000Z',
         tags: ['dev'],
+        coverUrl: 'https://images.hive.blog/current-top.jpg',
         payout: { pending: '0.000 HBD', total: '6.000 HBD' },
         authorPayout: '4.000 HBD',
         curatorPayout: '2.000 HBD',
@@ -46,6 +47,7 @@ describe('aggregateDashboardOverview', () => {
         title: 'Current second',
         created: '2026-05-01T12:00:00.000Z',
         tags: ['news'],
+        coverUrl: 'https://images.hive.blog/current-second.jpg',
         payout: { pending: '0.000 HBD', total: '3.000 HBD' },
         authorPayout: '2.000 HBD',
         curatorPayout: '1.000 HBD',
@@ -113,6 +115,10 @@ describe('aggregateDashboardOverview', () => {
     expect(result.topPosts.map((post) => post.permlink)).toEqual([
       'current-top',
       'current-second',
+    ])
+    expect(result.topPosts.map((post) => post.coverUrl)).toEqual([
+      'https://images.hive.blog/current-top.jpg',
+      'https://images.hive.blog/current-second.jpg',
     ])
     expect(
       result.buckets.reduce((total, bucket) => total + bucket.votes, 0),

@@ -1,3 +1,5 @@
+import type { PostSearchResult } from '@/lib/hive/search'
+
 export type DashboardRange = '1M' | '3M' | '6M' | '1Y'
 
 export type DashboardBucketUnit = 'week' | 'month'
@@ -27,12 +29,11 @@ export type DashboardBreakdownItem = {
   colorToken: string
 }
 
-export type DashboardTopPost = {
+export type DashboardTopPost = Pick<
+  PostSearchResult,
+  'author' | 'permlink' | 'title' | 'created' | 'coverUrl'
+> & {
   id: string
-  author: string
-  permlink: string
-  title: string
-  created: string
   totalReward: number
   authorReward: number
   votes: number
