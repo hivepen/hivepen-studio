@@ -1,13 +1,25 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
-import { Box, Button, HStack, Heading, Stack, Text } from '@chakra-ui/react'
-import { ArrowLeft } from 'lucide-react'
+import { createFileRoute } from '@tanstack/react-router'
+import {
+  Badge,
+  Box,
+  Button,
+  Collapsible,
+  HStack,
+  Stack,
+  Text,
+  useCollapsible,
+} from '@chakra-ui/react'
 import { useEffect, useMemo, useRef } from 'react'
+import type { AccountProfile } from '@/features/profile/profileTypes'
 import type { PostSearchResult } from '@/lib/hive/search'
+import ProfileBanner from '@/components/ProfileBanner'
 import useCommunityQuery from '@/features/communities/useCommunityQuery'
+import useProfilesQuery from '@/features/profile/useProfilesQuery'
 import PostsListSection from '@/features/posts/PostsListSection'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
+import { hiveAvatarUrl } from '@/lib/posts/tagColorConfig'
 import { m } from '@/paraglide/messages'
 
 export const Route = createFileRoute('/communities/$communityId')({
@@ -17,6 +29,10 @@ export const Route = createFileRoute('/communities/$communityId')({
 function CommunityPage() {
   const { communityId } = Route.useParams()
   const communityQuery = useCommunityQuery(communityId)
+  const communityProfileQuery = useProfilesQuery([communityId])
+  const communityProfile: AccountProfile | undefined =
+    communityProfileQuery.data.at(0)
+  const descriptionCollapsible = useCollapsible()
   const postsQuery = useInfinitePostsQuery({
     sort: 'created',
     tag: communityId,
@@ -80,53 +96,103 @@ function CommunityPage() {
     })
   }, [postsQuery.data])
 
+  const communityTitle = communityQuery.data?.title ?? communityId
+  const communityProfileAbout = communityProfile?.about
+  const communityProfileImage = communityProfile?.profileImage
+  const communityCoverImage = communityProfile?.coverImage
+  const communityLongDescription = communityQuery.data?.description?.trim()
+  const communityDescription =
+    communityQuery.data?.about ??
+    communityLongDescription ??
+    communityProfileAbout ??
+    m.community_overview_fallback()
+  const hasLongDescription =
+    Boolean(communityLongDescription) &&
+    communityLongDescription !== communityDescription
+  const communityMeta = (
+    <Stack gap={3}>
+      <HStack gap={2} wrap="wrap">
+        {communityQuery.data?.subscribers !== undefined ? (
+          <Badge
+            colorPalette="gray"
+            variant="subtle"
+            borderRadius="full"
+            px={3}
+            py={1}
+          >
+            {m.community_members({
+              count: communityQuery.data.subscribers,
+            })}
+          </Badge>
+        ) : null}
+        {communityQuery.data?.lang ? (
+          <Badge
+            colorPalette="gray"
+            variant="outline"
+            borderRadius="full"
+            px={3}
+            py={1}
+          >
+            {communityQuery.data.lang.toUpperCase()}
+          </Badge>
+        ) : null}
+        {communityQuery.data?.is_nsfw ? (
+          <Badge
+            colorPalette="red"
+            variant="subtle"
+            borderRadius="full"
+            px={3}
+            py={1}
+          >
+            {m.community_nsfw()}
+          </Badge>
+        ) : null}
+        {hasLongDescription ? (
+          <Collapsible.Trigger
+            alignSelf="flex-start"
+            colorPalette="gray"
+            variant="ghost"
+            size="sm"
+          >
+            {descriptionCollapsible.open
+              ? 'Hide full description'
+              : 'See full description'}
+          </Collapsible.Trigger>
+        ) : null}
+      </HStack>
+    </Stack>
+  )
+
   return (
     <Stack gap={6} p={6}>
-      <Button asChild variant="ghost" size="sm" alignSelf="flex-start">
-        <Link to="/communities">
-          <HStack gap={2}>
-            <ArrowLeft />
-            <Text>{m.community_back()}</Text>
-          </HStack>
-        </Link>
-      </Button>
-
-      <Box
-        border="1px solid"
-        borderColor="border"
-        borderRadius="16px"
-        bg="bg.panel"
-        p={{ base: 4, md: 6 }}
-      >
-        <Stack gap={3}>
-          <Heading size="lg">
-            {communityQuery.data?.title ?? communityId}
-          </Heading>
-          <Text color="fg.muted">
-            {communityQuery.data?.about ??
-              communityQuery.data?.description ??
-              m.community_overview_fallback()}
-          </Text>
-          <HStack gap={4} fontSize="sm" color="fg.muted" wrap="wrap">
-            {communityQuery.data?.name ? (
-              <Text>#{communityQuery.data.name}</Text>
-            ) : null}
-            {communityQuery.data?.subscribers !== undefined ? (
-              <Text>
-                {m.community_members({
-                  count: communityQuery.data.subscribers,
-                })}
-              </Text>
-            ) : null}
-            {communityQuery.data?.lang ? (
-              <Text>{communityQuery.data.lang}</Text>
-            ) : null}
-            {communityQuery.data?.is_nsfw ? (
-              <Text>{m.community_nsfw()}</Text>
-            ) : null}
-          </HStack>
+      <Collapsible.RootProvider value={descriptionCollapsible}>
+        <Stack gap={4}>
+          <ProfileBanner
+            title={communityTitle}
+            subtitle={`@${communityId}`}
+            description={communityDescription}
+            avatarName={communityId}
+            avatarUrl={communityProfileImage ?? hiveAvatarUrl(communityId)}
+            coverUrl={communityCoverImage}
+            meta={communityMeta}
+          />
+          {communityLongDescription ? (
+            <Collapsible.Content>
+              <Box
+                border="1px solid"
+                borderColor="border"
+                borderRadius="16px"
+                bg="bg.panel"
+                p={{ base: 4, md: 5 }}
+              >
+                <Text color="fg.muted" whiteSpace="pre-wrap">
+                  {communityLongDescription}
+                </Text>
+              </Box>
+            </Collapsible.Content>
+          ) : null}
         </Stack>
-      </Box>
+      </Collapsible.RootProvider>
       <InfiniteDebugBanner
         pages={postsQuery.data?.pages?.length ?? 0}
         totalPosts={posts.length}

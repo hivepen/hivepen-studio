@@ -20,6 +20,7 @@ import { Route as CommunitiesRouteImport } from './routes/communities'
 import { Route as BlogRouteImport } from './routes/blog'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CommunitiesIndexRouteImport } from './routes/communities.index'
 import { Route as AccountnameIndexRouteImport } from './routes/$accountname.index'
 import { Route as ProfileAccountnameRouteImport } from './routes/profile.$accountname'
 import { Route as CommunitiesCommunityIdRouteImport } from './routes/communities.$communityId'
@@ -85,6 +86,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CommunitiesIndexRoute = CommunitiesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CommunitiesRoute,
+} as any)
 const AccountnameIndexRoute = AccountnameIndexRouteImport.update({
   id: '/$accountname/',
   path: '/$accountname/',
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
   '/$accountname/': typeof AccountnameIndexRoute
+  '/communities/': typeof CommunitiesIndexRoute
   '/$accountname/wallet/hbd': typeof AccountnameWalletHbdRoute
   '/$accountname/wallet/hive': typeof AccountnameWalletHiveRoute
   '/$accountname/wallet/hp': typeof AccountnameWalletHpRoute
@@ -157,7 +164,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/blog': typeof BlogRoute
-  '/communities': typeof CommunitiesRouteWithChildren
   '/dashboard': typeof DashboardRoute
   '/drafts': typeof DraftsRoute
   '/editor': typeof EditorRoute
@@ -168,6 +174,7 @@ export interface FileRoutesByTo {
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
   '/$accountname': typeof AccountnameIndexRoute
+  '/communities': typeof CommunitiesIndexRoute
   '/$accountname/wallet/hbd': typeof AccountnameWalletHbdRoute
   '/$accountname/wallet/hive': typeof AccountnameWalletHiveRoute
   '/$accountname/wallet/hp': typeof AccountnameWalletHpRoute
@@ -191,6 +198,7 @@ export interface FileRoutesById {
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
   '/$accountname/': typeof AccountnameIndexRoute
+  '/communities/': typeof CommunitiesIndexRoute
   '/$accountname/wallet/hbd': typeof AccountnameWalletHbdRoute
   '/$accountname/wallet/hive': typeof AccountnameWalletHiveRoute
   '/$accountname/wallet/hp': typeof AccountnameWalletHpRoute
@@ -215,6 +223,7 @@ export interface FileRouteTypes {
     | '/communities/$communityId'
     | '/profile/$accountname'
     | '/$accountname/'
+    | '/communities/'
     | '/$accountname/wallet/hbd'
     | '/$accountname/wallet/hive'
     | '/$accountname/wallet/hp'
@@ -225,7 +234,6 @@ export interface FileRouteTypes {
     | '/'
     | '/analytics'
     | '/blog'
-    | '/communities'
     | '/dashboard'
     | '/drafts'
     | '/editor'
@@ -236,6 +244,7 @@ export interface FileRouteTypes {
     | '/communities/$communityId'
     | '/profile/$accountname'
     | '/$accountname'
+    | '/communities'
     | '/$accountname/wallet/hbd'
     | '/$accountname/wallet/hive'
     | '/$accountname/wallet/hp'
@@ -258,6 +267,7 @@ export interface FileRouteTypes {
     | '/communities/$communityId'
     | '/profile/$accountname'
     | '/$accountname/'
+    | '/communities/'
     | '/$accountname/wallet/hbd'
     | '/$accountname/wallet/hive'
     | '/$accountname/wallet/hp'
@@ -362,6 +372,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/communities/': {
+      id: '/communities/'
+      path: '/'
+      fullPath: '/communities/'
+      preLoaderRoute: typeof CommunitiesIndexRouteImport
+      parentRoute: typeof CommunitiesRoute
+    }
     '/$accountname/': {
       id: '/$accountname/'
       path: '/$accountname'
@@ -430,10 +447,12 @@ declare module '@tanstack/react-router' {
 
 interface CommunitiesRouteChildren {
   CommunitiesCommunityIdRoute: typeof CommunitiesCommunityIdRoute
+  CommunitiesIndexRoute: typeof CommunitiesIndexRoute
 }
 
 const CommunitiesRouteChildren: CommunitiesRouteChildren = {
   CommunitiesCommunityIdRoute: CommunitiesCommunityIdRoute,
+  CommunitiesIndexRoute: CommunitiesIndexRoute,
 }
 
 const CommunitiesRouteWithChildren = CommunitiesRoute._addFileChildren(
