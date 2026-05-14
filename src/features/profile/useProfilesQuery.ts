@@ -22,6 +22,7 @@ export default function useProfilesQuery(accounts: Array<string>) {
     ...(baseOptions as object),
     enabled,
     select: (data: Array<Profile>): Array<AccountProfile> => data.map(mapProfile),
+    placeholderData: [],
     staleTime: 10 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
   })

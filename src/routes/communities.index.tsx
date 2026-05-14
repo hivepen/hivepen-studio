@@ -83,7 +83,7 @@ function Communities() {
   const profilesQuery = useProfilesQuery(communityIds)
   const profilesByName = useMemo(() => {
     const map = new Map<string, AccountProfile>()
-    profilesQuery.data.forEach((profile) => {
+    ;(profilesQuery.data ?? []).forEach((profile) => {
       map.set(profile.name, profile)
     })
     return map

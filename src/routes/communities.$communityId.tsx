@@ -35,7 +35,7 @@ function CommunityPage() {
   const communityQuery = useCommunityQuery(communityId)
   const communityProfileQuery = useProfilesQuery([communityId])
   const communityProfile: AccountProfile | undefined =
-    communityProfileQuery.data.at(0)
+    communityProfileQuery.data?.[0]
   const postsQuery = useInfinitePostsQuery({
     sort: 'created',
     tag: communityId,
