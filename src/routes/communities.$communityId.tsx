@@ -10,7 +10,6 @@ import {
   IconButton,
   Stack,
   Text,
-  useCollapsible,
 } from '@chakra-ui/react'
 import { Info } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
@@ -36,7 +35,6 @@ function CommunityPage() {
   const communityProfileQuery = useProfilesQuery([communityId])
   const communityProfile: AccountProfile | undefined =
     communityProfileQuery.data.at(0)
-  const descriptionCollapsible = useCollapsible()
   const postsQuery = useInfinitePostsQuery({
     sort: 'created',
     tag: communityId,
@@ -172,7 +170,7 @@ function CommunityPage() {
 
   return (
     <Stack gap={6} p={6}>
-      <Collapsible.RootProvider value={descriptionCollapsible}>
+      <Collapsible.Root lazyMount unmountOnExit>
         <Stack gap={4}>
           <ProfileBanner
             actions={
@@ -180,16 +178,8 @@ function CommunityPage() {
                 <Group bg="bg.panel" gap={2} p={1} rounded="md">
                   <Collapsible.Trigger asChild>
                     <IconButton
-                      aria-label={
-                        descriptionCollapsible.open
-                          ? 'Hide full community description'
-                          : 'Show full community description'
-                      }
-                      title={
-                        descriptionCollapsible.open
-                          ? 'Hide full community description'
-                          : 'Show full community description'
-                      }
+                      aria-label="Toggle full community description"
+                      title="Toggle full community description"
                       variant="ghost"
                     >
                       <Icon as={Info} strokeWidth={2.2} />
@@ -207,7 +197,7 @@ function CommunityPage() {
             meta={communityMeta}
           />
         </Stack>
-      </Collapsible.RootProvider>
+      </Collapsible.Root>
       <InfiniteDebugBanner
         pages={postsQuery.data?.pages?.length ?? 0}
         totalPosts={posts.length}
