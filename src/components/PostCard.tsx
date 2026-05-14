@@ -22,7 +22,9 @@ import AccountAvatar from '@/components/AccountAvatar'
 import PostActions, {
   type VoteFeedbackOrigin,
 } from '@/features/posts/PostActions'
+import { formatFullDateTime, formatRelativeTime } from '@/lib/i18n/relativeTime'
 import { m } from '@/paraglide/messages'
+import { getLocale } from '@/paraglide/runtime'
 
 export type PostCardProps = {
   title: string
@@ -298,6 +300,12 @@ export function PostHeadInfo({
   createdAt?: string
   community?: CommunityInfo | string
 } & StackProps) {
+  const locale = getLocale()
+  const relativeCreatedAt = createdAt
+    ? formatRelativeTime(createdAt, locale)
+    : undefined
+  const createdAtLabel = createdAt ? formatFullDateTime(createdAt, locale) : ''
+
   return (
     <HStack
       flex="1"
@@ -345,8 +353,7 @@ export function PostHeadInfo({
                     ·
                   </Text>
                 </Show>
-                <Text>{createdAt}</Text>
-                {/* TODO: display formated time ago instead of created at raw date. Use a library or method with good support for i18n */}
+                <Text title={createdAtLabel}>{relativeCreatedAt || createdAt}</Text>
               </>
             ) : null}
           </HStack>
