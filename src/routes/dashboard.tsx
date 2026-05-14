@@ -102,7 +102,6 @@ const CHART_SERIES = {
   posts: { color: 'blue.solid', label: 'Posts', key: 'posts' },
 } as const
 
-type TrendDirection = 'up' | 'down' | 'flat'
 type DashboardFocus = 'all' | 'rewards' | 'publishing' | 'account'
 
 const PAGE_MAX_WIDTH = '1240px'
@@ -198,7 +197,15 @@ function Dashboard() {
   const followingCount = profile?.followingCount ?? null
   const totalPosts = profile?.postCount ?? null
 
-  const statCards = [
+  const statCards: Array<{
+    category: Exclude<DashboardFocus, 'all'>
+    label: string
+    palette: string
+    icon: typeof Crown
+    value: string | null
+    suffix: string
+    description: string
+  }> = [
     {
       category: 'account',
       label: 'Hive Power',
@@ -209,7 +216,6 @@ function Dashboard() {
           ? formatTokenAmount(wallet.metrics.effectiveHivePower, 2)
           : null,
       suffix: ' HP',
-      trend: null,
       description:
         wallet?.metrics.delegatedHivePower != null
           ? `${formatTokenAmount(wallet.metrics.hivePower, 2)} owned · ${formatTokenAmount(wallet.metrics.delegatedHivePower, 2)} delegated out`
@@ -225,7 +231,6 @@ function Dashboard() {
           ? formatTokenAmount(wallet.metrics.savingsHbd, 3)
           : null,
       suffix: ' HBD',
-      trend: null,
       description:
         wallet?.metrics.hbdInterestRate != null
           ? `${formatPercent(wallet.metrics.hbdInterestRate / 100, 1)} APR on savings`
@@ -241,7 +246,6 @@ function Dashboard() {
           ? formatTokenAmount(overview.summary.totalRewards, 2)
           : null,
       suffix: ' HBD',
-      trend: overview?.summary.totalRewardsChange ?? null,
       description: `${rangeToDescription(range)} across author, curation, and interest income`,
     },
     {
@@ -254,7 +258,6 @@ function Dashboard() {
           ? formatTokenAmount(wallet.metrics.votingManaPercent, 1)
           : null,
       suffix: '%',
-      trend: null,
       description:
         wallet?.metrics.downvoteManaPercent != null
           ? `${formatTokenAmount(wallet.metrics.downvoteManaPercent, 1)}% downvote mana available`
@@ -267,7 +270,6 @@ function Dashboard() {
       icon: WalletCards,
       value: totalPosts != null ? String(totalPosts) : null,
       suffix: '',
-      trend: null,
       description:
         overview?.summary.publishedPosts != null
           ? `${overview.summary.publishedPosts} published in ${rangeToDescription(range)}`
@@ -280,7 +282,6 @@ function Dashboard() {
       icon: UserRound,
       value: followerCount != null ? formatInteger(followerCount) : null,
       suffix: '',
-      trend: null,
       description:
         followingCount != null
           ? `Following ${formatInteger(followingCount)} accounts`
@@ -296,7 +297,6 @@ function Dashboard() {
           ? formatTokenAmount(overview.summary.averagePostReward, 2)
           : null,
       suffix: ' HBD',
-      trend: overview?.summary.averagePostRewardChange ?? null,
       description: `Average total payout per post in ${rangeToDescription(range)}`,
     },
     {
@@ -308,7 +308,6 @@ function Dashboard() {
         ? formatAccountAge(wallet.account.created)
         : null,
       suffix: '',
-      trend: null,
       description: wallet?.account.created
         ? `Member since ${new Date(wallet.account.created).toLocaleDateString(
             undefined,
@@ -322,7 +321,7 @@ function Dashboard() {
   ]
 
   return (
-    <Stack gap={3} p={{ base: 3, md: 4 }} mx="auto" maxW={PAGE_MAX_WIDTH}>
+    <Stack gap={3} px={{ base: 3, md: 4 }} pt={3} pb="20vh" mx="auto" maxW={PAGE_MAX_WIDTH}>
       <Stack p={{ base: 4, md: 5 }} gap={3}>
         <HStack justify="space-between" align="start" wrap="wrap" gap={4}>
           <Stack gap={2}>
@@ -416,7 +415,6 @@ function Dashboard() {
               value={card.value}
               suffix={card.suffix}
               description={card.description}
-              trend={card.trend}
               isLoading={
                 dashboardQuery.isLoading ||
                 walletQuery.isLoading ||
@@ -662,20 +660,6 @@ function Dashboard() {
           </Card.Root>
         ) : null}
       </SimpleGrid>
-
-      <HStack
-        justify="space-between"
-        wrap="wrap"
-        color="fg.muted"
-        fontSize="sm"
-      >
-        <Text>Hive dashboard · data via public Hive APIs</Text>
-        <Text fontFamily="mono">
-          {dashboardQuery.isRefreshing || walletQuery.isFetching
-            ? 'sync status: refreshing'
-            : 'sync status: idle'}
-        </Text>
-      </HStack>
     </Stack>
   )
 }
@@ -687,7 +671,6 @@ function MetricCard({
   description,
   palette,
   icon,
-  trend,
   isLoading,
 }: {
   label: string
@@ -696,7 +679,6 @@ function MetricCard({
   description: string
   palette: string
   icon: typeof Crown
-  trend: number | null
   isLoading: boolean
 }) {
   return (
@@ -749,21 +731,6 @@ function MetricCard({
         </Stat.Root>
       </Card.Body>
     </Card.Root>
-  )
-}
-
-function TrendBadge({ change }: { change: number }) {
-  const direction: TrendDirection =
-    change > 0 ? 'up' : change < 0 ? 'down' : 'flat'
-  const palette =
-    direction === 'up' ? 'green' : direction === 'down' ? 'red' : 'gray'
-  const prefix = direction === 'down' ? '' : '+'
-
-  return (
-    <Badge colorPalette={palette} variant="subtle" borderRadius="full">
-      {prefix}
-      {formatPercent(change, 1)}
-    </Badge>
   )
 }
 

@@ -1,5 +1,4 @@
 import {
-  Box,
   Combobox,
   Portal,
   Stack,

@@ -31,6 +31,7 @@ import {
   SidebarOpenIcon,
   SquarePen,
   User,
+  UserIcon,
   Users,
   Wallet,
 } from 'lucide-react'
@@ -156,7 +157,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
             to: '/communities',
             icon: Users,
           },
-          { label: m.app_shell_nav_users(), to: '/users', icon: Users },
+          { label: m.app_shell_nav_users(), to: '/users', icon: UserIcon },
           {
             label: m.app_shell_nav_engagement(),
             to: '/engagement',

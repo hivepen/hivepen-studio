@@ -5,9 +5,8 @@ import {
   HStack,
   Text,
 } from '@chakra-ui/react'
-import { Edit2Icon, EditIcon, SparkleIcon } from 'lucide-react'
-import type {
-  JsxStyleProps} from '@chakra-ui/react';
+import { SparkleIcon } from 'lucide-react'
+import type { JsxStyleProps } from '@chakra-ui/react'
 
 export default function AppHeader({
   title,

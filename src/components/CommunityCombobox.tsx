@@ -48,7 +48,7 @@ export default function CommunityCombobox({
   const { snapshot: cachedCommunities, refresh: refreshCachedCommunities } =
     useDiscoverySnapshot('communities', trimmedQuery, trimmedQuery ? 12 : 8)
 
-  const { collection, set } = useListCollection({
+  const { collection, set } = useListCollection<CommunityOption>({
     initialItems: [],
     itemToString: (item) => item.label,
     itemToValue: (item) => item.value,
@@ -176,7 +176,7 @@ export default function CommunityCombobox({
       onValueChange={(details) => {
         const selectedValue = details.value[0]
         const nextItem =
-          collection.items.find((item) => item.value === selectedValue) ??
+          details.items[0] ??
           (selectedValue
             ? {
                 label: selectedValue,
@@ -187,12 +187,10 @@ export default function CommunityCombobox({
 
         userTypingRef.current = false
         setSelectedItem(nextItem)
-        if (nextItem) {
-          discoveryCache.recordSelection('communities', nextItem.community)
-          refreshCachedCommunities()
-          setQuery(nextItem.label)
-        }
-        const nextValue = selectedValue ?? ''
+        discoveryCache.recordSelection('communities', nextItem.community)
+        refreshCachedCommunities()
+        setQuery(nextItem.label)
+        const nextValue = selectedValue
         if (nextValue !== value) {
           onChange(nextValue)
         }
@@ -251,7 +249,7 @@ export default function CommunityCombobox({
                 {m.community_none_found()}
               </Text>
             </Combobox.Empty>
-            {(collection?.items ?? []).map((item) => (
+            {collection.items.map((item) => (
               <Combobox.Item key={item.value} item={item}>
                 <Combobox.ItemText>
                   <HStack gap={3} align="center">
@@ -263,7 +261,7 @@ export default function CommunityCombobox({
                     <Box>
                       <Text fontWeight="600">{item.label}</Text>
                       {item.description && (
-                        <Text fontSize="xs" color="fg.muted" noOfLines={1}>
+                        <Text fontSize="xs" color="fg.muted" lineClamp={1}>
                           {item.description}
                         </Text>
                       )}
