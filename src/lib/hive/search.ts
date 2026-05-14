@@ -20,6 +20,8 @@ export type PostSearchResult = {
     pending: string
     total: string
   }
+  authorPayout?: string
+  curatorPayout?: string
   voteDetails?: Array<VoteDetail>
 }
 

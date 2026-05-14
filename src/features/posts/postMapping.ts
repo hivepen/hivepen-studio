@@ -1,9 +1,9 @@
 import {
+  resolveApp,
+  resolveCoverImageUrl,
+  resolveImages,
   resolveMetadata,
   resolveTags,
-  resolveApp,
-  resolveImages,
-  resolveCoverImageUrl,
 } from './postMetadataUtils'
 import type { Entry } from '@ecency/sdk'
 import type { PostSearchResult } from '@/lib/hive/search'
@@ -56,6 +56,8 @@ export const mapEntryToSearchResult = (entry: Entry): PostSearchResult => {
     images,
     app,
     payout,
+    authorPayout,
+    curatorPayout,
     voteDetails: Array.isArray(entry.active_votes)
       ? extractVoteDetails({ active_votes: entry.active_votes })
       : undefined,

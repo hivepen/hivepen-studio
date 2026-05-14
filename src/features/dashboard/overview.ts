@@ -1,0 +1,642 @@
+import { getAccountPosts } from '@ecency/sdk'
+import type { PostSearchResult } from '@/lib/hive/search'
+import type {
+  DashboardBreakdownItem,
+  DashboardBucket,
+  DashboardBucketUnit,
+  DashboardChartKind,
+  DashboardHistoricalOverview,
+  DashboardHistoricalSnapshot,
+  DashboardRange,
+  DashboardTopPost,
+} from './types'
+import type { HiveDynamicGlobalProperties } from '@/lib/hive/wallet'
+import { mapEntryToSearchResult } from '@/features/posts/postMapping'
+import { hiveClient } from '@/lib/hive/client'
+import { parseAssetAmount } from '@/lib/hive/payouts'
+import { vestsToHivePower } from '@/lib/hive/wallet'
+
+const DASHBOARD_STORAGE_KEY = 'hivepen.dashboard.overview.v1'
+export const DASHBOARD_TTL_MS = 15 * 60 * 1000
+
+const POSTS_PAGE_SIZE = 20
+const POSTS_MAX_PAGES = 40
+const HISTORY_PAGE_SIZE = 100
+const HISTORY_MAX_PAGES = 30
+
+type RewardHistoryOperation =
+  | {
+      type: 'curation_reward'
+      timestamp: string
+      reward: string
+    }
+  | {
+      type: 'interest'
+      timestamp: string
+      interest: string
+    }
+
+const RANGE_BUCKET_CONFIG: Record<
+  DashboardRange,
+  { bucketCount: number; bucketUnit: DashboardBucketUnit }
+> = {
+  '1M': { bucketCount: 4, bucketUnit: 'week' },
+  '3M': { bucketCount: 12, bucketUnit: 'week' },
+  '6M': { bucketCount: 6, bucketUnit: 'month' },
+  '1Y': { bucketCount: 12, bucketUnit: 'month' },
+}
+
+const normalizeUsername = (value: string) =>
+  value.trim().replace(/^@/, '').toLowerCase()
+
+const getStorage = () => {
+  if (typeof window === 'undefined') return null
+  return window.localStorage
+}
+
+const startOfUtcDay = (value: Date) =>
+  new Date(
+    Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate()),
+  )
+
+const addUtcDays = (value: Date, days: number) =>
+  new Date(value.getTime() + days * 24 * 60 * 60 * 1000)
+
+const startOfUtcMonth = (value: Date) =>
+  new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), 1))
+
+const addUtcMonths = (value: Date, months: number) =>
+  new Date(Date.UTC(value.getUTCFullYear(), value.getUTCMonth() + months, 1))
+
+const formatWeeklyLabel = (value: Date) =>
+  value.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })
+
+const formatMonthlyShortLabel = (value: Date) =>
+  value.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' })
+
+const formatMonthlyLongLabel = (value: Date) =>
+  value.toLocaleDateString(undefined, {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+
+const formatWeeklyLongLabel = (startAt: Date, endAt: Date) => {
+  const inclusiveEnd = addUtcDays(endAt, -1)
+  return `${startAt.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })} - ${inclusiveEnd.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  })}`
+}
+
+export const buildBuckets = (
+  range: DashboardRange,
+  now = new Date(),
+): Array<DashboardBucket> => {
+  const config = RANGE_BUCKET_CONFIG[range]
+
+  if (config.bucketUnit === 'week') {
+    const periodEnd = addUtcDays(startOfUtcDay(now), 1)
+    const buckets: Array<DashboardBucket> = []
+
+    for (let index = config.bucketCount - 1; index >= 0; index -= 1) {
+      const endAt = addUtcDays(periodEnd, -(index * 7))
+      const startAt = addUtcDays(endAt, -7)
+      buckets.push({
+        key: startAt.toISOString(),
+        shortLabel: formatWeeklyLabel(startAt),
+        longLabel: formatWeeklyLongLabel(startAt, endAt),
+        startAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
+        authorRewards: 0,
+        curationRewards: 0,
+        savingsInterest: 0,
+        totalRewards: 0,
+        posts: 0,
+        votes: 0,
+        comments: 0,
+      })
+    }
+
+    return buckets
+  }
+
+  const periodEnd = addUtcMonths(startOfUtcMonth(now), 1)
+  const buckets: Array<DashboardBucket> = []
+
+  for (let index = config.bucketCount - 1; index >= 0; index -= 1) {
+    const startAt = addUtcMonths(periodEnd, -(index + 1))
+    const endAt = addUtcMonths(startAt, 1)
+    buckets.push({
+      key: startAt.toISOString(),
+      shortLabel: formatMonthlyShortLabel(startAt),
+      longLabel: formatMonthlyLongLabel(startAt),
+      startAt: startAt.toISOString(),
+      endAt: endAt.toISOString(),
+      authorRewards: 0,
+      curationRewards: 0,
+      savingsInterest: 0,
+      totalRewards: 0,
+      posts: 0,
+      votes: 0,
+      comments: 0,
+    })
+  }
+
+  return buckets
+}
+
+export const getExtendedStart = (range: DashboardRange, now = new Date()) => {
+  const currentBuckets = buildBuckets(range, now)
+  const currentStart = new Date(currentBuckets[0]?.startAt ?? now.toISOString())
+  const { bucketCount, bucketUnit } = RANGE_BUCKET_CONFIG[range]
+
+  return bucketUnit === 'week'
+    ? addUtcDays(currentStart, -(bucketCount * 7))
+    : addUtcMonths(currentStart, -bucketCount)
+}
+
+const readSnapshots = () => {
+  const storage = getStorage()
+  if (!storage) return {}
+
+  try {
+    const raw = storage.getItem(DASHBOARD_STORAGE_KEY)
+    if (!raw) return {}
+    return JSON.parse(raw) as Partial<Record<string, DashboardHistoricalSnapshot>>
+  } catch {
+    return {}
+  }
+}
+
+const writeSnapshots = (
+  snapshots: Partial<Record<string, DashboardHistoricalSnapshot>>,
+) => {
+  const storage = getStorage()
+  if (!storage) return
+  storage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(snapshots))
+}
+
+const toSnapshotKey = (username: string, range: DashboardRange) =>
+  `${normalizeUsername(username)}:${range}`
+
+export const readDashboardSnapshot = (
+  username: string,
+  range: DashboardRange,
+) => {
+  const snapshot = readSnapshots()[toSnapshotKey(username, range)]
+  if (!snapshot) return null
+  if (snapshot.expiresAt <= Date.now()) return null
+  return snapshot
+}
+
+export const writeDashboardSnapshot = (
+  username: string,
+  data: DashboardHistoricalOverview,
+) => {
+  const snapshots = readSnapshots()
+  snapshots[toSnapshotKey(username, data.range)] = {
+    ...data,
+    username: normalizeUsername(username),
+    expiresAt: data.cachedAt + DASHBOARD_TTL_MS,
+  }
+  writeSnapshots(snapshots)
+}
+
+const getBucketForDate = (
+  buckets: Array<DashboardBucket>,
+  value: Date,
+): DashboardBucket | null => {
+  const timestamp = value.getTime()
+  for (const bucket of buckets) {
+    const startAt = new Date(bucket.startAt).getTime()
+    const endAt = new Date(bucket.endAt).getTime()
+    if (timestamp >= startAt && timestamp < endAt) {
+      return bucket
+    }
+  }
+  return null
+}
+
+const toFiniteNumber = (value: number | null | undefined) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : 0
+
+const toPercentChange = (current: number, previous: number) => {
+  if (previous <= 0) return current > 0 ? 1 : null
+  return (current - previous) / previous
+}
+
+const convertAssetToHbdEquivalent = (
+  assetText: string | undefined,
+  properties: Pick<
+    HiveDynamicGlobalProperties,
+    'total_vesting_fund_hive' | 'total_vesting_shares'
+  >,
+  hivePriceHbd: number,
+) => {
+  const asset = parseAssetAmount(assetText ?? '')
+  if (!asset) return 0
+  if (asset.symbol === 'HBD') return asset.amount
+  if (asset.symbol === 'HIVE') return asset.amount * hivePriceHbd
+  if (asset.symbol === 'VESTS') {
+    return vestsToHivePower(assetText, properties) * hivePriceHbd
+  }
+  return 0
+}
+
+const getPostTotalReward = (
+  post: PostSearchResult,
+  properties: Pick<
+    HiveDynamicGlobalProperties,
+    'total_vesting_fund_hive' | 'total_vesting_shares'
+  >,
+  hivePriceHbd: number,
+) =>
+  convertAssetToHbdEquivalent(
+    post.payout?.total || post.payout?.pending,
+    properties,
+    hivePriceHbd,
+  )
+
+const getPostAuthorReward = (
+  post: PostSearchResult,
+  properties: Pick<
+    HiveDynamicGlobalProperties,
+    'total_vesting_fund_hive' | 'total_vesting_shares'
+  >,
+  hivePriceHbd: number,
+) =>
+  convertAssetToHbdEquivalent(post.authorPayout, properties, hivePriceHbd)
+
+export const selectHistoricalChartKind = (
+  buckets: Array<DashboardBucket>,
+  valueKey: 'totalRewards' | 'votes',
+  bucketUnit: DashboardBucketUnit,
+): DashboardChartKind => {
+  const nonZeroPoints = buckets.filter(
+    (bucket) => toFiniteNumber(bucket[valueKey]) > 0,
+  ).length
+
+  if (bucketUnit === 'week' && nonZeroPoints <= 3) {
+    return 'bar'
+  }
+
+  return 'line'
+}
+
+const fetchDashboardPosts = async (username: string, range: DashboardRange) => {
+  const normalized = normalizeUsername(username)
+  const trackedStart = getExtendedStart(range)
+  const collected = new Map<string, PostSearchResult>()
+  let startAuthor: string | undefined
+  let startPermlink: string | undefined
+
+  for (let page = 0; page < POSTS_MAX_PAGES; page += 1) {
+    const entries =
+      (await getAccountPosts(
+        'posts',
+        normalized,
+        startAuthor,
+        startPermlink,
+        POSTS_PAGE_SIZE,
+      )) ?? []
+
+    if (entries.length === 0) break
+
+    for (const entry of entries) {
+      const mapped = mapEntryToSearchResult(entry)
+      collected.set(`${mapped.author}/${mapped.permlink}`, mapped)
+    }
+
+    const lastEntry = entries[entries.length - 1]
+
+    const oldestCreated = new Date(lastEntry.created)
+    if (Number.isNaN(oldestCreated.getTime()) || oldestCreated < trackedStart) {
+      break
+    }
+
+    if (entries.length < POSTS_PAGE_SIZE) break
+
+    startAuthor = lastEntry.author
+    startPermlink = lastEntry.permlink
+  }
+
+  return Array.from(collected.values())
+}
+
+const fetchRewardHistory = async (username: string, range: DashboardRange) => {
+  const normalized = normalizeUsername(username)
+  const trackedStart = getExtendedStart(range)
+  const operations: Array<RewardHistoryOperation> = []
+  let from = -1
+
+  for (let page = 0; page < HISTORY_MAX_PAGES; page += 1) {
+    const history = (await hiveClient.call('condenser_api', 'get_account_history', [
+      normalized,
+      from,
+      HISTORY_PAGE_SIZE,
+    ])) as Array<
+      [
+        number,
+        {
+          timestamp: string
+          op: [string, Record<string, unknown>]
+        },
+      ]
+    >
+
+    if (history.length === 0) break
+
+    for (let index = history.length - 1; index >= 0; index -= 1) {
+      const [, item] = history[index]
+      const [type, payload] = item.op
+      const timestamp = new Date(item.timestamp)
+      if (Number.isNaN(timestamp.getTime())) continue
+
+      if (timestamp < trackedStart) {
+        return operations
+      }
+
+      if (type === 'curation_reward' && typeof payload.reward === 'string') {
+        operations.push({
+          type: 'curation_reward',
+          timestamp: item.timestamp,
+          reward: payload.reward,
+        })
+      }
+
+      if (type === 'interest' && typeof payload.interest === 'string') {
+        operations.push({
+          type: 'interest',
+          timestamp: item.timestamp,
+          interest: payload.interest,
+        })
+      }
+    }
+
+    const [oldestIndex] = history[0]
+    if (oldestIndex <= 0) break
+    from = oldestIndex - 1
+  }
+
+  return operations
+}
+
+const fetchDynamicProperties = async () => {
+  const properties = (await hiveClient.call(
+    'condenser_api',
+    'get_dynamic_global_properties',
+    [],
+  )) as HiveDynamicGlobalProperties
+
+  const medianPrice = (await hiveClient.call(
+    'condenser_api',
+    'get_current_median_history_price',
+    [],
+  )) as { base?: string; quote?: string }
+
+  const base = parseAssetAmount(medianPrice.base ?? '')
+  const quote = parseAssetAmount(medianPrice.quote ?? '')
+  const hivePriceHbd =
+    base?.symbol === 'HBD' && quote?.symbol === 'HIVE' && quote.amount > 0
+      ? base.amount / quote.amount
+      : 0
+
+  return { properties, hivePriceHbd }
+}
+
+export const aggregateDashboardOverview = ({
+  posts,
+  range,
+  rewardHistory,
+  properties,
+  hivePriceHbd,
+  now = new Date(),
+}: {
+  posts: Array<PostSearchResult>
+  range: DashboardRange
+  rewardHistory: Array<RewardHistoryOperation>
+  properties: Pick<
+    HiveDynamicGlobalProperties,
+    'total_vesting_fund_hive' | 'total_vesting_shares'
+  >
+  hivePriceHbd: number
+  now?: Date
+}): DashboardHistoricalOverview => {
+  const buckets = buildBuckets(range, now)
+  const currentStart = new Date(buckets[0]?.startAt ?? now.toISOString())
+  const previousStart = getExtendedStart(range, now)
+
+  let currentPostRewardTotal = 0
+  let previousPostRewardTotal = 0
+  let previousPublishedPosts = 0
+  let previousAuthorRewards = 0
+  let previousCurationRewards = 0
+  let previousSavingsInterest = 0
+
+  const topPosts: Array<DashboardTopPost> = []
+
+  for (const post of posts) {
+    const createdAt = new Date(post.created)
+    if (Number.isNaN(createdAt.getTime()) || createdAt < previousStart) {
+      continue
+    }
+
+    const authorReward = getPostAuthorReward(post, properties, hivePriceHbd)
+    const totalReward = getPostTotalReward(post, properties, hivePriceHbd)
+
+    if (createdAt >= currentStart) {
+      const bucket = getBucketForDate(buckets, createdAt)
+      if (!bucket) continue
+
+      bucket.authorRewards += authorReward
+      bucket.totalRewards += authorReward
+      bucket.posts += 1
+      bucket.votes += post.votes ?? 0
+      bucket.comments += post.comments ?? 0
+
+      currentPostRewardTotal += totalReward
+
+      topPosts.push({
+        id: `${post.author}/${post.permlink}`,
+        author: post.author,
+        permlink: post.permlink,
+        title: post.title,
+        created: post.created,
+        totalReward,
+        authorReward,
+        votes: post.votes ?? 0,
+        comments: post.comments ?? 0,
+        primaryTag: post.tags[0],
+      })
+    } else {
+      previousAuthorRewards += authorReward
+      previousPostRewardTotal += totalReward
+      previousPublishedPosts += 1
+    }
+  }
+
+  for (const operation of rewardHistory) {
+    const timestamp = new Date(operation.timestamp)
+    if (Number.isNaN(timestamp.getTime()) || timestamp < previousStart) {
+      continue
+    }
+
+    const amount =
+      operation.type === 'curation_reward'
+        ? convertAssetToHbdEquivalent(
+            operation.reward,
+            properties,
+            hivePriceHbd,
+          )
+        : convertAssetToHbdEquivalent(
+            operation.interest,
+            properties,
+            hivePriceHbd,
+          )
+
+    if (timestamp >= currentStart) {
+      const bucket = getBucketForDate(buckets, timestamp)
+      if (!bucket) continue
+
+      if (operation.type === 'curation_reward') {
+        bucket.curationRewards += amount
+      } else {
+        bucket.savingsInterest += amount
+      }
+      bucket.totalRewards += amount
+    } else if (operation.type === 'curation_reward') {
+      previousCurationRewards += amount
+    } else {
+      previousSavingsInterest += amount
+    }
+  }
+
+  const totalAuthorRewards = buckets.reduce(
+    (total, bucket) => total + bucket.authorRewards,
+    0,
+  )
+  const totalCurationRewards = buckets.reduce(
+    (total, bucket) => total + bucket.curationRewards,
+    0,
+  )
+  const totalSavingsInterest = buckets.reduce(
+    (total, bucket) => total + bucket.savingsInterest,
+    0,
+  )
+  const totalRewards = buckets.reduce(
+    (total, bucket) => total + bucket.totalRewards,
+    0,
+  )
+  const publishedPosts = buckets.reduce(
+    (total, bucket) => total + bucket.posts,
+    0,
+  )
+  const averagePostReward =
+    publishedPosts > 0 ? currentPostRewardTotal / publishedPosts : 0
+  const previousTotalRewards =
+    previousAuthorRewards + previousCurationRewards + previousSavingsInterest
+  const previousAveragePostReward =
+    previousPublishedPosts > 0
+      ? previousPostRewardTotal / previousPublishedPosts
+      : 0
+
+  const breakdownBase = totalRewards > 0 ? totalRewards : 1
+  const breakdownItems: Array<DashboardBreakdownItem> = [
+    {
+      id: 'author',
+      label: 'Author rewards',
+      value: totalAuthorRewards,
+      share: totalAuthorRewards / breakdownBase,
+      colorToken: 'green.solid',
+    },
+    {
+      id: 'curation',
+      label: 'Curation rewards',
+      value: totalCurationRewards,
+      share: totalCurationRewards / breakdownBase,
+      colorToken: 'purple.solid',
+    },
+    {
+      id: 'interest',
+      label: 'Savings interest',
+      value: totalSavingsInterest,
+      share: totalSavingsInterest / breakdownBase,
+      colorToken: 'yellow.solid',
+    },
+  ]
+  const breakdown = breakdownItems.filter(
+    (item) => item.value > 0 || totalRewards === 0,
+  )
+
+  return {
+    range,
+    bucketUnit: RANGE_BUCKET_CONFIG[range].bucketUnit,
+    rewardIncomeChartKind: selectHistoricalChartKind(
+      buckets,
+      'totalRewards',
+      RANGE_BUCKET_CONFIG[range].bucketUnit,
+    ),
+    rewardTrendChartKind: selectHistoricalChartKind(
+      buckets,
+      'totalRewards',
+      RANGE_BUCKET_CONFIG[range].bucketUnit,
+    ),
+    engagementChartKind: selectHistoricalChartKind(
+      buckets,
+      'votes',
+      RANGE_BUCKET_CONFIG[range].bucketUnit,
+    ),
+    buckets,
+    breakdown,
+    summary: {
+      totalRewards,
+      totalRewardsChange: toPercentChange(totalRewards, previousTotalRewards),
+      averagePostReward,
+      averagePostRewardChange: toPercentChange(
+        averagePostReward,
+        previousAveragePostReward,
+      ),
+      publishedPosts,
+    },
+    topPosts: topPosts
+      .sort((left, right) => right.totalReward - left.totalReward)
+      .slice(0, 5),
+    cachedAt: now.getTime(),
+  }
+}
+
+export async function fetchDashboardOverview(
+  username: string,
+  range: DashboardRange,
+  now = new Date(),
+): Promise<DashboardHistoricalOverview> {
+  const normalized = normalizeUsername(username)
+  if (!normalized) {
+    throw new Error('A Hive account name is required')
+  }
+
+  const [posts, rewardHistory, chainState] = await Promise.all([
+    fetchDashboardPosts(normalized, range),
+    fetchRewardHistory(normalized, range),
+    fetchDynamicProperties(),
+  ])
+
+  return aggregateDashboardOverview({
+    posts,
+    range,
+    rewardHistory,
+    properties: chainState.properties,
+    hivePriceHbd: chainState.hivePriceHbd,
+    now,
+  })
+}
