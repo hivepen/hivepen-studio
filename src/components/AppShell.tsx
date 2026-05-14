@@ -14,7 +14,6 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import {
-  BarChart3,
   Bell,
   BookOpen,
   ChevronRightIcon,
@@ -142,11 +141,6 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
             icon: NotebookText,
           },
           {
-            label: m.app_shell_nav_analytics(),
-            to: '/analytics',
-            icon: BarChart3,
-          },
-          {
             label: m.app_shell_nav_dashboard(),
             to: '/dashboard',
             icon: LayoutDashboard,
@@ -271,7 +265,6 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
       communities: m.breadcrumb_communities(),
       users: m.breadcrumb_users(),
       engagement: m.breadcrumb_engagement(),
-      analytics: m.breadcrumb_analytics(),
       settings: m.breadcrumb_settings(),
       wallet: m.profile_wallet_button(),
     }

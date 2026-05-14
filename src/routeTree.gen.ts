@@ -18,7 +18,6 @@ import { Route as DraftsRouteImport } from './routes/drafts'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CommunitiesRouteImport } from './routes/communities'
 import { Route as BlogRouteImport } from './routes/blog'
-import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CommunitiesIndexRouteImport } from './routes/communities.index'
 import { Route as AccountnameIndexRouteImport } from './routes/$accountname.index'
@@ -74,11 +73,6 @@ const CommunitiesRoute = CommunitiesRouteImport.update({
 const BlogRoute = BlogRouteImport.update({
   id: '/blog',
   path: '/blog',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyticsRoute = AnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -139,7 +133,6 @@ const AccountnameWalletHbdRoute = AccountnameWalletHbdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
   '/blog': typeof BlogRoute
   '/communities': typeof CommunitiesRouteWithChildren
   '/dashboard': typeof DashboardRoute
@@ -162,7 +155,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
   '/blog': typeof BlogRoute
   '/dashboard': typeof DashboardRoute
   '/drafts': typeof DraftsRoute
@@ -184,7 +176,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/analytics': typeof AnalyticsRoute
   '/blog': typeof BlogRoute
   '/communities': typeof CommunitiesRouteWithChildren
   '/dashboard': typeof DashboardRoute
@@ -209,7 +200,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/analytics'
     | '/blog'
     | '/communities'
     | '/dashboard'
@@ -232,7 +222,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/analytics'
     | '/blog'
     | '/dashboard'
     | '/drafts'
@@ -253,7 +242,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/analytics'
     | '/blog'
     | '/communities'
     | '/dashboard'
@@ -277,7 +265,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AnalyticsRoute: typeof AnalyticsRoute
   BlogRoute: typeof BlogRoute
   CommunitiesRoute: typeof CommunitiesRouteWithChildren
   DashboardRoute: typeof DashboardRoute
@@ -356,13 +343,6 @@ declare module '@tanstack/react-router' {
       path: '/blog'
       fullPath: '/blog'
       preLoaderRoute: typeof BlogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analytics': {
-      id: '/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -478,7 +458,6 @@ const AccountnameWalletRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AnalyticsRoute: AnalyticsRoute,
   BlogRoute: BlogRoute,
   CommunitiesRoute: CommunitiesRouteWithChildren,
   DashboardRoute: DashboardRoute,
