@@ -42,7 +42,7 @@ export default function useInfinitePostsQuery(params: PostsQueryParams) {
           author,
           'posts',
           pageSize,
-          observer,
+          undefined,
           enabled,
         )
       : getPostsRankedInfiniteQueryOptions(

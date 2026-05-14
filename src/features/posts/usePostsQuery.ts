@@ -62,7 +62,7 @@ export default function usePostsQuery(params: PostsQueryParams) {
           undefined,
           undefined,
           pageSize,
-          observer,
+          undefined,
           enabled,
         ) as object)
       : (getPostsRankedQueryOptions(
