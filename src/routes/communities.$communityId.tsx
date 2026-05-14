@@ -4,11 +4,15 @@ import {
   Box,
   Button,
   Collapsible,
+  Group,
   HStack,
+  Icon,
+  IconButton,
   Stack,
   Text,
   useCollapsible,
 } from '@chakra-ui/react'
+import { Info } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 import type { AccountProfile } from '@/features/profile/profileTypes'
 import type { PostSearchResult } from '@/lib/hive/search'
@@ -147,19 +151,22 @@ function CommunityPage() {
             {m.community_nsfw()}
           </Badge>
         ) : null}
-        {hasLongDescription ? (
-          <Collapsible.Trigger
-            alignSelf="flex-start"
-            colorPalette="gray"
-            variant="ghost"
-            size="sm"
-          >
-            {descriptionCollapsible.open
-              ? 'Hide full description'
-              : 'See full description'}
-          </Collapsible.Trigger>
-        ) : null}
       </HStack>
+      {hasLongDescription ? (
+        <Collapsible.Content>
+          <Box
+            border="1px solid"
+            borderColor="border"
+            borderRadius="16px"
+            bg="bg.subtle"
+            p={{ base: 3, md: 4 }}
+          >
+            <Text color="fg.muted" whiteSpace="pre-wrap">
+              {communityLongDescription}
+            </Text>
+          </Box>
+        </Collapsible.Content>
+      ) : null}
     </Stack>
   )
 
@@ -168,6 +175,29 @@ function CommunityPage() {
       <Collapsible.RootProvider value={descriptionCollapsible}>
         <Stack gap={4}>
           <ProfileBanner
+            actions={
+              hasLongDescription ? (
+                <Group bg="bg.panel" gap={2} p={1} rounded="md">
+                  <Collapsible.Trigger asChild>
+                    <IconButton
+                      aria-label={
+                        descriptionCollapsible.open
+                          ? 'Hide full community description'
+                          : 'Show full community description'
+                      }
+                      title={
+                        descriptionCollapsible.open
+                          ? 'Hide full community description'
+                          : 'Show full community description'
+                      }
+                      variant="ghost"
+                    >
+                      <Icon as={Info} strokeWidth={2.2} />
+                    </IconButton>
+                  </Collapsible.Trigger>
+                </Group>
+              ) : null
+            }
             title={communityTitle}
             subtitle={`@${communityId}`}
             description={communityDescription}
@@ -176,21 +206,6 @@ function CommunityPage() {
             coverUrl={communityCoverImage}
             meta={communityMeta}
           />
-          {communityLongDescription ? (
-            <Collapsible.Content>
-              <Box
-                border="1px solid"
-                borderColor="border"
-                borderRadius="16px"
-                bg="bg.panel"
-                p={{ base: 4, md: 5 }}
-              >
-                <Text color="fg.muted" whiteSpace="pre-wrap">
-                  {communityLongDescription}
-                </Text>
-              </Box>
-            </Collapsible.Content>
-          ) : null}
         </Stack>
       </Collapsible.RootProvider>
       <InfiniteDebugBanner
