@@ -68,6 +68,8 @@ import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { formatFullDateTime, formatRelativeTime } from '@/lib/i18n/relativeTime'
 import { getLocale } from '@/paraglide/runtime'
 import { m } from '@/paraglide/messages'
+import { PostCardMedia } from '@/components/PostCard'
+import { getTitleMeta } from '@/lib/posts/titleMeta'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -314,24 +316,14 @@ function Dashboard() {
 
   return (
     <Stack gap={3} p={{ base: 3, md: 4 }} mx="auto" maxW={PAGE_MAX_WIDTH}>
-      <Card.Root
-        variant="outline"
-        bg="bg.panel"
-        borderRadius={SURFACE_RADIUS}
-        overflow="hidden"
-      >
-        <Card.Body p={{ base: 4, md: 5 }}>
-          <Stack gap={3}>
+     
+          <Stack p={{ base: 4, md: 5 }} gap={3}>
             <HStack justify="space-between" align="start" wrap="wrap" gap={4}>
               <Stack gap={2}>
                 <HStack
                   gap={3}
                   px={3}
                   py={2}
-                  border="1px solid"
-                  borderColor="border.muted"
-                  borderRadius="12px"
-                  bg="bg.subtle"
                   minW={{ md: '220px' }}
                 >
                   <Avatar
@@ -347,11 +339,6 @@ function Dashboard() {
                       @{account}
                     </Text>
                   </Stack>
-                  {dashboardQuery.isRefreshing || walletQuery.isFetching ? (
-                    <Badge colorPalette="blue" variant="subtle">
-                      Syncing
-                    </Badge>
-                  ) : null}
                 </HStack>
               </Stack>
 
@@ -405,8 +392,6 @@ function Dashboard() {
               ) : null}
             </HStack>
           </Stack>
-        </Card.Body>
-      </Card.Root>
 
       <SimpleGrid columns={{ base: 1, sm: 2, lg: 4, xl: 5 }} gap={2.5}>
         {statCards
@@ -528,7 +513,12 @@ function Dashboard() {
                           >
                             {index + 1}
                           </Box>
-                          <Stack gap={1} flex="1" minW={0}>
+                          <PostCardMedia
+              author={post.author}
+              coverUrl={post.coverUrl} //TODO: make sure the cover image url reaches here, and we use, extend or partially use existing type definitions instead of defining new ones for the top posts.
+              shortTitle={getTitleMeta(post.title).shortTitle}
+            />
+            <Stack gap={1} flex="1" minW={0}>
                             <Link
                               to="/post/$author/$permlink"
                               params={{
@@ -679,23 +669,9 @@ function MetricCard({
     >
       <Card.Body p={{ base: 4, md: 4.5 }}>
         <Stat.Root>
-          <Stack gap={2.5}>
-            <HStack justify="space-between" align="start">
-              <Box
-                boxSize="8"
-                borderRadius="9px"
-                bg="colorPalette.subtle"
-                color="colorPalette.fg"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <Icon as={icon} boxSize={4} />
-              </Box>
-              {trend !== null ? <TrendBadge change={trend} /> : <Box boxSize="6" />}
-            </HStack>
-
-            <Stack gap={1}>
+          <Stack gap={4}>
+            <HStack justify="space-between" align="center">
+            <Stack gap={4}>
               <Stat.Label color="fg.muted" fontSize="xs">
                 {label}
               </Stat.Label>
@@ -712,6 +688,20 @@ function MetricCard({
                 </Stat.ValueText>
               )}
             </Stack>
+              <Box
+                boxSize="8"
+                borderRadius="9px"
+                bg="colorPalette.subtle"
+                color="colorPalette.fg"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Icon as={icon} boxSize={4} />
+              </Box>
+              {/*REMOVE the trend badge support {trend !== null ? <TrendBadge change={trend} /> : <Box boxSize="6" />} */}
+            </HStack>
+
 
             <Text fontSize="xs" color="fg.muted" lineClamp={2}>
               {description}

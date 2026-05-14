@@ -411,7 +411,7 @@ export function PostHeadInfo({
   )
 }
 
-function PostCardMedia({
+export function PostCardMedia({
   author,
   coverUrl,
   shortTitle,
