@@ -70,6 +70,7 @@ import { getLocale } from '@/paraglide/runtime'
 import { m } from '@/paraglide/messages'
 import { PostCardMedia } from '@/components/PostCard'
 import { getTitleMeta } from '@/lib/posts/titleMeta'
+import { resolvePostCommunity } from '@/features/posts/postCardMapping'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -499,65 +500,85 @@ function Dashboard() {
                       />
                     ))
                   ) : overview?.topPosts.length ? (
-                    overview.topPosts.map((post, index) => (
-                      <HStack
-                        key={post.id}
-                        gap={3}
-                        align="start"
-                        py={2}
-                        borderBottom={
-                          index === overview.topPosts.length - 1
-                            ? 'none'
-                            : '1px solid'
-                        }
-                        borderColor="border.subtle"
-                      >
-                        <Box
-                          minW="24px"
-                          h="24px"
-                          borderRadius="8px"
-                          bg="bg.subtle"
-                          color="fg.muted"
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                          fontSize="xs"
-                          fontFamily="mono"
+                    overview.topPosts.map((post, index) => {
+                      const community = resolvePostCommunity(post)
+
+                      return (
+                        <HStack
+                          key={post.id}
+                          gap={3}
+                          align="start"
+                          py={2}
+                          borderBottom={
+                            index === overview.topPosts.length - 1
+                              ? 'none'
+                              : '1px solid'
+                          }
+                          borderColor="border.subtle"
                         >
-                          {index + 1}
-                        </Box>
-                        <PostCardMedia
-                          author={post.author}
-                          coverUrl={post.coverUrl}
-                          shortTitle={getTitleMeta(post.title).shortTitle}
-                        />
-                        <Stack gap={1} flex="1" minW={0}>
-                          <Link
-                            to="/post/$author/$permlink"
-                            params={{
-                              author: post.author,
-                              permlink: post.permlink,
-                            }}
+                          <Box
+                            minW="24px"
+                            h="24px"
+                            borderRadius="8px"
+                            bg="bg.subtle"
+                            color="fg.muted"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            fontSize="xs"
+                            fontFamily="mono"
                           >
-                            <Text fontWeight="600" lineClamp={1}>
-                              {post.title}
+                            {index + 1}
+                          </Box>
+                          <PostCardMedia
+                            author={post.author}
+                            coverUrl={post.coverUrl}
+                            shortTitle={getTitleMeta(post.title).shortTitle}
+                          />
+                          <Stack gap={1} flex="1" minW={0}>
+                            <Link
+                              to="/post/$author/$permlink"
+                              params={{
+                                author: post.author,
+                                permlink: post.permlink,
+                              }}
+                            >
+                              <Text fontWeight="600" lineClamp={1}>
+                                {post.title}
+                              </Text>
+                            </Link>
+                            <Text fontSize="sm" color="fg.muted" lineClamp={1}>
+                              {post.votes} votes · {post.comments} comments
+                              {community ? ' · on ' : ''}
+                              {community?.id ? (
+                                <Link
+                                  to="/communities/$communityId"
+                                  params={{ communityId: community.id }}
+                                >
+                                  <Text
+                                    as="span"
+                                    _hover={{ textDecoration: 'underline' }}
+                                  >
+                                    {community.label}
+                                  </Text>
+                                </Link>
+                              ) : community ? (
+                                community.label
+                              ) : null}
+                              {post.primaryTag ? ` · ${post.primaryTag}` : ''}
                             </Text>
-                          </Link>
-                          <Text fontSize="sm" color="fg.muted" lineClamp={1}>
-                            {post.votes} votes · {post.comments} comments
-                            {post.primaryTag ? ` · ${post.primaryTag}` : ''}
+                          </Stack>
+                          <Text
+                            color="green.fg"
+                            fontFamily="mono"
+                            fontSize="sm"
+                            whiteSpace="nowrap"
+                          >
+                            {formatTokenAmount(post.totalReward, 2)} HBD
                           </Text>
-                        </Stack>
-                        <Text
-                          color="green.fg"
-                          fontFamily="mono"
-                          fontSize="sm"
-                          whiteSpace="nowrap"
-                        >
-                          {formatTokenAmount(post.totalReward, 2)} HBD
-                        </Text>
-                      </HStack>
-                    ))
+                        </HStack>
+                      )
+                    })
                   ) : (
                     <EmptyStateMessage message="No rewarded posts were found for this period." />
                   )}

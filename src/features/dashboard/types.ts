@@ -31,7 +31,14 @@ export type DashboardBreakdownItem = {
 
 export type DashboardTopPost = Pick<
   PostSearchResult,
-  'author' | 'permlink' | 'title' | 'created' | 'coverUrl'
+  | 'author'
+  | 'permlink'
+  | 'title'
+  | 'created'
+  | 'coverUrl'
+  | 'communityId'
+  | 'communityTitle'
+  | 'communityInfo'
 > & {
   id: string
   totalReward: number
