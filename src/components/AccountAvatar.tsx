@@ -10,7 +10,9 @@ interface AccountAvatarProps extends AvatarProps {
 function AccountAvatar({ username, ...props }: AccountAvatarProps) {
   const src: AvatarProps['src'] = username ? hiveAvatarUrl(username) : undefined
 
-  return <Avatar src={src} name={username ?? undefined} {...props} />
+  return <Avatar src={src} name={username ?? undefined} {...props}
+  // style={{ viewTransitionName: `avatar-${username}` }}
+  />
 }
 
 function AuthAccountAvatar({ ...props }: AvatarProps) {
