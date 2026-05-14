@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react'
 
 import type { PostSearchResult } from '@/lib/hive/search'
 import PostsListSection from '@/features/posts/PostsListSection'
+import { mapSearchResultToPostCardProps } from '@/features/posts/postCardMapping'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import { useLocalStorageState } from '@/hooks/useLocalStorageState'
 import DevOnly from '@/components/DevOnly'
@@ -65,24 +66,7 @@ function MyBlogPage() {
       }
     })
 
-    return Array.from(unique.values()).map((post) => {
-      return {
-        title: post.title || m.post_untitled(),
-        author: post.author,
-        community: post.communityTitle ?? post.communityId,
-        communityId: post.communityId,
-        tags: post.tags,
-        summary: post.summary,
-        coverUrl: post.coverUrl,
-        app: post.app,
-        createdAt: new Date(post.created).toLocaleDateString(),
-        permlink: post.permlink,
-        votes: post.votes,
-        voteDetails: post.voteDetails,
-        comments: post.comments,
-        payout: post.payout,
-      }
-    })
+    return Array.from(unique.values()).map(mapSearchResultToPostCardProps)
   }, [postsQuery.data?.pages])
 
   if (!account) {

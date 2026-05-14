@@ -24,6 +24,7 @@ import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
 import ProfileBanner from '@/components/ProfileBanner'
 import PostsListSection from '@/features/posts/PostsListSection'
+import { mapSearchResultToPostCardProps } from '@/features/posts/postCardMapping'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import useProfileQuery from '@/features/profile/useProfileQuery'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
@@ -79,24 +80,7 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
       }
     })
 
-    return Array.from(unique.values()).map((post) => {
-      return {
-        app: post.app,
-        author: post.author,
-        comments: post.comments,
-        community: post.communityTitle ?? post.communityId,
-        communityId: post.communityId,
-        coverUrl: post.coverUrl,
-        createdAt: new Date(post.created).toLocaleDateString(),
-        payout: post.payout,
-        permlink: post.permlink,
-        summary: post.summary,
-        tags: post.tags,
-        title: post.title || m.post_untitled(),
-        votes: post.votes,
-        voteDetails: post.voteDetails,
-      }
-    })
+    return Array.from(unique.values()).map(mapSearchResultToPostCardProps)
   }, [postsQuery.data])
 
   const profileMeta = (

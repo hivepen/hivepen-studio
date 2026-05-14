@@ -14,6 +14,7 @@ import { renderHiveMarkdown } from '@/lib/posts/markdown'
 import { m } from '@/paraglide/messages'
 import { APP_CONFIG } from '@/lib/constants'
 import { PostHeadInfo } from '@/components/PostCard'
+import { resolvePostCommunity } from '@/features/posts/postCardMapping'
 
 export const Route = createFileRoute('/post/$author/$permlink')({
   component: PostDetailPage,
@@ -169,7 +170,7 @@ function PostDetailPage() {
         <PostHeadInfo
           author={author}
           createdAt={post.created}
-          community={post.communityTitle}
+          community={resolvePostCommunity(post)}
           style={{ viewTransitionName: `post-head-${permlink}` }}
         />
 

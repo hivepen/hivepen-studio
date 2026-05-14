@@ -29,8 +29,7 @@ import { getLocale } from '@/paraglide/runtime'
 export type PostCardProps = {
   title: string
   author: string
-  community?: string
-  communityId?: string
+  community?: PostCommunityRef
   summary?: string
   tags?: Array<string>
   createdAt?: string
@@ -44,6 +43,11 @@ export type PostCardProps = {
   voteDetails?: Array<VoteDetail>
   coverUrl?: string
   permlink?: string
+}
+
+export type PostCommunityRef = {
+  id?: string
+  label: string
 }
 
 export default function PostCard({
@@ -298,13 +302,22 @@ export function PostHeadInfo({
 }: {
   author: string
   createdAt?: string
-  community?: CommunityInfo | string
+  community?: CommunityInfo | PostCommunityRef
 } & StackProps) {
   const locale = getLocale()
   const relativeCreatedAt = createdAt
     ? formatRelativeTime(createdAt, locale)
     : undefined
   const createdAtLabel = createdAt ? formatFullDateTime(createdAt, locale) : ''
+  const communityRef =
+    community && 'label' in community
+      ? community
+      : community
+        ? {
+            id: community.id,
+            label: community.name ?? community.id,
+          }
+        : undefined
 
   return (
     <HStack
@@ -346,9 +359,20 @@ export function PostHeadInfo({
                     ·
                   </Text>
                 </Show>
-                <Show when={community}>
-                  <Text>on {community}</Text>
-                  {/* TODO: link to community. Needs communityId */}
+                <Show when={communityRef?.label}>
+                  {communityRef?.id ? (
+                    <Link
+                      to="/communities/$communityId"
+                      params={{ communityId: communityRef.id }}
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <Text as="span" _hover={{ textDecoration: 'underline' }}>
+                        on {communityRef.label}
+                      </Text>
+                    </Link>
+                  ) : (
+                    <Text>on {communityRef?.label}</Text>
+                  )}
                   <Text color="colorPalette.muted" fontWeight={900}>
                     ·
                   </Text>

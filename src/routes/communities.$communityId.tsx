@@ -19,6 +19,7 @@ import ProfileBanner from '@/components/ProfileBanner'
 import useCommunityQuery from '@/features/communities/useCommunityQuery'
 import useProfilesQuery from '@/features/profile/useProfilesQuery'
 import PostsListSection from '@/features/posts/PostsListSection'
+import { mapSearchResultToPostCardProps } from '@/features/posts/postCardMapping'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import DevOnly from '@/components/DevOnly'
 import InfiniteDebugBanner from '@/components/InfiniteDebugBanner'
@@ -78,24 +79,7 @@ function CommunityPage() {
       }
     })
 
-    return Array.from(unique.values()).map((post) => {
-      return {
-        title: post.title || m.post_untitled(),
-        author: post.author,
-        community: post.communityTitle ?? post.communityId,
-        communityId: post.communityId,
-        tags: post.tags,
-        summary: post.summary,
-        coverUrl: post.coverUrl,
-        app: post.app,
-        createdAt: new Date(post.created).toLocaleDateString(),
-        permlink: post.permlink,
-        votes: post.votes,
-        voteDetails: post.voteDetails,
-        comments: post.comments,
-        payout: post.payout,
-      }
-    })
+    return Array.from(unique.values()).map(mapSearchResultToPostCardProps)
   }, [postsQuery.data])
 
   const communityTitle = communityQuery.data?.title ?? communityId

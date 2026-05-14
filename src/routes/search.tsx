@@ -23,6 +23,7 @@ import { getLocale } from '@/paraglide/runtime'
 import CommunityCombobox from '@/components/CommunityCombobox'
 import AccountCombobox from '@/components/AccountCombobox'
 import PostsListSection from '@/features/posts/PostsListSection'
+import { mapSearchResultToPostCardProps } from '@/features/posts/postCardMapping'
 import usePostsListState from '@/features/posts/usePostsListState'
 import useInfinitePostsQuery from '@/features/posts/useInfinitePostsQuery'
 import { Field } from '@/components/ui/field'
@@ -363,24 +364,7 @@ function Search() {
       }
     })
 
-    return Array.from(unique.values()).map((post) => {
-      return {
-        title: post.title || m.post_untitled(),
-        author: post.author,
-        community: post.communityTitle ?? post.communityId,
-        communityId: post.communityId,
-        tags: post.tags,
-        summary: post.summary,
-        coverUrl: post.coverUrl,
-        app: post.app,
-        createdAt: new Date(post.created).toLocaleDateString(),
-        permlink: post.permlink,
-        votes: post.votes,
-        voteDetails: post.voteDetails,
-        comments: post.comments,
-        payout: post.payout,
-      }
-    })
+    return Array.from(unique.values()).map(mapSearchResultToPostCardProps)
   }, [postsQuery.data?.pages])
 
   return (
