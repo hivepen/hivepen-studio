@@ -1,64 +1,67 @@
-import { Box, Button, HStack, Input, Stack, Text } from '@chakra-ui/react'
-import { Field } from '@/components/ui/field'
+import {
+  HStack,
+  IconButton,
+  Input,
+  InputGroup,
+  Spinner,
+} from '@chakra-ui/react'
+import { Search } from 'lucide-react'
 
 type SearchPanelProps = {
-  label: string
   placeholder: string
   value: string
   onChange: (value: string) => void
   onSearch: () => void
-  buttonLabel: string
-  helperText?: string
+  searchAriaLabel: string
   isLoading?: boolean
   isDisabled?: boolean
 }
 
 const SearchPanel = ({
-  label,
   placeholder,
   value,
   onChange,
   onSearch,
-  buttonLabel,
-  helperText,
+  searchAriaLabel,
   isLoading,
   isDisabled,
 }: SearchPanelProps) => {
   return (
-    <Box
-      border="1px solid"
-      borderColor="border"
-      borderRadius="16px"
-      bg="bg.panel"
-      p={{ base: 4, md: 6 }}
+    <HStack
+      as="form"
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (!isDisabled) onSearch()
+      }}
+      gap={2}
+      w="full"
     >
-      <Stack gap={4}>
-        <Field label={label}>
-          <Input
-            placeholder={placeholder}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            bg="bg.panel"
-            borderColor="border"
-          />
-        </Field>
-        <HStack justify="space-between" wrap="wrap" gap={3}>
-          <Button
-            colorPalette="gray"
-            onClick={onSearch}
-            loading={isLoading}
-            disabled={isDisabled}
-          >
-            {buttonLabel}
-          </Button>
-          {helperText ? (
-            <Text fontSize="sm" color="fg.muted">
-              {helperText}
-            </Text>
-          ) : null}
-        </HStack>
-      </Stack>
-    </Box>
+      <InputGroup
+        endElement={isLoading ? <Spinner size="sm" color="fg.muted" /> : null}
+        flex="1"
+      >
+        <Input
+          placeholder={placeholder}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          bg="bg.panel"
+          borderColor="border"
+          borderRadius="full"
+          px={4}
+          h={11}
+        />
+      </InputGroup>
+      <IconButton
+        type="submit"
+        aria-label={searchAriaLabel}
+        colorPalette="gray"
+        borderRadius="full"
+        disabled={isDisabled}
+        flexShrink={0}
+      >
+        <Search size={18} />
+      </IconButton>
+    </HStack>
   )
 }
 

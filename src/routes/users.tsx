@@ -9,6 +9,8 @@ import {
   Skeleton,
   Stack,
   Text,
+  Wrap,
+  WrapItem,
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
@@ -73,33 +75,29 @@ function Users() {
     refreshCachedUsers()
   }
 
-  const helperText =
-    trimmedQuery.length === 0 && cachedUsers.results.length > 0
-      ? m.users_recent_help()
-      : trimmedQuery.length > 1
-        ? m.users_cached_help({ query: trimmedQuery })
-        : m.users_min_chars()
-
   return (
     <Stack gap={6} p={6}>
-      <Box>
-        <Heading size="lg" mb={2}>
-          {m.users_heading()}
-        </Heading>
-        <Text color="fg.muted">{m.users_subtitle()}</Text>
-      </Box>
-
-      <SearchPanel
-        label={m.users_field_label()}
-        placeholder={m.users_placeholder()}
-        value={query}
-        onChange={setQuery}
-        onSearch={() => setDebouncedQuery(query.trim())}
-        buttonLabel={m.users_search_button()}
-        helperText={helperText}
-        isLoading={usersQuery.isFetching}
-        isDisabled={query.trim().length < 2}
-      />
+      <Wrap align="end" justify="space-between" gap={4}>
+        <WrapItem flex="1" minW={{ base: '100%', md: '320px' }}>
+          <Box>
+            <Heading size="lg" mb={2}>
+              {m.users_heading()}
+            </Heading>
+            <Text color="fg.muted">{m.users_subtitle()}</Text>
+          </Box>
+        </WrapItem>
+        <WrapItem flex="1" minW={{ base: '100%', md: '320px' }}>
+          <SearchPanel
+            placeholder={m.users_placeholder()}
+            value={query}
+            onChange={setQuery}
+            onSearch={() => setDebouncedQuery(query.trim())}
+            searchAriaLabel={m.users_search_button()}
+            isLoading={usersQuery.isFetching}
+            isDisabled={query.trim().length < 2}
+          />
+        </WrapItem>
+      </Wrap>
 
       <SimpleGrid columns={{ base: 1, md: 2 }} gap={4}>
         {usersQuery.isFetching && results.length === 0

@@ -6,6 +6,8 @@ import {
   Skeleton,
   Stack,
   Text,
+  Wrap,
+  WrapItem,
 } from '@chakra-ui/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
@@ -94,33 +96,29 @@ function Communities() {
     refreshCachedCommunities()
   }
 
-  const helperText =
-    trimmedQuery.length === 0 && cachedCommunities.results.length > 0
-      ? m.communities_recent_help()
-      : trimmedQuery.length > 1
-        ? m.communities_cached_help({ query: trimmedQuery })
-        : m.communities_min_chars()
-
   return (
     <Stack gap={6} p={6}>
-      <Box>
-        <Heading size="lg" mb={2}>
-          {m.communities_heading()}
-        </Heading>
-        <Text color="fg.muted">{m.communities_description()}</Text>
-      </Box>
-
-      <SearchPanel
-        label={m.communities_search_label()}
-        placeholder={m.communities_search_placeholder()}
-        value={query}
-        onChange={setQuery}
-        onSearch={() => setDebouncedQuery(query.trim())}
-        buttonLabel={m.communities_search_button()}
-        helperText={helperText}
-        isLoading={communitiesQuery.isFetching}
-        isDisabled={query.trim().length < 2}
-      />
+      <Wrap align="end" justify="space-between" gap={4}>
+        <WrapItem flex="1" minW={{ base: '100%', md: '320px' }}>
+          <Box>
+            <Heading size="lg" mb={2}>
+              {m.communities_heading()}
+            </Heading>
+            <Text color="fg.muted">{m.communities_description()}</Text>
+          </Box>
+        </WrapItem>
+        <WrapItem flex="1" minW={{ base: '100%', md: '320px' }}>
+          <SearchPanel
+            placeholder={m.communities_search_placeholder()}
+            value={query}
+            onChange={setQuery}
+            onSearch={() => setDebouncedQuery(query.trim())}
+            searchAriaLabel={m.communities_search_button()}
+            isLoading={communitiesQuery.isFetching}
+            isDisabled={query.trim().length < 2}
+          />
+        </WrapItem>
+      </Wrap>
 
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={4}>
         {communitiesQuery.isFetching && results.length === 0
