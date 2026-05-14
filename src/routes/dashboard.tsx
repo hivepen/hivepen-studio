@@ -54,6 +54,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { ComponentProps, ReactNode } from 'react'
+import type { Payload as RechartsTooltipPayload } from 'recharts/types/component/DefaultTooltipContent'
 import type {
   DashboardHistoricalOverview,
   DashboardRange,
@@ -458,24 +459,14 @@ function Dashboard() {
           ) : null}
           {matchesDashboardFocus('publishing', focus) ? (
             <ChartPanel
-              title="Author rewards"
-              subtitle="Weekly HBD payout"
+              title="Engagement trend"
+              subtitle="Votes · comments · posts"
               isLoading={dashboardQuery.isLoading}
             >
-              <AuthorRewardsChart overview={overview} />
+              <EngagementChart overview={overview} />
             </ChartPanel>
           ) : null}
         </SimpleGrid>
-      ) : null}
-
-      {matchesDashboardFocus('publishing', focus) ? (
-        <ChartPanel
-          title="Engagement trend"
-          subtitle="Votes · comments · posts"
-          isLoading={dashboardQuery.isLoading}
-        >
-          <EngagementChart overview={overview} />
-        </ChartPanel>
       ) : null}
 
       <SimpleGrid columns={{ base: 1, lg: 2 }} gap={2.5}>
@@ -1012,6 +1003,34 @@ function RewardBreakdownChart({
     })),
   })
 
+  const renderBreakdownTooltip = (
+    item: RechartsTooltipPayload<string, string>,
+  ): ReactNode => {
+    const data = item as unknown as Record<string, unknown>
+    const label = String(data.label ?? '')
+    const value = Number(data.value ?? 0)
+    const valuePercent = Number(data.valuePercent ?? 0) / 100
+
+    return (
+      <Stack gap={0.5}>
+        <Text fontWeight="medium">{label}</Text>
+        <HStack gap={2} justify="space-between">
+          <Text color="fg.muted" fontSize="xs">
+            {formatPercent(valuePercent, 1)}
+          </Text>
+          <Text
+            fontFamily="mono"
+            fontSize="sm"
+            fontVariantNumeric="tabular-nums"
+            fontWeight="medium"
+          >
+            {`${formatTokenAmount(value, 2)} HBD`}
+          </Text>
+        </HStack>
+      </Stack>
+    )
+  }
+
   return (
     <Stack gap={3}>
       <Chart.Root height="13rem" chart={chart}>
@@ -1021,9 +1040,10 @@ function RewardBreakdownChart({
             cursor={false}
             content={
               <Chart.Tooltip
-                formatter={(value) =>
-                  `${formatTokenAmount(Number(value), 2)} HBD`
-                }
+                hideLabel
+                fitContent
+                hideIndicator
+                render={renderBreakdownTooltip}
               />
             }
           />
@@ -1200,79 +1220,6 @@ function RewardTrendChart({
           />
         </AreaChart>
       )}
-    </Chart.Root>
-  )
-}
-
-function AuthorRewardsChart({
-  overview,
-}: {
-  overview: DashboardHistoricalOverview | null
-}) {
-  if (!overview) {
-    return (
-      <EmptyStateMessage message="No author reward data is available yet." />
-    )
-  }
-
-  const chart = useChart({
-    data: overview.buckets,
-    series: [
-      { name: CHART_SERIES.author.key, color: CHART_SERIES.author.color },
-    ],
-  })
-  const maxValue = getChartMax(overview.buckets, [CHART_SERIES.author.key])
-  const upperBound = getPaddedUpperBound(maxValue, 0.15, 0.4)
-
-  return (
-    <Chart.Root height="11.5rem" chart={chart}>
-      <BarChart
-        data={chart.data}
-        barCategoryGap="26%"
-        margin={BAR_CHART_MARGIN}
-        responsive
-      >
-        <CartesianGrid stroke={chart.color('border.muted')} vertical={false} />
-        <XAxis
-          axisLine={false}
-          tickLine={false}
-          dataKey={chart.key('shortLabel')}
-          stroke={chart.color('border')}
-          minTickGap={20}
-          tick={{ fontSize: 11 }}
-        />
-        <YAxis
-          axisLine={false}
-          tickLine={false}
-          tickMargin={8}
-          stroke={chart.color('border')}
-          width={30}
-          tick={{ fontSize: 11 }}
-          domain={[0, upperBound]}
-          tickFormatter={(value) =>
-            formatCompactCurrency(
-              typeof value === 'number' ? value : Number(value),
-            )
-          }
-        />
-        <Tooltip
-          animationDuration={100}
-          cursor={false}
-          content={
-            <Chart.Tooltip
-              formatter={(value) =>
-                `${formatTokenAmount(Number(value), 2)} HBD`
-              }
-            />
-          }
-        />
-        <Bar
-          isAnimationActive={false}
-          dataKey={chart.key(CHART_SERIES.author.key)}
-          fill={chart.color(CHART_SERIES.author.color)}
-          radius={6}
-        />
-      </BarChart>
     </Chart.Root>
   )
 }
