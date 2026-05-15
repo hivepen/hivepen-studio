@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {  getProfilesQueryOptions } from '@ecency/sdk'
-import type {Profile} from '@ecency/sdk';
-import type {AccountProfile} from '@/features/profile/profileTypes';
+import { getProfilesQueryOptions } from '@ecency/sdk'
+import type { Profile } from '@ecency/sdk'
+import type { AccountProfile } from '@/features/profile/profileTypes'
 import { mapProfile } from '@/features/profile/profileMapping'
 
 export default function useProfilesQuery(accounts: Array<string>) {
@@ -19,7 +19,7 @@ export default function useProfilesQuery(accounts: Array<string>) {
   const baseOptions = getProfilesQueryOptions(normalized, undefined, enabled)
 
   return useQuery({
-    ...(baseOptions as object),
+    ...baseOptions,
     enabled,
     select: (data: Array<Profile>): Array<AccountProfile> => data.map(mapProfile),
     placeholderData: [],

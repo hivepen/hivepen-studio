@@ -10,13 +10,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { Link } from '@tanstack/react-router'
-import {
-  InfoIcon,
-  MessageSquare,
-  MessageSquareIcon,
-  MoreVertical,
-  Wallet,
-} from 'lucide-react'
+import { MessageSquare, MoreVertical } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 
 import type { PostSearchResult } from '@/lib/hive/search'
@@ -137,14 +131,15 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
       <InfiniteDebugBanner
         hasNextPage={postsQuery.hasNextPage}
         isFetchingNextPage={postsQuery.isFetchingNextPage}
-        lastPost={
-          posts.length > 0
+        lastPost={(() => {
+          const lastPost = posts[posts.length - 1]
+          return lastPost?.permlink
             ? {
-                author: posts[posts.length - 1].author,
-                permlink: posts[posts.length - 1].permlink,
+                author: lastPost.author,
+                permlink: lastPost.permlink,
               }
             : undefined
-        }
+        })()}
         pages={postsQuery.data?.pages?.length ?? 0}
         totalPosts={posts.length}
       />
