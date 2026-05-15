@@ -93,6 +93,14 @@ describe('aggregateDashboardOverview', () => {
       username: 'alice',
       posts,
       comments,
+      outgoingDelegations: [
+        {
+          delegator: 'alice',
+          delegatee: 'carol',
+          vesting_shares: '100.000000 VESTS',
+          min_delegation_time: '2026-04-01T00:00:00',
+        },
+      ],
       range: '3M',
       rewardHistory: [
         {
@@ -111,17 +119,17 @@ describe('aggregateDashboardOverview', () => {
           vesting_shares: '2.000000 VESTS',
         },
         {
-          type: 'delegate_vesting_shares',
-          timestamp: '2026-05-04T00:00:00.000Z',
-          vesting_shares: '4.000000 VESTS',
-          delegator: 'bob',
-          delegatee: 'alice',
-        },
-        {
           type: 'transfer',
           timestamp: '2026-05-05T00:00:00.000Z',
           amount: '1.500 HBD',
           from: 'carol',
+          to: 'alice',
+        },
+        {
+          type: 'transfer_from_savings',
+          timestamp: '2026-05-06T00:00:00.000Z',
+          amount: '2.000 HIVE',
+          from: 'dan',
           to: 'alice',
         },
         {
@@ -165,7 +173,7 @@ describe('aggregateDashboardOverview', () => {
       'transfers',
     ])
     expect(result.incomeBreakdown.map((item) => item.value)).toEqual([
-      7.5, 1, 0.5, 1, 3.5,
+      7.5, 1, 0.5, 1, 2.5,
     ])
     expect(
       result.incomeBreakdown.find((item) => item.id === 'author')?.subcategories,
@@ -177,12 +185,15 @@ describe('aggregateDashboardOverview', () => {
       result.incomeBreakdown.find((item) => item.id === 'transfers')
         ?.subcategories,
     ).toMatchObject([
-      { id: 'delegation_income', value: 2 },
-      { id: 'other_transfers', value: 1.5 },
+      { id: 'delegation_income', label: 'From delegatees', value: 1.5 },
+      { id: 'other_transfers', value: 1 },
     ])
     expect(
+      result.incomeBreakdown.some((item) => item.subcategories.some((sub) => sub.value === 0)),
+    ).toBe(false)
+    expect(
       result.incomeBreakdown.reduce((total, category) => total + category.value, 0),
-    ).toBe(13.5)
+    ).toBe(12.5)
     expect(result.topPosts.map((post) => post.permlink)).toEqual([
       'current-top',
       'current-second',

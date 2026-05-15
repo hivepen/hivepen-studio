@@ -13,7 +13,10 @@ import type {
   DashboardRange,
   DashboardTopPost,
 } from './types'
-import type { HiveDynamicGlobalProperties } from '@/lib/hive/wallet'
+import type {
+  HiveDynamicGlobalProperties,
+  HiveVestingDelegation,
+} from '@/lib/hive/wallet'
 import { mapEntryToSearchResult } from '@/features/posts/postMapping'
 import { hiveClient } from '@/lib/hive/client'
 import { parseAssetAmount } from '@/lib/hive/payouts'
@@ -44,18 +47,11 @@ type RewardHistoryOperation =
       vesting_shares: string
     }
   | {
-      type: 'transfer' | 'transfer_from_savings' | 'transfer_to_vesting'
+      type: 'transfer' | 'transfer_from_savings'
       timestamp: string
       amount: string
       from?: string
       to?: string
-    }
-  | {
-      type: 'delegate_vesting_shares'
-      timestamp: string
-      vesting_shares: string
-      delegator?: string
-      delegatee?: string
     }
 
 const RANGE_BUCKET_CONFIG: Record<
@@ -374,6 +370,15 @@ const fetchDashboardPosts = (username: string, range: DashboardRange) =>
 const fetchDashboardComments = (username: string, range: DashboardRange) =>
   fetchDashboardEntries(username, range, 'comments')
 
+const fetchOutgoingDelegations = async (username: string) => {
+  const normalized = normalizeUsername(username)
+  return ((await hiveClient.call('condenser_api', 'get_vesting_delegations', [
+    normalized,
+    '',
+    100,
+  ])) as Array<HiveVestingDelegation>) ?? []
+}
+
 const fetchRewardHistory = async (username: string, range: DashboardRange) => {
   const normalized = normalizeUsername(username)
   const trackedStart = getExtendedStart(range)
@@ -435,9 +440,7 @@ const fetchRewardHistory = async (username: string, range: DashboardRange) => {
       }
 
       if (
-        (type === 'transfer' ||
-          type === 'transfer_from_savings' ||
-          type === 'transfer_to_vesting') &&
+        (type === 'transfer' || type === 'transfer_from_savings') &&
         typeof payload.amount === 'string'
       ) {
         operations.push({
@@ -446,19 +449,6 @@ const fetchRewardHistory = async (username: string, range: DashboardRange) => {
           amount: payload.amount,
           from: getPayloadString(payload, 'from'),
           to: getPayloadString(payload, 'to'),
-        })
-      }
-
-      if (
-        type === 'delegate_vesting_shares' &&
-        typeof payload.vesting_shares === 'string'
-      ) {
-        operations.push({
-          type: 'delegate_vesting_shares',
-          timestamp: item.timestamp,
-          vesting_shares: payload.vesting_shares,
-          delegator: getPayloadString(payload, 'delegator'),
-          delegatee: getPayloadString(payload, 'delegatee'),
         })
       }
     }
@@ -498,6 +488,7 @@ export const aggregateDashboardOverview = ({
   username,
   posts,
   comments,
+  outgoingDelegations,
   range,
   rewardHistory,
   properties,
@@ -507,6 +498,7 @@ export const aggregateDashboardOverview = ({
   username: string
   posts: Array<PostSearchResult>
   comments: Array<PostSearchResult>
+  outgoingDelegations: Array<HiveVestingDelegation>
   range: DashboardRange
   rewardHistory: Array<RewardHistoryOperation>
   properties: Pick<
@@ -520,6 +512,14 @@ export const aggregateDashboardOverview = ({
   const currentStart = new Date(buckets[0]?.startAt ?? now.toISOString())
   const previousStart = getExtendedStart(range, now)
   const normalized = normalizeUsername(username)
+  const delegatees = new Set(
+    outgoingDelegations
+      .map((delegation) => normalizeUsername(delegation.delegatee))
+      .filter((delegatee) => delegatee && delegatee !== normalized),
+  )
+  // TODO: Attribute transfers against delegation history for the selected range,
+  // not just the current live delegatee set.
+  // Spec: src/features/dashboard/INCOME_BREAKDOWN_ROADMAP.md
 
   let currentPostRewardTotal = 0
   let previousPostRewardTotal = 0
@@ -529,7 +529,7 @@ export const aggregateDashboardOverview = ({
   let previousCurationRewards = 0
   let previousSavingsInterest = 0
   let previousWitnessRewards = 0
-  let previousDelegationIncome = 0
+  let previousTransfersFromDelegatees = 0
   let previousOtherTransfers = 0
 
   let currentPostAuthorRewards = 0
@@ -537,7 +537,7 @@ export const aggregateDashboardOverview = ({
   let currentCurationRewards = 0
   let currentSavingsInterest = 0
   let currentWitnessRewards = 0
-  let currentDelegationIncome = 0
+  let currentTransfersFromDelegatees = 0
   let currentOtherTransfers = 0
 
   const topPosts: Array<DashboardTopPost> = []
@@ -632,17 +632,11 @@ export const aggregateDashboardOverview = ({
                 properties,
                 hivePriceHbd,
               )
-            : operation.type === 'delegate_vesting_shares'
-              ? convertAssetToHbdEquivalent(
-                  operation.vesting_shares,
-                  properties,
-                  hivePriceHbd,
-                )
-              : convertAssetToHbdEquivalent(
-                  operation.amount,
-                  properties,
-                  hivePriceHbd,
-                )
+            : convertAssetToHbdEquivalent(
+                operation.amount,
+                properties,
+                hivePriceHbd,
+              )
 
     if (timestamp >= currentStart) {
       const bucket = getBucketForDate(buckets, timestamp)
@@ -659,19 +653,18 @@ export const aggregateDashboardOverview = ({
       } else if (operation.type === 'producer_reward') {
         currentWitnessRewards += amount
       } else if (
-        operation.type === 'delegate_vesting_shares' &&
-        operation.delegatee === normalized &&
-        operation.delegator !== normalized
-      ) {
-        currentDelegationIncome += amount
-      } else if (
         (operation.type === 'transfer' ||
-          operation.type === 'transfer_from_savings' ||
-          operation.type === 'transfer_to_vesting') &&
+          operation.type === 'transfer_from_savings') &&
         operation.to === normalized &&
         operation.from !== normalized
       ) {
-        currentOtherTransfers += amount
+        // We treat transfers from current delegatees as attributable relationship
+        // signals, but we do not infer that delegation operations themselves are income.
+        if (operation.from && delegatees.has(normalizeUsername(operation.from))) {
+          currentTransfersFromDelegatees += amount
+        } else {
+          currentOtherTransfers += amount
+        }
       }
     } else if (operation.type === 'curation_reward') {
       previousCurationRewards += amount
@@ -680,19 +673,16 @@ export const aggregateDashboardOverview = ({
     } else if (operation.type === 'producer_reward') {
       previousWitnessRewards += amount
     } else if (
-      operation.type === 'delegate_vesting_shares' &&
-      operation.delegatee === normalized &&
-      operation.delegator !== normalized
-    ) {
-      previousDelegationIncome += amount
-    } else if (
       (operation.type === 'transfer' ||
-        operation.type === 'transfer_from_savings' ||
-        operation.type === 'transfer_to_vesting') &&
+        operation.type === 'transfer_from_savings') &&
       operation.to === normalized &&
       operation.from !== normalized
     ) {
-      previousOtherTransfers += amount
+      if (operation.from && delegatees.has(normalizeUsername(operation.from))) {
+        previousTransfersFromDelegatees += amount
+      } else {
+        previousOtherTransfers += amount
+      }
     }
   }
 
@@ -707,9 +697,9 @@ export const aggregateDashboardOverview = ({
   )
   const rewardTotal = buckets.reduce((total, bucket) => total + bucket.totalRewards, 0)
   const totalWitnessRewards = currentWitnessRewards
-  const totalDelegationIncome = currentDelegationIncome
+  const totalTransfersFromDelegatees = currentTransfersFromDelegatees
   const totalOtherTransfers = currentOtherTransfers
-  const totalTransferIncome = totalDelegationIncome + totalOtherTransfers
+  const totalTransferIncome = totalTransfersFromDelegatees + totalOtherTransfers
   const incomeBreakdownTotal =
     totalAuthorRewards +
     totalCurationRewards +
@@ -819,8 +809,8 @@ export const aggregateDashboardOverview = ({
         createSubcategory({
           id: 'delegation_income',
           parentId: 'transfers',
-          label: 'Delegation',
-          value: currentDelegationIncome,
+          label: 'From delegatees',
+          value: currentTransfersFromDelegatees,
           colorToken: 'red.emphasized',
         }),
         createSubcategory({
@@ -832,7 +822,7 @@ export const aggregateDashboardOverview = ({
         }),
       ],
     }),
-  ]
+  ].filter((category) => category.value > 0)
 
   const totalRewards = rewardTotal
   const previousTotalRewards =
@@ -927,17 +917,20 @@ export async function fetchDashboardOverview(
     throw new Error('A Hive account name is required')
   }
 
-  const [posts, comments, rewardHistory, chainState] = await Promise.all([
+  const [posts, comments, outgoingDelegations, rewardHistory, chainState] =
+    await Promise.all([
     fetchDashboardPosts(normalized, range),
     fetchDashboardComments(normalized, range),
+    fetchOutgoingDelegations(normalized),
     fetchRewardHistory(normalized, range),
     fetchDynamicProperties(),
-  ])
+    ])
 
   return aggregateDashboardOverview({
     username: normalized,
     posts,
     comments,
+    outgoingDelegations,
     range,
     rewardHistory,
     properties: chainState.properties,
