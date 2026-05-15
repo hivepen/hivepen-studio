@@ -29,6 +29,40 @@ export type DashboardBreakdownItem = {
   colorToken: string
 }
 
+export type DashboardIncomeBreakdownCategoryId =
+  | 'author'
+  | 'curation'
+  | 'interest'
+  | 'witness'
+  | 'transfers'
+
+export type DashboardIncomeBreakdownSubcategoryId =
+  | 'post_rewards'
+  | 'comment_rewards'
+  | 'curation_votes'
+  | 'hbd_savings'
+  | 'witness_blocks'
+  | 'delegation_income'
+  | 'other_transfers'
+
+export type DashboardIncomeBreakdownSubcategory = {
+  id: DashboardIncomeBreakdownSubcategoryId
+  parentId: DashboardIncomeBreakdownCategoryId
+  label: string
+  value: number
+  share: number
+  colorToken: string
+}
+
+export type DashboardIncomeBreakdownCategory = {
+  id: DashboardIncomeBreakdownCategoryId
+  label: string
+  value: number
+  share: number
+  colorToken: string
+  subcategories: Array<DashboardIncomeBreakdownSubcategory>
+}
+
 export type DashboardTopPost = Pick<
   PostSearchResult,
   | 'author'
@@ -64,6 +98,7 @@ export type DashboardHistoricalOverview = {
   engagementChartKind: DashboardChartKind
   buckets: Array<DashboardBucket>
   breakdown: Array<DashboardBreakdownItem>
+  incomeBreakdown: Array<DashboardIncomeBreakdownCategory>
   summary: DashboardSummary
   topPosts: Array<DashboardTopPost>
   cachedAt: number

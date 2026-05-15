@@ -59,6 +59,7 @@ import type {
   DashboardHistoricalOverview,
   DashboardRange,
 } from '@/features/dashboard/types'
+import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
 import { Avatar } from '@/components/ui/avatar'
 import useDashboardQuery from '@/features/dashboard/useDashboardQuery'
 import useProfileQuery from '@/features/profile/useProfileQuery'
@@ -442,6 +443,13 @@ function Dashboard() {
             <RewardBreakdownChart overview={overview} />
           </ChartPanel>
         </SimpleGrid>
+      ) : null}
+
+      {matchesDashboardFocus('rewards', focus) && overview ? (
+        <IncomeBreakdownChart
+          range={overview.range}
+          categories={overview.incomeBreakdown}
+        />
       ) : null}
 
       {focus === 'all' || focus === 'rewards' || focus === 'publishing' ? (

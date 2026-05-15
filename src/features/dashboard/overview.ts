@@ -7,6 +7,9 @@ import type {
   DashboardChartKind,
   DashboardHistoricalOverview,
   DashboardHistoricalSnapshot,
+  DashboardIncomeBreakdownCategory,
+  DashboardIncomeBreakdownCategoryId,
+  DashboardIncomeBreakdownSubcategory,
   DashboardRange,
   DashboardTopPost,
 } from './types'
@@ -16,7 +19,7 @@ import { hiveClient } from '@/lib/hive/client'
 import { parseAssetAmount } from '@/lib/hive/payouts'
 import { vestsToHivePower } from '@/lib/hive/wallet'
 
-const DASHBOARD_STORAGE_KEY = 'hivepen.dashboard.overview.v1'
+const DASHBOARD_STORAGE_KEY = 'hivepen.dashboard.overview.v2'
 export const DASHBOARD_TTL_MS = 15 * 60 * 1000
 
 const POSTS_PAGE_SIZE = 20
@@ -34,6 +37,25 @@ type RewardHistoryOperation =
       type: 'interest'
       timestamp: string
       interest: string
+    }
+  | {
+      type: 'producer_reward'
+      timestamp: string
+      vesting_shares: string
+    }
+  | {
+      type: 'transfer' | 'transfer_from_savings' | 'transfer_to_vesting'
+      timestamp: string
+      amount: string
+      from?: string
+      to?: string
+    }
+  | {
+      type: 'delegate_vesting_shares'
+      timestamp: string
+      vesting_shares: string
+      delegator?: string
+      delegatee?: string
     }
 
 const RANGE_BUCKET_CONFIG: Record<
@@ -278,6 +300,14 @@ const getPostAuthorReward = (
   hivePriceHbd: number,
 ) => convertAssetToHbdEquivalent(post.authorPayout, properties, hivePriceHbd)
 
+const getPayloadString = (
+  payload: Record<string, unknown>,
+  key: string,
+): string | undefined => {
+  const value = payload[key]
+  return typeof value === 'string' && value.length > 0 ? value : undefined
+}
+
 export const selectHistoricalChartKind = (
   buckets: Array<DashboardBucket>,
   valueKey: 'totalRewards' | 'votes',
@@ -294,7 +324,11 @@ export const selectHistoricalChartKind = (
   return 'line'
 }
 
-const fetchDashboardPosts = async (username: string, range: DashboardRange) => {
+const fetchDashboardEntries = async (
+  username: string,
+  range: DashboardRange,
+  sort: 'posts' | 'comments',
+) => {
   const normalized = normalizeUsername(username)
   const trackedStart = getExtendedStart(range)
   const collected = new Map<string, PostSearchResult>()
@@ -304,7 +338,7 @@ const fetchDashboardPosts = async (username: string, range: DashboardRange) => {
   for (let page = 0; page < POSTS_MAX_PAGES; page += 1) {
     const entries =
       (await getAccountPosts(
-        'posts',
+        sort,
         normalized,
         startAuthor,
         startPermlink,
@@ -333,6 +367,12 @@ const fetchDashboardPosts = async (username: string, range: DashboardRange) => {
 
   return Array.from(collected.values())
 }
+
+const fetchDashboardPosts = (username: string, range: DashboardRange) =>
+  fetchDashboardEntries(username, range, 'posts')
+
+const fetchDashboardComments = (username: string, range: DashboardRange) =>
+  fetchDashboardEntries(username, range, 'comments')
 
 const fetchRewardHistory = async (username: string, range: DashboardRange) => {
   const normalized = normalizeUsername(username)
@@ -382,6 +422,45 @@ const fetchRewardHistory = async (username: string, range: DashboardRange) => {
           interest: payload.interest,
         })
       }
+
+      if (
+        type === 'producer_reward' &&
+        typeof payload.vesting_shares === 'string'
+      ) {
+        operations.push({
+          type: 'producer_reward',
+          timestamp: item.timestamp,
+          vesting_shares: payload.vesting_shares,
+        })
+      }
+
+      if (
+        (type === 'transfer' ||
+          type === 'transfer_from_savings' ||
+          type === 'transfer_to_vesting') &&
+        typeof payload.amount === 'string'
+      ) {
+        operations.push({
+          type,
+          timestamp: item.timestamp,
+          amount: payload.amount,
+          from: getPayloadString(payload, 'from'),
+          to: getPayloadString(payload, 'to'),
+        })
+      }
+
+      if (
+        type === 'delegate_vesting_shares' &&
+        typeof payload.vesting_shares === 'string'
+      ) {
+        operations.push({
+          type: 'delegate_vesting_shares',
+          timestamp: item.timestamp,
+          vesting_shares: payload.vesting_shares,
+          delegator: getPayloadString(payload, 'delegator'),
+          delegatee: getPayloadString(payload, 'delegatee'),
+        })
+      }
     }
 
     const [oldestIndex] = history[0]
@@ -416,14 +495,18 @@ const fetchDynamicProperties = async () => {
 }
 
 export const aggregateDashboardOverview = ({
+  username,
   posts,
+  comments,
   range,
   rewardHistory,
   properties,
   hivePriceHbd,
   now = new Date(),
 }: {
+  username: string
   posts: Array<PostSearchResult>
+  comments: Array<PostSearchResult>
   range: DashboardRange
   rewardHistory: Array<RewardHistoryOperation>
   properties: Pick<
@@ -436,13 +519,26 @@ export const aggregateDashboardOverview = ({
   const buckets = buildBuckets(range, now)
   const currentStart = new Date(buckets[0]?.startAt ?? now.toISOString())
   const previousStart = getExtendedStart(range, now)
+  const normalized = normalizeUsername(username)
 
   let currentPostRewardTotal = 0
   let previousPostRewardTotal = 0
   let previousPublishedPosts = 0
-  let previousAuthorRewards = 0
+  let previousPostRewards = 0
+  let previousCommentRewards = 0
   let previousCurationRewards = 0
   let previousSavingsInterest = 0
+  let previousWitnessRewards = 0
+  let previousDelegationIncome = 0
+  let previousOtherTransfers = 0
+
+  let currentPostAuthorRewards = 0
+  let currentCommentAuthorRewards = 0
+  let currentCurationRewards = 0
+  let currentSavingsInterest = 0
+  let currentWitnessRewards = 0
+  let currentDelegationIncome = 0
+  let currentOtherTransfers = 0
 
   const topPosts: Array<DashboardTopPost> = []
 
@@ -465,6 +561,7 @@ export const aggregateDashboardOverview = ({
       bucket.votes += post.votes ?? 0
       bucket.comments += post.comments ?? 0
 
+      currentPostAuthorRewards += authorReward
       currentPostRewardTotal += totalReward
 
       topPosts.push({
@@ -484,9 +581,29 @@ export const aggregateDashboardOverview = ({
         primaryTag: post.tags[0],
       })
     } else {
-      previousAuthorRewards += authorReward
+      previousPostRewards += authorReward
       previousPostRewardTotal += totalReward
       previousPublishedPosts += 1
+    }
+  }
+
+  for (const comment of comments) {
+    const createdAt = new Date(comment.created)
+    if (Number.isNaN(createdAt.getTime()) || createdAt < previousStart) {
+      continue
+    }
+
+    const authorReward = getPostAuthorReward(comment, properties, hivePriceHbd)
+
+    if (createdAt >= currentStart) {
+      const bucket = getBucketForDate(buckets, createdAt)
+      if (!bucket) continue
+
+      bucket.authorRewards += authorReward
+      bucket.totalRewards += authorReward
+      currentCommentAuthorRewards += authorReward
+    } else {
+      previousCommentRewards += authorReward
     }
   }
 
@@ -503,11 +620,29 @@ export const aggregateDashboardOverview = ({
             properties,
             hivePriceHbd,
           )
-        : convertAssetToHbdEquivalent(
-            operation.interest,
-            properties,
-            hivePriceHbd,
-          )
+        : operation.type === 'interest'
+          ? convertAssetToHbdEquivalent(
+              operation.interest,
+              properties,
+              hivePriceHbd,
+            )
+          : operation.type === 'producer_reward'
+            ? convertAssetToHbdEquivalent(
+                operation.vesting_shares,
+                properties,
+                hivePriceHbd,
+              )
+            : operation.type === 'delegate_vesting_shares'
+              ? convertAssetToHbdEquivalent(
+                  operation.vesting_shares,
+                  properties,
+                  hivePriceHbd,
+                )
+              : convertAssetToHbdEquivalent(
+                  operation.amount,
+                  properties,
+                  hivePriceHbd,
+                )
 
     if (timestamp >= currentStart) {
       const bucket = getBucketForDate(buckets, timestamp)
@@ -515,21 +650,53 @@ export const aggregateDashboardOverview = ({
 
       if (operation.type === 'curation_reward') {
         bucket.curationRewards += amount
-      } else {
+        currentCurationRewards += amount
+        bucket.totalRewards += amount
+      } else if (operation.type === 'interest') {
         bucket.savingsInterest += amount
+        currentSavingsInterest += amount
+        bucket.totalRewards += amount
+      } else if (operation.type === 'producer_reward') {
+        currentWitnessRewards += amount
+      } else if (
+        operation.type === 'delegate_vesting_shares' &&
+        operation.delegatee === normalized &&
+        operation.delegator !== normalized
+      ) {
+        currentDelegationIncome += amount
+      } else if (
+        (operation.type === 'transfer' ||
+          operation.type === 'transfer_from_savings' ||
+          operation.type === 'transfer_to_vesting') &&
+        operation.to === normalized &&
+        operation.from !== normalized
+      ) {
+        currentOtherTransfers += amount
       }
-      bucket.totalRewards += amount
     } else if (operation.type === 'curation_reward') {
       previousCurationRewards += amount
-    } else {
+    } else if (operation.type === 'interest') {
       previousSavingsInterest += amount
+    } else if (operation.type === 'producer_reward') {
+      previousWitnessRewards += amount
+    } else if (
+      operation.type === 'delegate_vesting_shares' &&
+      operation.delegatee === normalized &&
+      operation.delegator !== normalized
+    ) {
+      previousDelegationIncome += amount
+    } else if (
+      (operation.type === 'transfer' ||
+        operation.type === 'transfer_from_savings' ||
+        operation.type === 'transfer_to_vesting') &&
+      operation.to === normalized &&
+      operation.from !== normalized
+    ) {
+      previousOtherTransfers += amount
     }
   }
 
-  const totalAuthorRewards = buckets.reduce(
-    (total, bucket) => total + bucket.authorRewards,
-    0,
-  )
+  const totalAuthorRewards = currentPostAuthorRewards + currentCommentAuthorRewards
   const totalCurationRewards = buckets.reduce(
     (total, bucket) => total + bucket.curationRewards,
     0,
@@ -538,22 +705,141 @@ export const aggregateDashboardOverview = ({
     (total, bucket) => total + bucket.savingsInterest,
     0,
   )
-  const totalRewards = buckets.reduce(
-    (total, bucket) => total + bucket.totalRewards,
-    0,
-  )
-  const publishedPosts = buckets.reduce(
-    (total, bucket) => total + bucket.posts,
-    0,
-  )
-  const averagePostReward =
-    publishedPosts > 0 ? currentPostRewardTotal / publishedPosts : 0
+  const rewardTotal = buckets.reduce((total, bucket) => total + bucket.totalRewards, 0)
+  const totalWitnessRewards = currentWitnessRewards
+  const totalDelegationIncome = currentDelegationIncome
+  const totalOtherTransfers = currentOtherTransfers
+  const totalTransferIncome = totalDelegationIncome + totalOtherTransfers
+  const incomeBreakdownTotal =
+    totalAuthorRewards +
+    totalCurationRewards +
+    totalSavingsInterest +
+    totalWitnessRewards +
+    totalTransferIncome
+  const incomeBreakdownBase = incomeBreakdownTotal > 0 ? incomeBreakdownTotal : 1
+
+  const createSubcategory = (
+    subcategory: Omit<DashboardIncomeBreakdownSubcategory, 'share'>,
+  ): DashboardIncomeBreakdownSubcategory => ({
+    ...subcategory,
+    share: subcategory.value / incomeBreakdownBase,
+  })
+
+  const createCategory = ({
+    id,
+    label,
+    colorToken,
+    subcategories,
+  }: {
+    id: DashboardIncomeBreakdownCategoryId
+    label: string
+    colorToken: string
+    subcategories: Array<DashboardIncomeBreakdownSubcategory>
+  }): DashboardIncomeBreakdownCategory => {
+    const value = subcategories.reduce((total, item) => total + item.value, 0)
+    return {
+      id,
+      label,
+      value,
+      share: value / incomeBreakdownBase,
+      colorToken,
+      subcategories,
+    }
+  }
+
+  const incomeBreakdown = [
+    createCategory({
+      id: 'author',
+      label: 'Author',
+      colorToken: 'green.solid',
+      subcategories: [
+        createSubcategory({
+          id: 'post_rewards',
+          parentId: 'author',
+          label: 'Post rewards',
+          value: currentPostAuthorRewards,
+          colorToken: 'green.emphasized',
+        }),
+        createSubcategory({
+          id: 'comment_rewards',
+          parentId: 'author',
+          label: 'Comment rewards',
+          value: currentCommentAuthorRewards,
+          colorToken: 'green.subtle',
+        }),
+      ],
+    }),
+    createCategory({
+      id: 'curation',
+      label: 'Curation',
+      colorToken: 'purple.solid',
+      subcategories: [
+        createSubcategory({
+          id: 'curation_votes',
+          parentId: 'curation',
+          label: 'Vote curation',
+          value: currentCurationRewards,
+          colorToken: 'purple.emphasized',
+        }),
+      ],
+    }),
+    createCategory({
+      id: 'interest',
+      label: 'HBD savings',
+      colorToken: 'yellow.solid',
+      subcategories: [
+        createSubcategory({
+          id: 'hbd_savings',
+          parentId: 'interest',
+          label: 'HBD interest',
+          value: currentSavingsInterest,
+          colorToken: 'yellow.emphasized',
+        }),
+      ],
+    }),
+    createCategory({
+      id: 'witness',
+      label: 'Witness',
+      colorToken: 'cyan.solid',
+      subcategories: [
+        createSubcategory({
+          id: 'witness_blocks',
+          parentId: 'witness',
+          label: 'Block rewards',
+          value: currentWitnessRewards,
+          colorToken: 'cyan.emphasized',
+        }),
+      ],
+    }),
+    createCategory({
+      id: 'transfers',
+      label: 'Transfers',
+      colorToken: 'red.solid',
+      subcategories: [
+        createSubcategory({
+          id: 'delegation_income',
+          parentId: 'transfers',
+          label: 'Delegation',
+          value: currentDelegationIncome,
+          colorToken: 'red.emphasized',
+        }),
+        createSubcategory({
+          id: 'other_transfers',
+          parentId: 'transfers',
+          label: 'Other transfers',
+          value: currentOtherTransfers,
+          colorToken: 'red.subtle',
+        }),
+      ],
+    }),
+  ]
+
+  const totalRewards = rewardTotal
   const previousTotalRewards =
-    previousAuthorRewards + previousCurationRewards + previousSavingsInterest
-  const previousAveragePostReward =
-    previousPublishedPosts > 0
-      ? previousPostRewardTotal / previousPublishedPosts
-      : 0
+    previousPostRewards +
+    previousCommentRewards +
+    previousCurationRewards +
+    previousSavingsInterest
 
   const breakdownBase = totalRewards > 0 ? totalRewards : 1
   const breakdownItems: Array<DashboardBreakdownItem> = [
@@ -573,7 +859,7 @@ export const aggregateDashboardOverview = ({
     },
     {
       id: 'interest',
-      label: 'Savings interest',
+      label: 'HBD savings interest',
       value: totalSavingsInterest,
       share: totalSavingsInterest / breakdownBase,
       colorToken: 'yellow.solid',
@@ -582,6 +868,16 @@ export const aggregateDashboardOverview = ({
   const breakdown = breakdownItems.filter(
     (item) => item.value > 0 || totalRewards === 0,
   )
+  const publishedPosts = buckets.reduce(
+    (total, bucket) => total + bucket.posts,
+    0,
+  )
+  const averagePostReward =
+    publishedPosts > 0 ? currentPostRewardTotal / publishedPosts : 0
+  const previousAveragePostReward =
+    previousPublishedPosts > 0
+      ? previousPostRewardTotal / previousPublishedPosts
+      : 0
 
   return {
     range,
@@ -603,6 +899,7 @@ export const aggregateDashboardOverview = ({
     ),
     buckets,
     breakdown,
+    incomeBreakdown,
     summary: {
       totalRewards,
       totalRewardsChange: toPercentChange(totalRewards, previousTotalRewards),
@@ -630,14 +927,17 @@ export async function fetchDashboardOverview(
     throw new Error('A Hive account name is required')
   }
 
-  const [posts, rewardHistory, chainState] = await Promise.all([
+  const [posts, comments, rewardHistory, chainState] = await Promise.all([
     fetchDashboardPosts(normalized, range),
+    fetchDashboardComments(normalized, range),
     fetchRewardHistory(normalized, range),
     fetchDynamicProperties(),
   ])
 
   return aggregateDashboardOverview({
+    username: normalized,
     posts,
+    comments,
     range,
     rewardHistory,
     properties: chainState.properties,
