@@ -1,7 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { Badge, Box, Button, HStack, Stack, Tabs, Text } from '@chakra-ui/react'
 import { ArrowLeft } from 'lucide-react'
-import { getPostQueryOptions, type Entry } from '@ecency/sdk'
+import { getPostQueryOptions } from '@ecency/sdk'
 import usePostQuery, { mapEntryToPost } from '@/features/posts/usePostQuery'
 import PostActions from '@/features/posts/PostActions'
 import usePostCommentsQuery from '@/features/posts/usePostCommentsQuery'
@@ -41,19 +41,19 @@ export const Route = createFileRoute('/post/$author/$permlink')({
   },
   head: ({ loaderData, params }) => ({
     meta: [
-      { title: loaderData?.post?.title || 'Untitled Post' },
+      { title: loaderData?.post.title || 'Untitled Post' },
       {
         name: 'description',
-        content: loaderData?.post?.body?.slice(0, 160) || '',
+        content: loaderData?.post.body.slice(0, 160) || '',
       },
       // Open Graph
       {
         property: 'og:title',
-        content: loaderData?.post?.title || 'Untitled Post',
+        content: loaderData?.post.title || 'Untitled Post',
       },
       {
         property: 'og:description',
-        content: loaderData?.post?.body?.slice(0, 160) || '',
+        content: loaderData?.post.body.slice(0, 160) || '',
       },
       { property: 'og:type', content: 'article' },
       { property: 'og:site_name', content: APP_CONFIG.SITE_NAME },
@@ -66,19 +66,17 @@ export const Route = createFileRoute('/post/$author/$permlink')({
       },
       {
         property: 'og:image',
-        content:
-          loaderData?.post?.coverImageUrl ||
-          `${APP_CONFIG.BASE_URL}/og-image.png`,
+        content: loaderData?.post.coverImageUrl || `${APP_CONFIG.BASE_URL}/og-image.png`,
       },
       // Twitter Card
       { name: 'twitter:card', content: 'summary_large_image' },
       {
         name: 'twitter:title',
-        content: loaderData?.post?.title || 'Untitled Post',
+        content: loaderData?.post.title || 'Untitled Post',
       },
       {
         name: 'twitter:description',
-        content: loaderData?.post?.body?.slice(0, 160) || '',
+        content: loaderData?.post.body.slice(0, 160) || '',
       },
       {
         name: 'twitter:url',
@@ -89,9 +87,7 @@ export const Route = createFileRoute('/post/$author/$permlink')({
       },
       {
         name: 'twitter:image',
-        content:
-          loaderData?.post?.coverImageUrl ||
-          `${APP_CONFIG.BASE_URL}/og-image.png`,
+        content: loaderData?.post.coverImageUrl || `${APP_CONFIG.BASE_URL}/og-image.png`,
       },
     ],
   }),

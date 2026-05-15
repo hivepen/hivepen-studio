@@ -41,6 +41,10 @@ export const mapEntryToSearchResult = (entry: Entry): PostSearchResult => {
           total: totalPayout ?? pendingPayout ?? '',
         }
       : undefined
+  const communityInfo =
+    entry.community && entry.community_title
+      ? { id: entry.community, name: entry.community_title }
+      : undefined
 
   return {
     author: entry.author,
@@ -50,7 +54,7 @@ export const mapEntryToSearchResult = (entry: Entry): PostSearchResult => {
     tags,
     communityId: entry.community,
     communityTitle: entry.community_title,
-    communityInfo: { id: entry.community, name: entry.community_title },
+    communityInfo,
     summary,
     coverUrl: coverImageUrl,
     images,

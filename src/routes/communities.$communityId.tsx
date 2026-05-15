@@ -67,9 +67,7 @@ function CommunityPage() {
   ])
 
   const posts = useMemo(() => {
-    const pages = (postsQuery.data?.pages ?? []) as Array<
-      Array<PostSearchResult>
-    >
+    const pages: Array<Array<PostSearchResult>> = postsQuery.data?.pages ?? []
     const flattened = pages.flat()
     const unique = new Map<string, PostSearchResult>()
     flattened.forEach((post) => {
@@ -183,18 +181,19 @@ function CommunityPage() {
         </Stack>
       </Collapsible.Root>
       <InfiniteDebugBanner
-        pages={postsQuery.data?.pages?.length ?? 0}
+        pages={postsQuery.data ? postsQuery.data.pages.length : 0}
         totalPosts={posts.length}
         hasNextPage={postsQuery.hasNextPage}
         isFetchingNextPage={postsQuery.isFetchingNextPage}
-        lastPost={
-          posts.length > 0
+        lastPost={(() => {
+          const lastPost = posts[posts.length - 1]
+          return posts.length > 0 && lastPost.permlink
             ? {
-                author: posts[posts.length - 1].author,
-                permlink: posts[posts.length - 1].permlink,
+                author: lastPost.author,
+                permlink: lastPost.permlink,
               }
             : undefined
-        }
+        })()}
       />
 
       <PostsListSection

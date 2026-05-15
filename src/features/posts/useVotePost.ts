@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { Operation } from '@hiveio/dhive'
 import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
 import { buildVoteOperation } from '@/lib/hive/operations'
 import { m } from '@/paraglide/messages'
@@ -17,9 +18,9 @@ export default function useVotePost({
 
   const vote = async (weightPercent: number) => {
     if (!account) {
-      const error = m.editor_status_keychain_required()
-      setError(error)
-      return { success: false as const, error }
+      const missingAccountError = m.editor_status_keychain_required()
+      setError(missingAccountError)
+      return { success: false as const, error: missingAccountError }
     }
 
     setIsVoting(true)
@@ -36,12 +37,15 @@ export default function useVotePost({
       }),
     ]
 
-    const response = await signAndBroadcastOperations(operations, 'Posting')
+    const response = await signAndBroadcastOperations(
+      operations as unknown as Array<Operation>,
+      'Posting',
+    )
     if (!response.success) {
-      const error = response.error ?? m.post_actions_vote_failed()
-      setError(error)
+      const voteError = response.error ?? m.post_actions_vote_failed()
+      setError(voteError)
       setIsVoting(false)
-      return { success: false as const, error }
+      return { success: false as const, error: voteError }
     } else {
       setSuccess(true)
     }
