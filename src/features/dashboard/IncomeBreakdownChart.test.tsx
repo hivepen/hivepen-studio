@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { ChakraProvider } from '@chakra-ui/react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import IncomeBreakdownChart from './IncomeBreakdownChart'
 import chakraSystem from '@/theme'
@@ -52,34 +52,34 @@ const categories: Array<DashboardIncomeBreakdownCategory> = [
   },
   {
     id: 'interest',
-    label: 'Interest',
+    label: 'HBD savings',
     value: 0.5,
     share: 0.05,
-    colorToken: 'yellow.solid',
+    colorToken: 'orange.solid',
     subcategories: [
       {
         id: 'hbd_savings',
         parentId: 'interest',
-        label: 'HBD Savings',
+        label: 'HBD interest',
         value: 0.5,
         share: 0.05,
-        colorToken: 'yellow.emphasized',
+        colorToken: 'orange.emphasized',
       },
     ],
   },
   {
     id: 'witness',
     label: 'Witness',
-    value: 1,
-    share: 0.1,
+    value: 0,
+    share: 0,
     colorToken: 'cyan.solid',
     subcategories: [
       {
         id: 'witness_blocks',
         parentId: 'witness',
         label: 'Block rewards',
-        value: 1,
-        share: 0.1,
+        value: 0,
+        share: 0,
         colorToken: 'cyan.emphasized',
       },
     ],
@@ -94,7 +94,7 @@ const categories: Array<DashboardIncomeBreakdownCategory> = [
       {
         id: 'delegation_income',
         parentId: 'transfers',
-        label: 'Delegation',
+        label: 'From delegatees',
         value: 2,
         share: 0.15,
         colorToken: 'red.emphasized',
@@ -112,7 +112,7 @@ const categories: Array<DashboardIncomeBreakdownCategory> = [
 ]
 
 describe('IncomeBreakdownChart', () => {
-  it('renders the dashboard-owned range and hierarchical legend values', () => {
+  it('renders the dashboard-owned range, hides empty categories, and supports pinning', () => {
     render(
       <ChakraProvider value={chakraSystem}>
         <IncomeBreakdownChart range="3M" categories={categories} />
@@ -123,7 +123,14 @@ describe('IncomeBreakdownChart', () => {
     expect(screen.getAllByText(/Last 3 months/i)).toHaveLength(2)
     expect(screen.getByText('Post rewards')).toBeTruthy()
     expect(screen.getByText('Comment rewards')).toBeTruthy()
-    expect(screen.getByText('Delegation')).toBeTruthy()
-    expect(screen.getAllByText('13.50')).toHaveLength(2)
+    expect(screen.getByText('From delegatees')).toBeTruthy()
+    expect(screen.queryByText('Witness')).toBeNull()
+    expect(
+      screen.getByText('Percentages show share of total income for the selected range.'),
+    ).toBeTruthy()
+    expect(screen.getAllByText('12.50')).toHaveLength(2)
+
+    fireEvent.click(screen.getByRole('button', { name: /From delegatees/i }))
+    expect(screen.getByRole('button', { name: /Clear pin/i })).toBeTruthy()
   })
 })

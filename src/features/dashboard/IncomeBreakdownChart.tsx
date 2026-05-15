@@ -4,16 +4,9 @@ import { Cell, Pie, PieChart } from 'recharts'
 import type {
   DashboardIncomeBreakdownCategory,
   DashboardIncomeBreakdownCategoryId,
+  DashboardIncomeBreakdownSubcategory,
   DashboardRange,
 } from './types'
-
-const PALETTE = {
-  author: ['#22c55e', '#16a34a', '#4ade80'],
-  curation: ['#a855f7', '#9333ea', '#c084fc'],
-  interest: ['#f59e0b', '#d97706', '#fbbf24'],
-  witness: ['#06b6d4', '#0891b2', '#22d3ee'],
-  transfers: ['#f43f5e', '#e11d48', '#fb7185'],
-} as const
 
 const RANGE_LABELS: Record<DashboardRange, string> = {
   '1M': 'Last month',
@@ -22,23 +15,27 @@ const RANGE_LABELS: Record<DashboardRange, string> = {
   '1Y': 'Last year',
 }
 
+const tokenVar = (token: string) =>
+  `var(--chakra-colors-${token.replace(/\./g, '-')})`
+
+const semanticVar = (token: string) =>
+  `var(--chakra-colors-${token.replace(/\./g, '-')})`
+
 type CategorySlice = {
+  id: DashboardIncomeBreakdownCategoryId
+  label: string
+  value: number
+  colorToken: string
+  palette: string
+}
+
+type SubcategorySlice = {
   id: string
   label: string
   value: number
-  color: string
+  colorToken: string
+  palette: string
   categoryId: DashboardIncomeBreakdownCategoryId
-}
-
-type SubcategorySlice = CategorySlice
-
-function getCategoryColor(id: DashboardIncomeBreakdownCategoryId, index = 0) {
-  return PALETTE[id]?.[index] ?? '#6b7280'
-}
-
-function getSubColor(id: DashboardIncomeBreakdownCategoryId, index: number) {
-  const palette = PALETTE[id]
-  return palette?.[index % palette.length] ?? '#9ca3af'
 }
 
 function formatHbd(value: number) {
@@ -49,8 +46,18 @@ function formatHbd(value: number) {
 }
 
 function formatPercent(value: number, total: number) {
-  if (total === 0) return '0%'
+  if (total === 0) return '0.0%'
   return `${((value / total) * 100).toFixed(1)}%`
+}
+
+function getPaletteName(token: string) {
+  return token.split('.')[0] ?? 'gray'
+}
+
+function getVisibleSubcategories(
+  subcategories: Array<DashboardIncomeBreakdownSubcategory>,
+) {
+  return subcategories.filter((subcategory) => subcategory.value > 0)
 }
 
 function CenterLabel({
@@ -75,9 +82,9 @@ function CenterLabel({
           x={cx}
           y={cy - lineHeight * 1.6}
           textAnchor="middle"
-          fill="#64748b"
+          fill={semanticVar('fg.muted')}
           fontSize="11"
-          fontFamily="monospace"
+          fontFamily="var(--chakra-fonts-mono)"
           letterSpacing="2"
         >
           {formatPercent(hovered.value, total)}
@@ -86,10 +93,10 @@ function CenterLabel({
           x={cx}
           y={cy - lineHeight * 0.35}
           textAnchor="middle"
-          fill="#f1f5f9"
+          fill={semanticVar('fg')}
           fontSize="22"
           fontWeight="700"
-          fontFamily="system-ui"
+          fontFamily="var(--chakra-fonts-body)"
         >
           {formatHbd(hovered.value)}
         </text>
@@ -97,9 +104,9 @@ function CenterLabel({
           x={cx}
           y={cy + lineHeight * 0.85}
           textAnchor="middle"
-          fill="#64748b"
+          fill={semanticVar('fg.muted')}
           fontSize="12"
-          fontFamily="system-ui"
+          fontFamily="var(--chakra-fonts-body)"
         >
           HBD
         </text>
@@ -107,9 +114,9 @@ function CenterLabel({
           x={cx}
           y={cy + lineHeight * 2}
           textAnchor="middle"
-          fill="#475569"
+          fill={semanticVar('fg.subtle')}
           fontSize="11"
-          fontFamily="system-ui"
+          fontFamily="var(--chakra-fonts-body)"
         >
           {hovered.label}
         </text>
@@ -123,9 +130,9 @@ function CenterLabel({
         x={cx}
         y={cy - lineHeight * 1.3}
         textAnchor="middle"
-        fill="#334155"
+        fill={semanticVar('fg.subtle')}
         fontSize="10"
-        fontFamily="monospace"
+        fontFamily="var(--chakra-fonts-mono)"
         letterSpacing="2"
       >
         TOTAL INCOME
@@ -134,10 +141,10 @@ function CenterLabel({
         x={cx}
         y={cy - lineHeight * 0.1}
         textAnchor="middle"
-        fill="#f1f5f9"
+        fill={semanticVar('fg')}
         fontSize="24"
         fontWeight="700"
-        fontFamily="system-ui"
+        fontFamily="var(--chakra-fonts-body)"
       >
         {formatHbd(total)}
       </text>
@@ -145,9 +152,9 @@ function CenterLabel({
         x={cx}
         y={cy + lineHeight * 1.1}
         textAnchor="middle"
-        fill="#64748b"
+        fill={semanticVar('fg.muted')}
         fontSize="12"
-        fontFamily="system-ui"
+        fontFamily="var(--chakra-fonts-body)"
       >
         HBD
       </text>
@@ -155,9 +162,9 @@ function CenterLabel({
         x={cx}
         y={cy + lineHeight * 2.2}
         textAnchor="middle"
-        fill="#334155"
+        fill={semanticVar('fg.subtle')}
         fontSize="10"
-        fontFamily="system-ui"
+        fontFamily="var(--chakra-fonts-body)"
       >
         {RANGE_LABELS[range]}
       </text>
@@ -166,80 +173,94 @@ function CenterLabel({
 }
 
 function LegendRow({
-  color,
+  colorToken,
+  palette,
   label,
   value,
   total,
   isActive,
+  isPinned,
   isChild,
-  onEnter,
-  onLeave,
+  onPreview,
+  onPreviewEnd,
+  onTogglePin,
 }: {
-  color: string
+  colorToken: string
+  palette: string
   label: string
   value: number
   total: number
   isActive: boolean
+  isPinned: boolean
   isChild: boolean
-  onEnter: () => void
-  onLeave: () => void
+  onPreview: () => void
+  onPreviewEnd: () => void
+  onTogglePin: () => void
 }) {
-  const percent = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0'
-
   return (
-    <HStack
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      gap={2}
+    <Box
+      as="button"
+      type="button"
+      w="full"
+      colorPalette={palette}
+      onMouseEnter={onPreview}
+      onMouseLeave={onPreviewEnd}
+      onFocus={onPreview}
+      onBlur={onPreviewEnd}
+      onClick={onTogglePin}
+      aria-pressed={isPinned}
+      textAlign="left"
       px={1.5}
       py={isChild ? 0.75 : 1.25}
       ps={isChild ? 5.5 : 1.5}
-      borderRadius="7px"
-      bg={isActive ? 'rgba(255,255,255,0.055)' : 'transparent'}
-      opacity={isActive ? 1 : 0.55}
-      transition="background 0.14s, opacity 0.14s"
-      cursor="default"
-      userSelect="none"
+      borderRadius="md"
+      borderWidth="1px"
+      borderColor={isActive ? 'colorPalette.border' : 'transparent'}
+      bg={isActive ? 'colorPalette.subtle' : 'transparent'}
+      opacity={isActive ? 1 : 0.72}
+      transition="background 0.14s, opacity 0.14s, border-color 0.14s"
+      _hover={{ opacity: 1 }}
+      _focusVisible={{
+        outline: '2px solid',
+        outlineColor: 'colorPalette.focusRing',
+        outlineOffset: '2px',
+      }}
     >
-      <Box
-        boxSize={isChild ? '7px' : '10px'}
-        borderRadius={isChild ? '2px' : '3px'}
-        bg={color}
-        flexShrink={0}
-      />
-      <Text
-        flex="1"
-        minW={0}
-        overflow="hidden"
-        textOverflow="ellipsis"
-        whiteSpace="nowrap"
-        fontSize={isChild ? '12px' : '13px'}
-        color={isActive ? '#e2e8f0' : '#94a3b8'}
-        fontWeight={isChild ? '400' : '500'}
-      >
-        {label}
-      </Text>
-      <Text
-        fontSize="11px"
-        color="#475569"
-        fontFamily="mono"
-        flexShrink={0}
-      >
-        {percent}%
-      </Text>
-      <Text
-        minW="62px"
-        textAlign="right"
-        fontSize="12px"
-        color={isActive ? color : '#334155'}
-        fontFamily="mono"
-        fontWeight={isActive ? '600' : '400'}
-        flexShrink={0}
-        transition="color 0.14s"
-      >
-        {formatHbd(value)}
-      </Text>
-    </HStack>
+      <HStack gap={2}>
+        <Box
+          boxSize={isChild ? '7px' : '10px'}
+          borderRadius={isChild ? '2px' : '3px'}
+          bg={tokenVar(colorToken)}
+          flexShrink={0}
+        />
+        <Text
+          flex="1"
+          minW={0}
+          overflow="hidden"
+          textOverflow="ellipsis"
+          whiteSpace="nowrap"
+          fontSize={isChild ? '12px' : '13px'}
+          color={isActive ? 'colorPalette.fg' : 'fg'}
+          fontWeight={isChild ? '400' : '500'}
+        >
+          {label}
+        </Text>
+        <Text fontSize="11px" color="fg.muted" fontFamily="mono" flexShrink={0}>
+          {formatPercent(value, total)}
+        </Text>
+        <Text
+          minW="62px"
+          textAlign="right"
+          fontSize="12px"
+          color={isActive ? 'colorPalette.fg' : 'fg.subtle'}
+          fontFamily="mono"
+          fontWeight={isActive ? '600' : '400'}
+          flexShrink={0}
+        >
+          {formatHbd(value)}
+        </Text>
+      </HStack>
+    </Box>
   )
 }
 
@@ -255,60 +276,125 @@ export default function IncomeBreakdownChart({
   const [hoveredSubcategoryId, setHoveredSubcategoryId] = useState<
     string | null
   >(null)
+  const [pinnedCategoryId, setPinnedCategoryId] =
+    useState<DashboardIncomeBreakdownCategoryId | null>(null)
+  const [pinnedSubcategoryId, setPinnedSubcategoryId] = useState<string | null>(
+    null,
+  )
+
+  const visibleCategories = categories
+    .map((category) => {
+      const subcategories = getVisibleSubcategories(category.subcategories)
+      return {
+        ...category,
+        subcategories,
+      }
+    })
+    .filter((category) => category.value > 0 && category.subcategories.length > 0)
 
   const chartCenterX = 140
   const chartCenterY = 140
-  const totalHbd = categories.reduce((total, category) => total + category.value, 0)
+  const totalHbd = visibleCategories.reduce(
+    (total, category) => total + category.value,
+    0,
+  )
+  const hasPinnedSelection =
+    pinnedCategoryId != null || pinnedSubcategoryId != null
+  const activeCategoryId = pinnedCategoryId ?? hoveredCategoryId
+  const activeSubcategoryId = pinnedSubcategoryId ?? hoveredSubcategoryId
 
-  const innerSlices: Array<CategorySlice> = categories.map((category) => ({
+  const clearPreview = () => {
+    if (hasPinnedSelection) return
+    setHoveredCategoryId(null)
+    setHoveredSubcategoryId(null)
+  }
+
+  const previewCategory = (categoryId: DashboardIncomeBreakdownCategoryId) => {
+    if (hasPinnedSelection) return
+    setHoveredCategoryId(categoryId)
+    setHoveredSubcategoryId(null)
+  }
+
+  const previewSubcategory = (
+    categoryId: DashboardIncomeBreakdownCategoryId,
+    subcategoryId: string,
+  ) => {
+    if (hasPinnedSelection) return
+    setHoveredCategoryId(categoryId)
+    setHoveredSubcategoryId(subcategoryId)
+  }
+
+  const clearPinnedSelection = () => {
+    setPinnedCategoryId(null)
+    setPinnedSubcategoryId(null)
+  }
+
+  const togglePinnedCategory = (categoryId: DashboardIncomeBreakdownCategoryId) => {
+    if (pinnedCategoryId === categoryId && pinnedSubcategoryId == null) {
+      clearPinnedSelection()
+      return
+    }
+
+    setPinnedCategoryId(categoryId)
+    setPinnedSubcategoryId(null)
+    setHoveredCategoryId(null)
+    setHoveredSubcategoryId(null)
+  }
+
+  const togglePinnedSubcategory = (
+    categoryId: DashboardIncomeBreakdownCategoryId,
+    subcategoryId: string,
+  ) => {
+    if (
+      pinnedCategoryId === categoryId &&
+      pinnedSubcategoryId === subcategoryId
+    ) {
+      clearPinnedSelection()
+      return
+    }
+
+    setPinnedCategoryId(categoryId)
+    setPinnedSubcategoryId(subcategoryId)
+    setHoveredCategoryId(null)
+    setHoveredSubcategoryId(null)
+  }
+
+  const innerSlices: Array<CategorySlice> = visibleCategories.map((category) => ({
     id: category.id,
     label: category.label,
     value: category.value,
-    color: getCategoryColor(category.id),
-    categoryId: category.id,
+    colorToken: category.colorToken,
+    palette: getPaletteName(category.colorToken),
   }))
 
-  const outerSlices: Array<SubcategorySlice> = categories.flatMap((category) => {
-    const subcategories = category.subcategories
-
-    if (subcategories.length > 1) {
-      return subcategories.map((subcategory, index) => ({
+  const outerSlices: Array<SubcategorySlice> = visibleCategories.flatMap(
+    (category) =>
+      category.subcategories.map((subcategory) => ({
         id: subcategory.id,
         label: subcategory.label,
         value: subcategory.value,
-        color: getSubColor(category.id, index + 1),
+        colorToken: subcategory.colorToken,
+        palette: getPaletteName(subcategory.colorToken),
         categoryId: category.id,
-      }))
-    }
-
-    const subcategory = subcategories[0]
-    return [
-      {
-        id: subcategory?.id ?? `${category.id}_outer`,
-        label: subcategory?.label ?? category.label,
-        value: subcategory?.value ?? category.value,
-        color: getSubColor(category.id, 1),
-        categoryId: category.id,
-      },
-    ]
-  })
-
-  const hoveredOuterSlice = outerSlices.find(
-    (slice) => slice.id === hoveredSubcategoryId,
+      })),
   )
 
-  const hoveredCenter = (() => {
-    if (hoveredSubcategoryId) {
+  const activeOuterSlice = outerSlices.find(
+    (slice) => slice.id === activeSubcategoryId,
+  )
+
+  const activeCenter = (() => {
+    if (activeSubcategoryId) {
       const subcategory = outerSlices.find(
-        (slice) => slice.id === hoveredSubcategoryId,
+        (slice) => slice.id === activeSubcategoryId,
       )
       if (subcategory) {
         return { label: subcategory.label, value: subcategory.value }
       }
     }
 
-    if (hoveredCategoryId) {
-      const category = categories.find((entry) => entry.id === hoveredCategoryId)
+    if (activeCategoryId) {
+      const category = visibleCategories.find((entry) => entry.id === activeCategoryId)
       if (category) {
         return { label: category.label, value: category.value }
       }
@@ -350,11 +436,11 @@ export default function IncomeBreakdownChart({
       <text
         x={x}
         y={y}
-        fill="#334155"
+        fill={semanticVar('fg.subtle')}
         fontSize="9.5"
         textAnchor={x > cx ? 'start' : 'end'}
         dominantBaseline="central"
-        fontFamily="monospace"
+        fontFamily="var(--chakra-fonts-mono)"
       >
         {(percent * 100).toFixed(0)}%
       </text>
@@ -366,9 +452,10 @@ export default function IncomeBreakdownChart({
       <Box
         w="full"
         maxW="680px"
-        bg="#0f172a"
+        bg="bg.panel"
         borderRadius="20px"
-        border="1px solid rgba(255,255,255,0.07)"
+        borderWidth="1px"
+        borderColor="border.subtle"
         px={{ base: 4, md: 6 }}
         py={7}
       >
@@ -380,207 +467,252 @@ export default function IncomeBreakdownChart({
           wrap="wrap"
         >
           <Stack gap={0.5}>
-            <Text
-              fontSize="15px"
-              fontWeight="600"
-              letterSpacing="-0.01em"
-              color="#f1f5f9"
-            >
+            <Text fontSize="15px" fontWeight="600" letterSpacing="-0.01em">
               Income breakdown
             </Text>
             <Text
               fontSize="10px"
-              color="#334155"
+              color="fg.muted"
               fontFamily="mono"
               letterSpacing="0.1em"
               textTransform="uppercase"
             >
-              {RANGE_LABELS[range]} · all sources
+              {RANGE_LABELS[range]} · cash-like sources
             </Text>
           </Stack>
 
-          <Box
-            bg="rgba(255,255,255,0.04)"
-            border="1px solid rgba(255,255,255,0.07)"
-            borderRadius="8px"
-            px={3}
-            py={1}
-            fontSize="13px"
-            color="#64748b"
-            fontFamily="mono"
-          >
-            {formatHbd(totalHbd)} <Text as="span" color="#334155">HBD</Text>
-          </Box>
+          <HStack gap={2} wrap="wrap" justify="end">
+            {hasPinnedSelection ? (
+              <Box
+                as="button"
+                type="button"
+                onClick={clearPinnedSelection}
+                px={2.5}
+                py={1}
+                borderRadius="md"
+                borderWidth="1px"
+                borderColor="border.subtle"
+                bg="bg.subtle"
+                fontSize="11px"
+                color="fg.muted"
+                fontFamily="mono"
+                _hover={{ bg: 'bg.muted', color: 'fg' }}
+              >
+                Clear pin
+              </Box>
+            ) : null}
+            <Box
+              bg="bg.subtle"
+              borderWidth="1px"
+              borderColor="border.subtle"
+              borderRadius="8px"
+              px={3}
+              py={1}
+              fontSize="13px"
+              color="fg.muted"
+              fontFamily="mono"
+            >
+              {formatHbd(totalHbd)} <Text as="span" color="fg.subtle">HBD</Text>
+            </Box>
+          </HStack>
         </Flex>
 
         <Flex direction={{ base: 'column', md: 'row' }} gap={5} align="center">
           <Box position="relative" w="280px" h="280px" flexShrink={0}>
-            <PieChart width={280} height={280}>
-              <Pie
-                data={innerSlices}
-                cx={chartCenterX}
-                cy={chartCenterY}
-                innerRadius={68}
-                outerRadius={104}
-                dataKey="value"
-                paddingAngle={2.5}
-                isAnimationActive={false}
-                onMouseEnter={(_, index) => {
-                  setHoveredCategoryId(innerSlices[index].categoryId)
-                  setHoveredSubcategoryId(null)
-                }}
-                onMouseLeave={() => {
-                  setHoveredCategoryId(null)
-                }}
-              >
-                {innerSlices.map((slice) => (
-                  <Cell
-                    key={slice.id}
-                    fill={slice.color}
-                    opacity={
-                      hoveredCategoryId == null && hoveredSubcategoryId == null
-                        ? 1
-                        : hoveredCategoryId === slice.categoryId ||
-                            hoveredOuterSlice?.categoryId === slice.categoryId
-                          ? 1
-                          : 0.2
-                    }
-                    stroke={
-                      hoveredCategoryId === slice.categoryId
-                        ? 'rgba(255,255,255,0.2)'
-                        : 'transparent'
-                    }
-                    strokeWidth={2}
-                    style={{ transition: 'opacity 0.18s', cursor: 'pointer' }}
-                  />
-                ))}
-              </Pie>
-
-              <Pie
-                data={outerSlices}
-                cx={chartCenterX}
-                cy={chartCenterY}
-                innerRadius={110}
-                outerRadius={132}
-                dataKey="value"
-                paddingAngle={1.5}
-                cornerRadius={3}
-                isAnimationActive={false}
-                onMouseEnter={(_, index) => {
-                  const slice = outerSlices[index]
-                  setHoveredSubcategoryId(slice.id)
-                  setHoveredCategoryId(slice.categoryId)
-                }}
-                onMouseLeave={() => {
-                  setHoveredSubcategoryId(null)
-                  setHoveredCategoryId(null)
-                }}
-                label={renderOuterLabel}
-                labelLine={false}
-              >
-                {outerSlices.map((slice) => (
-                  <Cell
-                    key={slice.id}
-                    fill={slice.color}
-                    opacity={
-                      hoveredCategoryId == null && hoveredSubcategoryId == null
-                        ? 0.82
-                        : hoveredSubcategoryId === slice.id
-                          ? 1
-                          : hoveredCategoryId === slice.categoryId
-                            ? 0.7
-                            : 0.15
-                    }
-                    stroke={
-                      hoveredSubcategoryId === slice.id
-                        ? 'rgba(255,255,255,0.25)'
-                        : 'transparent'
-                    }
-                    strokeWidth={1.5}
-                    style={{ transition: 'opacity 0.18s', cursor: 'pointer' }}
-                  />
-                ))}
-              </Pie>
-
-              <g>
-                <CenterLabel
+            {visibleCategories.length > 0 ? (
+              <PieChart width={280} height={280}>
+                <Pie
+                  data={innerSlices}
                   cx={chartCenterX}
                   cy={chartCenterY}
-                  hovered={hoveredCenter}
-                  total={totalHbd}
-                  range={range}
-                />
-              </g>
-            </PieChart>
+                  innerRadius={68}
+                  outerRadius={104}
+                  dataKey="value"
+                  paddingAngle={2.5}
+                  isAnimationActive={false}
+                  onMouseEnter={(_, index) => {
+                    const slice = innerSlices[index]
+                    previewCategory(slice.id)
+                  }}
+                  onMouseLeave={clearPreview}
+                  onClick={(_, index) => {
+                    const slice = innerSlices[index]
+                    togglePinnedCategory(slice.id)
+                  }}
+                >
+                  {innerSlices.map((slice) => (
+                    <Cell
+                      key={slice.id}
+                      fill={tokenVar(slice.colorToken)}
+                      opacity={
+                        activeCategoryId == null && activeSubcategoryId == null
+                          ? 1
+                          : activeCategoryId === slice.id ||
+                              activeOuterSlice?.categoryId === slice.id
+                            ? 1
+                            : 0.2
+                      }
+                      stroke={
+                        activeCategoryId === slice.id
+                          ? semanticVar(`${slice.palette}.border`)
+                          : 'transparent'
+                      }
+                      strokeWidth={2}
+                      style={{ transition: 'opacity 0.18s', cursor: 'pointer' }}
+                    />
+                  ))}
+                </Pie>
 
+                <Pie
+                  data={outerSlices}
+                  cx={chartCenterX}
+                  cy={chartCenterY}
+                  innerRadius={110}
+                  outerRadius={132}
+                  dataKey="value"
+                  paddingAngle={1.5}
+                  cornerRadius={3}
+                  isAnimationActive={false}
+                  onMouseEnter={(_, index) => {
+                    const slice = outerSlices[index]
+                    previewSubcategory(slice.categoryId, slice.id)
+                  }}
+                  onMouseLeave={clearPreview}
+                  onClick={(_, index) => {
+                    const slice = outerSlices[index]
+                    togglePinnedSubcategory(slice.categoryId, slice.id)
+                  }}
+                  label={renderOuterLabel}
+                  labelLine={false}
+                >
+                  {outerSlices.map((slice) => (
+                    <Cell
+                      key={slice.id}
+                      fill={tokenVar(slice.colorToken)}
+                      opacity={
+                        activeCategoryId == null && activeSubcategoryId == null
+                          ? 0.9
+                          : activeSubcategoryId === slice.id
+                            ? 1
+                            : activeCategoryId === slice.categoryId
+                              ? 0.72
+                              : 0.14
+                      }
+                      stroke={
+                        activeSubcategoryId === slice.id
+                          ? semanticVar(`${slice.palette}.border`)
+                          : 'transparent'
+                      }
+                      strokeWidth={1.5}
+                      style={{ transition: 'opacity 0.18s', cursor: 'pointer' }}
+                    />
+                  ))}
+                </Pie>
+
+                <g>
+                  <CenterLabel
+                    cx={chartCenterX}
+                    cy={chartCenterY}
+                    hovered={activeCenter}
+                    total={totalHbd}
+                    range={range}
+                  />
+                </g>
+              </PieChart>
+            ) : (
+              <Flex
+                h="full"
+                align="center"
+                justify="center"
+                borderRadius="full"
+                borderWidth="1px"
+                borderColor="border.subtle"
+                bg="bg.subtle"
+                textAlign="center"
+                px={8}
+              >
+                <Stack gap={1.5}>
+                  <Text fontSize="sm" fontWeight="600">
+                    No cash-like income yet
+                  </Text>
+                  <Text fontSize="xs" color="fg.muted">
+                    {RANGE_LABELS[range]} does not include HBD or HIVE transfers,
+                    author rewards, curation rewards, savings interest, or witness rewards.
+                  </Text>
+                </Stack>
+              </Flex>
+            )}
           </Box>
 
           <Stack flex="1 1 180px" minW={0} gap={0.5} w="full">
-            {categories.map((category) => {
-              const categoryIsActive = hoveredCategoryId === category.id
-              const hasMultipleSubcategories = category.subcategories.length > 1
+            {visibleCategories.map((category) => {
+              const categoryIsActive = activeCategoryId === category.id
+              const categoryPalette = getPaletteName(category.colorToken)
 
               return (
                 <Box key={category.id}>
                   <LegendRow
-                    color={getCategoryColor(category.id)}
+                    colorToken={category.colorToken}
+                    palette={categoryPalette}
                     label={category.label}
                     value={category.value}
                     total={totalHbd}
                     isActive={categoryIsActive}
+                    isPinned={
+                      pinnedCategoryId === category.id &&
+                      pinnedSubcategoryId == null
+                    }
                     isChild={false}
-                    onEnter={() => {
-                      setHoveredCategoryId(category.id)
-                      setHoveredSubcategoryId(null)
-                    }}
-                    onLeave={() => {
-                      setHoveredCategoryId(null)
-                      setHoveredSubcategoryId(null)
-                    }}
+                    onPreview={() => previewCategory(category.id)}
+                    onPreviewEnd={clearPreview}
+                    onTogglePin={() => togglePinnedCategory(category.id)}
                   />
-                  {hasMultipleSubcategories
-                    ? category.subcategories.map((subcategory, index) => (
-                        <LegendRow
-                          key={subcategory.id}
-                          color={getSubColor(category.id, index + 1)}
-                          label={subcategory.label}
-                          value={subcategory.value}
-                          total={totalHbd}
-                          isActive={
-                            hoveredSubcategoryId === subcategory.id ||
-                            categoryIsActive
-                          }
-                          isChild
-                          onEnter={() => {
-                            setHoveredSubcategoryId(subcategory.id)
-                            setHoveredCategoryId(category.id)
-                          }}
-                          onLeave={() => {
-                            setHoveredSubcategoryId(null)
-                            setHoveredCategoryId(null)
-                          }}
-                        />
-                      ))
-                    : null}
-                  <Box h="1px" bg="rgba(255,255,255,0.04)" mx={1.5} my={1} />
+                  {category.subcategories.map((subcategory) => (
+                    <LegendRow
+                      key={subcategory.id}
+                      colorToken={subcategory.colorToken}
+                      palette={getPaletteName(subcategory.colorToken)}
+                      label={subcategory.label}
+                      value={subcategory.value}
+                      total={totalHbd}
+                      isActive={
+                        activeSubcategoryId === subcategory.id || categoryIsActive
+                      }
+                      isPinned={pinnedSubcategoryId === subcategory.id}
+                      isChild
+                      onPreview={() =>
+                        previewSubcategory(category.id, subcategory.id)
+                      }
+                      onPreviewEnd={clearPreview}
+                      onTogglePin={() =>
+                        togglePinnedSubcategory(category.id, subcategory.id)
+                      }
+                    />
+                  ))}
+                  <Box h="1px" bg="border.subtle" mx={1.5} my={1} />
                 </Box>
               )
             })}
+
+            <Text px={1.5} pt={1} fontSize="11px" color="fg.muted">
+              Percentages show share of total income for the selected range.
+            </Text>
 
             <HStack
               justify="space-between"
               px={1.5}
               pt={2}
               mt={0.5}
-              borderTop="1px solid rgba(255,255,255,0.06)"
+              borderTopWidth="1px"
+              borderTopColor="border.subtle"
             >
-              <Text fontSize="12px" color="#475569">
+              <Text fontSize="12px" color="fg.muted">
                 Total
               </Text>
               <Text
                 fontSize="14px"
                 fontWeight="600"
-                color="#e2e8f0"
+                color="fg"
                 fontFamily="mono"
                 letterSpacing="0.04em"
               >
@@ -590,7 +722,6 @@ export default function IncomeBreakdownChart({
           </Stack>
         </Flex>
       </Box>
-
     </Stack>
   )
 }

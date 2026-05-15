@@ -776,14 +776,14 @@ export const aggregateDashboardOverview = ({
     createCategory({
       id: 'interest',
       label: 'HBD savings',
-      colorToken: 'yellow.solid',
+      colorToken: 'orange.solid',
       subcategories: [
         createSubcategory({
           id: 'hbd_savings',
           parentId: 'interest',
           label: 'HBD interest',
           value: currentSavingsInterest,
-          colorToken: 'yellow.emphasized',
+          colorToken: 'orange.emphasized',
         }),
       ],
     }),
@@ -852,7 +852,7 @@ export const aggregateDashboardOverview = ({
       label: 'HBD savings interest',
       value: totalSavingsInterest,
       share: totalSavingsInterest / breakdownBase,
-      colorToken: 'yellow.solid',
+      colorToken: 'orange.solid',
     },
   ]
   const breakdown = breakdownItems.filter(
