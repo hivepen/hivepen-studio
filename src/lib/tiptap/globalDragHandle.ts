@@ -149,8 +149,9 @@ const DragHandlePlugin = (options: {
     } else {
       selection = NodeSelection.create(view.state.doc, draggedNodePos)
       if (
-        selection.node.type.isInline ||
-        selection.node.type.name === 'tableRow'
+        selection instanceof NodeSelection &&
+        (selection.node.type.isInline ||
+          selection.node.type.name === 'tableRow')
       ) {
         const $pos = view.state.doc.resolve(selection.from)
         selection = NodeSelection.create(view.state.doc, $pos.before())
@@ -284,7 +285,10 @@ const DragHandlePlugin = (options: {
           const handlesContainer = view.dom.closest(
             '[data-show-handles]',
           )
-          if (handlesContainer?.dataset.showHandles === 'false') {
+          if (
+            handlesContainer instanceof HTMLElement &&
+            handlesContainer.dataset.showHandles === 'false'
+          ) {
             hideDragHandle()
             return
           }

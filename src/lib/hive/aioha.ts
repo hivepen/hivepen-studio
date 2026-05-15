@@ -9,19 +9,21 @@ const LOGIN_MESSAGE = 'Login to Hivepen Studio'
 
 let browserAioha: Aioha | null = null
 
-type AiohaAccountDirectory = Pick<
-  Aioha,
-  | 'getCurrentProvider'
-  | 'getCurrentUser'
-  | 'getLoginExpiration'
-  | 'getOtherLogins'
-  | 'isLoggedIn'
-  | 'isProviderEnabled'
-  | 'logout'
-  | 'logoutAll'
-  | 'removeOtherLogin'
-  | 'switchUser'
->
+type AiohaAccountDirectory = {
+  getCurrentProvider: () => unknown
+  getCurrentUser: () => string | null | undefined
+  getLoginExpiration: (username: string) => number | undefined
+  getOtherLogins: () => Record<string, unknown>
+  logout: () => Promise<unknown>
+  logoutAll: () => Promise<unknown>
+  removeOtherLogin: (username: string) => unknown
+  switchUser: (username: string) => boolean
+}
+
+type AiohaWalletStateSource = AiohaAccountDirectory & {
+  isLoggedIn: () => boolean
+  isProviderEnabled: (provider: Providers) => boolean
+}
 
 export type AiohaWalletState = {
   account: string | null
@@ -68,7 +70,7 @@ export function getAiohaInstance() {
 }
 
 export function getConnectedAiohaAccounts(
-  aioha: AiohaAccountDirectory = getAiohaInstance(),
+  aioha: AiohaAccountDirectory = getAiohaInstance() as AiohaAccountDirectory,
 ) {
   const connectedAccounts: Array<ConnectedWalletAccount> = []
   const activeAccount = aioha.getCurrentUser()
@@ -97,7 +99,7 @@ export function getConnectedAiohaAccounts(
         entry,
       ): entry is {
         account: string
-        expiresAt?: number
+        expiresAt: number | undefined
         isActive: false
         provider: WalletProvider
       } =>
@@ -113,7 +115,9 @@ export function getConnectedAiohaAccounts(
   return connectedAccounts
 }
 
-export function syncLegacyWalletStorage(aioha = getAiohaInstance()) {
+export function syncLegacyWalletStorage(
+  aioha: AiohaAccountDirectory = getAiohaInstance() as AiohaAccountDirectory,
+) {
   if (typeof window === 'undefined') return
 
   const currentUser = aioha.getCurrentUser()
@@ -138,7 +142,9 @@ export function syncLegacyWalletStorage(aioha = getAiohaInstance()) {
   }
 }
 
-export function getAiohaWalletState(aioha = getAiohaInstance()) {
+export function getAiohaWalletState(
+  aioha: AiohaWalletStateSource = getAiohaInstance() as AiohaWalletStateSource,
+) {
   const connectedAccounts = getConnectedAiohaAccounts(aioha)
   const activeAccount =
     connectedAccounts.find((entry) => entry.isActive)?.account ?? null
@@ -159,7 +165,7 @@ export function getAiohaWalletState(aioha = getAiohaInstance()) {
 
 export function isAiohaAccountConnected(
   username: string,
-  aioha: AiohaAccountDirectory = getAiohaInstance(),
+  aioha: AiohaAccountDirectory = getAiohaInstance() as AiohaAccountDirectory,
 ) {
   const normalized = normalizeWalletUsername(username)
   return getConnectedAiohaAccounts(aioha).some(
@@ -173,25 +179,25 @@ export async function loginWithAioha(
 ) {
   const aioha = getAiohaInstance()
   const result = await aioha.login(provider, username, getLoginOptions())
-  syncLegacyWalletStorage(aioha)
+  syncLegacyWalletStorage(aioha as AiohaAccountDirectory)
   return result
 }
 
 export async function logoutAioha() {
   const aioha = getAiohaInstance()
   await aioha.logout()
-  syncLegacyWalletStorage(aioha)
+  syncLegacyWalletStorage(aioha as AiohaAccountDirectory)
 }
 
 export async function logoutAllAioha() {
   const aioha = getAiohaInstance()
   await aioha.logoutAll()
-  syncLegacyWalletStorage(aioha)
+  syncLegacyWalletStorage(aioha as AiohaAccountDirectory)
 }
 
 export function switchAiohaAccount(
   username: string,
-  aioha: AiohaAccountDirectory = getAiohaInstance(),
+  aioha: AiohaAccountDirectory = getAiohaInstance() as AiohaAccountDirectory,
 ) {
   const success = aioha.switchUser(username)
   syncLegacyWalletStorage(aioha)
@@ -200,7 +206,7 @@ export function switchAiohaAccount(
 
 export async function disconnectAiohaAccount(
   username: string,
-  aioha: AiohaAccountDirectory = getAiohaInstance(),
+  aioha: AiohaAccountDirectory = getAiohaInstance() as AiohaAccountDirectory,
 ) {
   const connectedAccounts = getConnectedAiohaAccounts(aioha)
   const normalized = normalizeWalletUsername(username)
@@ -252,6 +258,6 @@ export async function signAndBroadcastOperationsWithAioha(
     operations,
     keyType === 'Active' ? KeyTypes.Active : KeyTypes.Posting,
   )
-  syncLegacyWalletStorage(aioha)
+  syncLegacyWalletStorage(aioha as AiohaAccountDirectory)
   return result
 }

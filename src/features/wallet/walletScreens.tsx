@@ -8,7 +8,6 @@ import {
   Heading,
   Icon,
   Menu,
-  Progress,
   SimpleGrid,
   Skeleton,
   Stack,
@@ -22,7 +21,6 @@ import {
   Ellipsis,
   ExternalLink,
   ShieldCheck,
-  Sparkles,
   Vote,
 } from 'lucide-react'
 import { useMemo } from 'react'
@@ -42,7 +40,6 @@ import useProfileQuery from '@/features/profile/useProfileQuery'
 import {
   WalletAssetBadge,
   WalletAssetIcon,
-  getWalletAssetMeta,
 } from '@/features/wallet/walletAssets'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { MAX_WITNESS_VOTES, vestsToHivePower } from '@/lib/hive/wallet'
