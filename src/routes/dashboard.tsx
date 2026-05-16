@@ -437,7 +437,6 @@ function Dashboard() {
       {matchesDashboardFocus('rewards', focus) && overview ? (
         <ChartPanel
           title="Income breakdown"
-          subtitle="Cash-like sources · two-level view"
           isLoading={dashboardQuery.isLoading}
         >
           <IncomeBreakdownChart
@@ -745,7 +744,7 @@ function ChartPanel({
   isLoading,
 }: {
   title: string
-  subtitle: string
+  subtitle?: string
   children: ReactNode
   gridColumn?: ComponentProps<typeof Card.Root>['gridColumn']
   isLoading: boolean
@@ -762,15 +761,17 @@ function ChartPanel({
         <Stack gap={3}>
           <Stack gap={1}>
             <Text fontWeight="600">{title}</Text>
-            <Text
-              fontSize="xs"
-              color="fg.muted"
-              textTransform="uppercase"
-              letterSpacing="0.16em"
-              fontFamily="mono"
-            >
-              {subtitle}
-            </Text>
+            {subtitle ? (
+              <Text
+                fontSize="xs"
+                color="fg.muted"
+                textTransform="uppercase"
+                letterSpacing="0.16em"
+                fontFamily="mono"
+              >
+                {subtitle}
+              </Text>
+            ) : null}
           </Stack>
           {isLoading ? (
             <Skeleton height="220px" borderRadius="16px" />

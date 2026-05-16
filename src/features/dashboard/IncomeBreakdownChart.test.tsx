@@ -119,7 +119,6 @@ describe('IncomeBreakdownChart', () => {
       </ChakraProvider>,
     )
 
-    expect(screen.getByText('Last 3 months · cash-like sources')).toBeTruthy()
     expect(screen.getByText('Post rewards')).toBeTruthy()
     expect(screen.queryByText('Witness')).toBeNull()
     expect(screen.getAllByText('12.50')).toHaveLength(2)

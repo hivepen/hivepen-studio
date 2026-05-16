@@ -452,17 +452,7 @@ export default function IncomeBreakdownChart({
           : `No cash-like income is available for ${RANGE_LABELS[range]}.`}
       </VisuallyHidden>
 
-      <Flex justify="space-between" align={{ base: 'start', sm: 'center' }} gap={3} wrap="wrap">
-        <Text
-          fontSize="10px"
-          color="fg.muted"
-          fontFamily="mono"
-          letterSpacing="0.1em"
-          textTransform="uppercase"
-        >
-          {RANGE_LABELS[range]} · cash-like sources
-        </Text>
-
+      <Flex justify="flex-end" align={{ base: 'start', sm: 'center' }} gap={3} wrap="wrap">
         <HStack gap={2} wrap="wrap" justify="end">
           {hasPinnedSelection ? (
             <Box
@@ -682,9 +672,6 @@ export default function IncomeBreakdownChart({
               )
             })}
 
-            <Text px={1.5} pt={1} fontSize="11px" color="fg.muted">
-              Percentages show share of total income for the selected range.
-            </Text>
         </Stack>
       </Flex>
     </Stack>
