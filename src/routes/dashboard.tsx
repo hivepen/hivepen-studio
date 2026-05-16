@@ -22,8 +22,6 @@ import {
   ArrowUpToLine,
   BadgeCheck,
   Coins,
-  Crown,
-  Gauge,
   Gem,
   HandCoins,
   HandHeart,
@@ -199,14 +197,12 @@ function Dashboard() {
     category: Exclude<DashboardFocus, 'all'>
     label: string
     palette: string
-    icon: ReactNode
+    icon?: ReactNode
+    media?: ReactNode
     value: string | null
     suffix: string
     description: string
   }> = [
-    // TODO(stat-cards): Add a compact fiat/value-context companion for HP so
-    // the user can connect effective stake to estimated wallet value without
-    // opening the wallet screen.
     {
       category: 'account',
       label: 'Hive Power',
@@ -217,11 +213,7 @@ function Dashboard() {
           ? formatTokenAmount(wallet.metrics.effectiveHivePower, 2)
           : null,
       suffix: ' HP',
-      description:
-        wallet?.metrics.receivedHivePower != null &&
-        wallet?.metrics.delegatedHivePower != null
-          ? `${formatTokenAmount(wallet.metrics.hivePower, 2)} owned · +${formatTokenAmount(wallet.metrics.receivedHivePower, 2)} in · -${formatTokenAmount(wallet.metrics.delegatedHivePower, 2)} out`
-          : 'Owned stake',
+      description: formatHivePowerContext(wallet?.metrics ?? null),
     },
     // TODO(stat-cards): Add a time-to-next-payout style savings cue derived
     // from the account's earning balance so the card answers "when" as well as
@@ -241,9 +233,6 @@ function Dashboard() {
         wallet?.metrics.hbdInterestRate ?? null,
       ),
     },
-    // TODO(stat-cards): Split the reward mix inline once the breakdown is more
-    // stable, so this card can preview the biggest source instead of repeating
-    // category names generically.
     {
       category: 'rewards',
       label: 'Total rewards',
@@ -254,7 +243,7 @@ function Dashboard() {
           ? formatTokenAmount(overview.summary.totalRewards, 2)
           : null,
       suffix: ' HBD',
-      description: formatTopRewardSource(overview),
+      description: formatRewardMixPreview(overview),
     },
     // TODO(stat-cards): Replace the generic regen note with an ETA to full
     // voting mana or next recommended vote threshold if we add that utility.
@@ -262,19 +251,20 @@ function Dashboard() {
       category: 'account',
       label: 'Voting power',
       palette: 'green',
-      icon: <Icon as={Gauge} boxSize={4} />,
+      media: (
+        <VotingPowerMedia
+          votingManaPercent={wallet?.metrics.votingManaPercent ?? null}
+          downvoteManaPercent={wallet?.metrics.downvoteManaPercent ?? null}
+          rcPercent={wallet?.metrics.rcPercent ?? null}
+        />
+      ),
       value:
         wallet?.metrics.votingManaPercent != null
           ? formatTokenAmount(wallet.metrics.votingManaPercent, 1)
           : null,
       suffix: '%',
-      description:
-        wallet?.metrics.downvoteManaPercent != null
-          ? `${formatTokenAmount(wallet.metrics.downvoteManaPercent, 1)}% downvote mana`
-          : 'Regenerates continuously',
+      description: formatVotingPowerContext(wallet?.metrics ?? null),
     },
-    // TODO(stat-cards): Add a cadence signal such as posts per month or the
-    // share of lifetime posts published in the active range.
     {
       category: 'publishing',
       label: 'Posts published',
@@ -282,10 +272,11 @@ function Dashboard() {
       icon: <Icon as={WalletCards} boxSize={4} />,
       value: totalPosts != null ? String(totalPosts) : null,
       suffix: '',
-      description:
-        overview?.summary.publishedPosts != null
-          ? `${overview.summary.publishedPosts} in ${rangeToDescription(range)} · ${formatPostingCadence(overview.summary.publishedPosts, range)}`
-          : 'From public Hive APIs',
+      description: formatPublishingContext(
+        overview?.summary.publishedPosts ?? null,
+        totalPosts,
+        range,
+      ),
     },
     // TODO(stat-cards): Add net audience context such as follower/following
     // ratio or recent follower delta once we have a trustworthy source.
@@ -303,8 +294,6 @@ function Dashboard() {
             ? `Following ${formatInteger(followingCount)} accounts`
           : 'Connected profile',
     },
-    // TODO(stat-cards): Pair the average with post count and total earned in
-    // range so this card explains whether the average comes from 1 post or 30.
     {
       category: 'publishing',
       label: 'Avg post reward',
@@ -321,8 +310,6 @@ function Dashboard() {
           ? `${overview.summary.publishedPosts} posts · ${formatTokenAmount(overview.summary.totalRewards, 2)} HBD total`
           : `Per post in ${rangeToDescription(range)}`,
     },
-    // TODO(stat-cards): Add a milestone-oriented age cue such as the account's
-    // next yearly anniversary window instead of only the absolute age.
     {
       category: 'account',
       label: 'Account age',
@@ -332,15 +319,7 @@ function Dashboard() {
         ? formatAccountAge(wallet.account.created)
         : null,
       suffix: '',
-      description: wallet?.account.created
-        ? `Member since ${new Date(wallet.account.created).toLocaleDateString(
-            undefined,
-            {
-              month: 'long',
-              year: 'numeric',
-            },
-          )}`
-        : 'Age based on on-chain account creation time',
+      description: formatAccountMilestone(wallet?.account.created ?? null),
     },
   ]
 
@@ -700,6 +679,7 @@ function MetricCard({
   description,
   palette,
   icon,
+  media,
   isLoading,
 }: {
   label: string
@@ -707,7 +687,8 @@ function MetricCard({
   suffix: string
   description: string
   palette: string
-  icon: ReactNode
+  icon?: ReactNode
+  media?: ReactNode
   isLoading: boolean
 }) {
   return (
@@ -730,9 +711,9 @@ function MetricCard({
                 {isLoading ? (
                   <Skeleton height="32px" width="70%" />
                 ) : (
-                  <Stat.ValueText fontSize="xl" lineHeight="1.05">
-                    {value ?? '—'}
-                    {suffix ? (
+                <Stat.ValueText fontSize="xl" lineHeight="1.05">
+                  {value ?? '—'}
+                  {suffix ? (
                       <Stat.ValueUnit color="fg.muted" fontSize="xs">
                         {suffix}
                       </Stat.ValueUnit>
@@ -740,17 +721,21 @@ function MetricCard({
                   </Stat.ValueText>
                 )}
               </Stack>
-              <Box
-                boxSize="8"
-                borderRadius="9px"
-                bg="colorPalette.subtle"
-                color="colorPalette.fg"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                {icon}
-              </Box>
+              {media ? (
+                media
+              ) : (
+                <Box
+                  boxSize="8"
+                  borderRadius="9px"
+                  bg="colorPalette.subtle"
+                  color="colorPalette.fg"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  {icon}
+                </Box>
+              )}
             </HStack>
 
             <Text fontSize="xs" color="fg.muted" lineClamp={2}>
@@ -760,6 +745,83 @@ function MetricCard({
         </Stat.Root>
       </Card.Body>
     </Card.Root>
+  )
+}
+
+function VotingPowerMedia({
+  votingManaPercent,
+  downvoteManaPercent,
+  rcPercent,
+}: {
+  votingManaPercent: number | null
+  downvoteManaPercent: number | null
+  rcPercent: number | null
+}) {
+  const bars = [
+    { label: 'VP', value: votingManaPercent, tone: 'solid' },
+    { label: 'DV', value: downvoteManaPercent, tone: 'fg' },
+    { label: 'RC', value: rcPercent, tone: 'muted' },
+  ] as const
+
+  return (
+    <Box
+      w="84px"
+      h="64px"
+      px={2}
+      py={1.5}
+      borderRadius="12px"
+      bg="colorPalette.subtle"
+      borderWidth="1px"
+      borderColor="colorPalette.border"
+      display="flex"
+      alignItems="end"
+      justifyContent="space-between"
+      gap={1.5}
+    >
+      {bars.map((bar) => {
+        const normalizedValue =
+          bar.value != null && Number.isFinite(bar.value)
+            ? Math.max(0, Math.min(100, bar.value))
+            : 0
+
+        return (
+          <Stack key={bar.label} gap={1} align="center" flex="1" minW="0">
+            <Box
+              h="38px"
+              w="100%"
+              borderRadius="full"
+              bg="bg.panel"
+              overflow="hidden"
+              position="relative"
+            >
+              <Box
+                position="absolute"
+                insetX="0"
+                bottom="0"
+                h={`${Math.max(normalizedValue, normalizedValue > 0 ? 10 : 0)}%`}
+                borderRadius="full"
+                bg={
+                  bar.tone === 'solid'
+                    ? 'colorPalette.solid'
+                    : bar.tone === 'muted'
+                      ? 'colorPalette.muted'
+                      : 'colorPalette.fg'
+                }
+                opacity={bar.tone === 'solid' ? 1 : 0.75}
+              />
+            </Box>
+            <Text
+              fontSize="2xs"
+              lineHeight="1"
+              fontFamily="mono"
+              color="colorPalette.fg"
+            >
+              {bar.label}
+            </Text>
+          </Stack>
+        )
+      })}
+    </Box>
   )
 }
 
@@ -1398,7 +1460,26 @@ function formatSavingsProjection(
   return `${formatPercent(apr, 0)} APR · +${formatTokenAmount(monthlyPayout, 2)}/mo · ~${formatTokenAmount(compoundedYearlyGain, 1)} HBD/year`
 }
 
-function formatTopRewardSource(overview: DashboardHistoricalOverview | null) {
+function formatHivePowerContext(
+  metrics:
+    | {
+        hivePower: number
+        receivedHivePower: number
+        delegatedHivePower: number
+        effectiveHivePower: number
+        hivePriceHbd: number
+      }
+    | null,
+) {
+  if (!metrics) {
+    return 'Owned stake'
+  }
+
+  const ownedValue = metrics.hivePower * metrics.hivePriceHbd
+  return `${formatTokenAmount(metrics.hivePower, 2)} owned · ${formatTokenAmount(metrics.receivedHivePower, 2)} in · ~${formatTokenAmount(ownedValue, 0)} HBD value`
+}
+
+function formatRewardMixPreview(overview: DashboardHistoricalOverview | null) {
   if (!overview?.breakdown.length) {
     return 'No rewards yet'
   }
@@ -1406,8 +1487,12 @@ function formatTopRewardSource(overview: DashboardHistoricalOverview | null) {
   const topSource = overview.breakdown.reduce((top, item) =>
     item.value > top.value ? item : top,
   )
+  const share =
+    overview.summary.totalRewards > 0
+      ? topSource.value / overview.summary.totalRewards
+      : 0
 
-  return `${rangeToDescription(overview.range)} · ${topSource.label.toLowerCase()} lead`
+  return `${topSource.label} ${formatPercent(share, 0)} · ${rangeToDescription(overview.range)}`
 }
 
 function formatPostingCadence(posts: number, range: DashboardRange) {
@@ -1423,6 +1508,29 @@ function formatPostingCadence(posts: number, range: DashboardRange) {
     range === '1M' ? 4 : range === '3M' ? 13 : range === '6M' ? 26 : 52
   const perWeek = posts / weeks
   return `~${formatTokenAmount(perWeek, 1)}/wk`
+}
+
+function formatPublishingContext(
+  publishedPosts: number | null,
+  totalPosts: number | null,
+  range: DashboardRange,
+) {
+  if (publishedPosts == null) {
+    return 'From public Hive APIs'
+  }
+
+  const cadence = formatPostingCadence(publishedPosts, range)
+
+  if (
+    totalPosts != null &&
+    Number.isFinite(totalPosts) &&
+    totalPosts > 0 &&
+    totalPosts >= publishedPosts
+  ) {
+    return `${publishedPosts} in ${rangeToDescription(range)} · ${formatPercent(publishedPosts / totalPosts, 0)} of lifetime`
+  }
+
+  return `${publishedPosts} in ${rangeToDescription(range)} · ${cadence}`
 }
 
 function getChartMax<T extends Record<string, unknown>>(
@@ -1453,6 +1561,43 @@ function matchesDashboardFocus(
   return focus === 'all' || focus === category
 }
 
+function formatVotingPowerContext(
+  metrics:
+    | {
+        votingManaPercent: number | null
+        downvoteManaPercent: number | null
+        rcPercent: number | null
+      }
+    | null,
+) {
+  if (
+    metrics?.votingManaPercent == null ||
+    !Number.isFinite(metrics.votingManaPercent)
+  ) {
+    return 'Regenerates continuously'
+  }
+
+  const remainder = Math.max(0, 100 - metrics.votingManaPercent)
+  const hoursToFull = (remainder / 100) * 24 * 5
+  const recoveryText =
+    remainder <= 0.2
+      ? 'Full now'
+      : `${formatDurationShort(hoursToFull)} to full`
+
+  if (metrics.rcPercent != null && Number.isFinite(metrics.rcPercent)) {
+    return `${recoveryText} · ${formatTokenAmount(metrics.rcPercent, 0)}% RC`
+  }
+
+  if (
+    metrics.downvoteManaPercent != null &&
+    Number.isFinite(metrics.downvoteManaPercent)
+  ) {
+    return `${recoveryText} · ${formatTokenAmount(metrics.downvoteManaPercent, 0)}% downvote`
+  }
+
+  return recoveryText
+}
+
 function formatAccountAge(value: string) {
   const createdAt = new Date(value)
   if (Number.isNaN(createdAt.getTime())) return '—'
@@ -1471,6 +1616,66 @@ function formatAccountAge(value: string) {
   }
 
   return `${years}y ${months}m`
+}
+
+function formatAccountMilestone(value: string | null) {
+  if (!value) {
+    return 'On-chain account age'
+  }
+
+  const createdAt = new Date(value)
+  if (Number.isNaN(createdAt.getTime())) {
+    return 'On-chain account age'
+  }
+
+  const now = new Date()
+  const nextAnniversaryYear =
+    now >=
+    new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        createdAt.getUTCMonth(),
+        createdAt.getUTCDate(),
+      ),
+    )
+      ? now.getUTCFullYear() + 1
+      : now.getUTCFullYear()
+  const nextAnniversary = new Date(
+    Date.UTC(
+      nextAnniversaryYear,
+      createdAt.getUTCMonth(),
+      createdAt.getUTCDate(),
+    ),
+  )
+  const daysUntil = Math.max(
+    0,
+    Math.ceil((nextAnniversary.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+  )
+  const milestoneYears = nextAnniversaryYear - createdAt.getUTCFullYear()
+
+  if (daysUntil <= 45) {
+    return `${milestoneYears}y in ${daysUntil}d`
+  }
+
+  return `Turns ${milestoneYears} in ${nextAnniversary.toLocaleDateString(undefined, {
+    month: 'short',
+  })}`
+}
+
+function formatDurationShort(hours: number) {
+  if (!Number.isFinite(hours) || hours <= 0) {
+    return '0h'
+  }
+
+  if (hours >= 48) {
+    return `${Math.round(hours / 24)}d`
+  }
+
+  if (hours >= 1) {
+    return `${Math.round(hours)}h`
+  }
+
+  return `${Math.max(1, Math.round(hours * 60))}m`
 }
 
 function getActivityPalette(type: string) {
