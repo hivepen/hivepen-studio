@@ -16,7 +16,7 @@
   "dependencies": {
     "@aioha/aioha": "^1.8.2",
     "@chakra-ui/react": "^3.33.0",
-    "@ecency/sdk": "^2.0.14",
+    "@ecency/sdk": "^2.2.13",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@hiveio/content-renderer": "^2.3.1",
