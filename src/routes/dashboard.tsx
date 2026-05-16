@@ -24,7 +24,6 @@ import {
   Coins,
   Gauge,
   Gem,
-  HandCoins,
   HandHeart,
   Landmark,
   PiggyBank,
@@ -234,18 +233,6 @@ function Dashboard() {
         wallet?.metrics.savingsHbd ?? null,
         wallet?.metrics.hbdInterestRate ?? null,
       ),
-    },
-    {
-      category: 'rewards',
-      label: 'Total rewards',
-      palette: 'purple',
-      icon: <Icon as={HandCoins} boxSize={4} />,
-      value:
-        overview?.summary.totalRewards != null
-          ? formatTokenAmount(overview.summary.totalRewards, 2)
-          : null,
-      suffix: ' HBD',
-      description: formatRewardMixPreview(overview),
     },
     // TODO(stat-cards): Replace the generic regen note with an ETA to full
     // voting mana or next recommended vote threshold if we add that utility.
@@ -1405,7 +1392,7 @@ function renderHivePowerCardBody(
         ) : null}
       </HStack>
       <Text fontSize="2xs" color="fg.muted" fontFamily="mono">
-        ~{formatTokenAmount(estimatedValue, 0)} HBD value at current price
+        ~{formatTokenAmount(estimatedValue, 2)} HBD
       </Text>
     </Stack>
   )
@@ -1446,26 +1433,10 @@ function renderSavingsCardBody(
         </Text>
       </HStack>
       <Text fontSize="2xs" color="fg.muted" fontFamily="mono">
-        compound monthly on the current balance
+        compound monthly
       </Text>
     </Stack>
   )
-}
-
-function formatRewardMixPreview(overview: DashboardHistoricalOverview | null) {
-  if (!overview?.breakdown.length) {
-    return 'No rewards yet'
-  }
-
-  const topSource = overview.breakdown.reduce((top, item) =>
-    item.value > top.value ? item : top,
-  )
-  const share =
-    overview.summary.totalRewards > 0
-      ? topSource.value / overview.summary.totalRewards
-      : 0
-
-  return `${topSource.label} ${formatPercent(share, 0)} · ${rangeToDescription(overview.range)}`
 }
 
 function formatPostingCadence(posts: number, range: DashboardRange) {
