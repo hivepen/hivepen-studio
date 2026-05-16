@@ -53,6 +53,7 @@ import type {
   DashboardRange,
 } from '@/features/dashboard/types'
 import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
+import RewardIncomeStackedChart from '@/features/dashboard/RewardIncomeStackedChart'
 import HbdIcon from '@/components/hive/HbdIcon'
 import HiveIcon from '@/components/hive/HiveIcon'
 import { Avatar } from '@/components/ui/avatar'
@@ -953,6 +954,8 @@ function RewardIncomeChart({
           />
         ))}
       </HStack>
+
+      <RewardIncomeStackedChart buckets={overview.buckets} />
     </Stack>
   )
 }
