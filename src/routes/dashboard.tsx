@@ -411,9 +411,11 @@ function Dashboard() {
               label={card.label}
               palette={card.palette}
               icon={card.icon}
+              media={card.media}
               value={card.value}
               suffix={card.suffix}
               description={card.description}
+              children={card.children}
               isLoading={
                 dashboardQuery.isLoading ||
                 walletQuery.isLoading ||
