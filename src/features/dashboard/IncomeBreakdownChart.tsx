@@ -719,28 +719,6 @@ export default function IncomeBreakdownChart({
             <Text px={1.5} pt={1} fontSize="11px" color="fg.muted">
               Percentages show share of total income for the selected range.
             </Text>
-
-            <HStack
-              justify="space-between"
-              px={1.5}
-              pt={2}
-              mt={0.5}
-              borderTopWidth="1px"
-              borderTopColor="border.subtle"
-            >
-              <Text fontSize="12px" color="fg.muted">
-                Total
-              </Text>
-              <Text
-                fontSize="14px"
-                fontWeight="600"
-                color="fg"
-                fontFamily="mono"
-                letterSpacing="0.04em"
-              >
-                {formatHbd(totalHbd)} HBD
-              </Text>
-            </HStack>
           </Stack>
         </Flex>
       </Box>

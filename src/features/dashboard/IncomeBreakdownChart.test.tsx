@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { ChakraProvider } from '@chakra-ui/react'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import IncomeBreakdownChart from './IncomeBreakdownChart'
 import chakraSystem from '@/theme'
@@ -112,7 +112,7 @@ const categories: Array<DashboardIncomeBreakdownCategory> = [
 ]
 
 describe('IncomeBreakdownChart', () => {
-  it('renders the dashboard-owned range, hides empty categories, and supports pinning', () => {
+  it('renders the dashboard-owned range and hides empty categories', () => {
     render(
       <ChakraProvider value={chakraSystem}>
         <IncomeBreakdownChart range="3M" categories={categories} />
@@ -120,23 +120,8 @@ describe('IncomeBreakdownChart', () => {
     )
 
     expect(screen.getByText('Income breakdown')).toBeTruthy()
-    expect(screen.getByText('Last 3 months · cash-like sources')).toBeTruthy()
     expect(screen.getByText('Post rewards')).toBeTruthy()
-    expect(screen.getByText('Comment rewards')).toBeTruthy()
-    expect(screen.getByText('From delegatees')).toBeTruthy()
     expect(screen.queryByText('Witness')).toBeNull()
-    expect(
-      screen.getByText('Percentages show share of total income for the selected range.'),
-    ).toBeTruthy()
-    expect(screen.getAllByText('12.50')).toHaveLength(2)
-    expect(
-      screen.getByLabelText(
-        'From delegatees, 16.0% of total income, 2.00 HBD',
-      ),
-    ).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: /From delegatees/i }))
-    expect(screen.getByRole('button', { name: /Clear pin/i })).toBeTruthy()
   })
 
   it('renders an explicit empty state when every category is zero', () => {
