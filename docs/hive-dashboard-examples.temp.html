@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hive Analytics Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #13161e;
+    --surface2: #1a1e29;
+    --border: rgba(255,255,255,0.07);
+    --text: #e8e6df;
+    --muted: #6e6d67;
+    --accent: #e84b4b;
+    --accent2: #f0a500;
+    --accent3: #3ecf8e;
+    --accent4: #5b8cf7;
+    --accent5: #c084fc;
+    --font: 'DM Mono', 'Fira Mono', 'Courier New', monospace;
+    --sans: 'DM Sans', 'Segoe UI', sans-serif;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── header ── */
+  .dash-header {
+    padding: 32px 40px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .dash-title {
+    font-family: var(--font);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .dash-headline {
+    font-family: var(--sans);
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .dash-headline span { color: var(--accent); }
+  .dash-meta {
+    font-family: var(--font);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+  }
+  .live-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent3);
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  /* ── stat strip ── */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-cell {
+    background: var(--surface);
+    padding: 18px 24px;
+  }
+  .stat-label {
+    font-family: var(--font);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .stat-delta {
+    font-family: var(--font);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  .up { color: var(--accent3); }
+  .down { color: var(--accent); }
+  .neutral { color: var(--muted); }
+
+  /* ── layout ── */
+  .dash-body { padding: 32px 40px; display: flex; flex-direction: column; gap: 28px; }
+
+  .section-label {
+    font-family: var(--font);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  }
+  .card-title {
+    font-family: var(--font);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .card-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    opacity: 0.7;
+  }
+  .chart-area { width: 100%; }
+
+  /* legend pills */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--font);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* annotation badge */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-1-2, .grid-2-1 { grid-template-columns: 1fr; }
+    .dash-body { padding: 20px; }
+    .dash-header { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════ HEADER -->
+<header class="dash-header">
+  <div>
+    <div class="dash-title">Hive Blockchain Analytics</div>
+    <div class="dash-headline">@<span>carlosepc</span> · Creator Studio</div>
+  </div>
+  <div class="dash-meta">
+    <div><span class="live-dot"></span>Live · Block #85,412,900</div>
+    <div style="margin-top:4px">Last 90 days · May 2026</div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════ STAT STRIP -->
+<div class="stat-strip">
+  <div class="stat-cell">
+    <div class="stat-label">Total Earned</div>
+    <div class="stat-value" style="color:var(--accent2)">847.33</div>
+    <div class="stat-delta up">↑ HBD this period</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Hive Power</div>
+    <div class="stat-value" style="color:var(--accent4)">14,280</div>
+    <div class="stat-delta up">↑ +320 HP delegated in</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Posts Published</div>
+    <div class="stat-value">38</div>
+    <div class="stat-delta neutral">→ 0.42/day avg</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Curation APR</div>
+    <div class="stat-value" style="color:var(--accent3)">12.4%</div>
+    <div class="stat-delta up">↑ +1.2pp vs last period</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Followers</div>
+    <div class="stat-value">1,847</div>
+    <div class="stat-delta up">↑ +112 new</div>
+  </div>
+  <div class="stat-cell">
+    <div class="stat-label">Vote Value</div>
+    <div class="stat-value" style="color:var(--accent5)">$0.083</div>
+    <div class="stat-delta down">↓ −0.004 vs last week</div>
+  </div>
+</div>
+
+<div class="dash-body">
+
+  <!-- ═══════════════════════════════════════════════════════ SECTION 1: EARNINGS -->
+  <div>
+    <div class="section-label">Creator earnings</div>
+    <div class="grid-2-1" style="align-items:start">
+
+      <!-- 1. STACKED AREA: earnings timeline -->
+      <div class="card">
+        <div class="card-title">Income breakdown · 12-week timeline</div>
+        <div class="card-subtitle">Author rewards split by token type, weekly</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#e84b4b"></div>HBD liquid</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#5b8cf7"></div>HP (powered up)</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f0a500"></div>Curation</div>
+        </div>
+        <div class="chart-area" id="chart-earnings" style="height:260px"></div>
+      </div>
+
+      <!-- 2. GAUGE + RING: vote power state -->
+      <div class="card">
+        <div class="card-title">Voting mana</div>
+        <div class="card-subtitle">Current regeneration state</div>
+        <div class="chart-area" id="chart-mana" style="height:260px"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ SECTION 2: CURATION -->
+  <div>
+    <div class="section-label">Curation analytics</div>
+    <div class="grid-3">
+
+      <!-- 3. HEATMAP: curation activity by hour/weekday -->
+      <div class="card" style="grid-column: span 2">
+        <div class="card-title">Vote timing heatmap · week × hour</div>
+        <div class="card-subtitle">When you vote most, across days and hours (UTC). Brighter = more votes cast.</div>
+        <div class="chart-area" id="chart-heatmap" style="height:220px"></div>
+      </div>
+
+      <!-- 4. RADAR: curation profile -->
+      <div class="card">
+        <div class="card-title">Curator profile</div>
+        <div class="card-subtitle">vs. top-100 curators avg</div>
+        <div class="chart-area" id="chart-radar" style="height:220px"></div>
+      </div>
+
+    </div>
+
+    <div class="grid-2" style="margin-top:20px">
+
+      <!-- 5. BUBBLE SCATTER: post performance -->
+      <div class="card">
+        <div class="card-title">Post performance map</div>
+        <div class="card-subtitle">Payout (x) × votes (y) · bubble = word count</div>
+        <div class="chart-area" id="chart-scatter" style="height:260px"></div>
+      </div>
+
+      <!-- 6. HORIZONTAL BAR: top curated communities -->
+      <div class="card">
+        <div class="card-title">Top curated communities</div>
+        <div class="card-subtitle">By total HP allocated in last 30 days</div>
+        <div class="chart-area" id="chart-communities" style="height:260px"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ SECTION 3: DELEGATION -->
+  <div>
+    <div class="section-label">HP & delegation flow</div>
+    <div class="grid-1-2">
+
+      <!-- 7. TREEMAP: delegation breakdown -->
+      <div class="card">
+        <div class="card-title">Incoming delegations</div>
+        <div class="card-subtitle">HP delegated to you, by account</div>
+        <div class="chart-area" id="chart-treemap" style="height:300px"></div>
+      </div>
+
+      <!-- 8. SANKEY: HP flow diagram -->
+      <div class="card">
+        <div class="card-title">Hive Power flow</div>
+        <div class="card-subtitle">How your HP is distributed and earns</div>
+        <div class="chart-area" id="chart-sankey" style="height:300px"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ SECTION 4: GROWTH & TOKENS -->
+  <div>
+    <div class="section-label">Growth & token economics</div>
+    <div class="grid-2">
+
+      <!-- 9. LINE + AREA: HP growth projection -->
+      <div class="card">
+        <div class="card-title">HP accumulation · 18-month projection</div>
+        <div class="card-subtitle">Actual vs. projected at current growth rate (+3.2%/mo)</div>
+        <div class="chart-area" id="chart-growth" style="height:250px"></div>
+      </div>
+
+      <!-- 10. DUAL-AXIS: HIVE/HBD price vs. your earnings -->
+      <div class="card">
+        <div class="card-title">Price × earnings correlation</div>
+        <div class="card-subtitle">HIVE USD price vs. weekly HBD income</div>
+        <div class="chart-area" id="chart-price" style="height:250px"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ SECTION 5: SUNBURST -->
+  <div>
+    <div class="section-label">Content ecosystem</div>
+    <div class="grid-2">
+
+      <!-- 11. SUNBURST: community income breakdown -->
+      <div class="card">
+        <div class="card-title">Income sunburst · by community & type</div>
+        <div class="card-subtitle">Inner ring = community, outer ring = reward type</div>
+        <div class="chart-area" id="chart-sunburst" style="height:380px"></div>
+      </div>
+
+      <!-- 12. CANDLESTICK-STYLE: post payout distribution over time -->
+      <div class="card">
+        <div class="card-title">Payout distribution · weekly boxplot</div>
+        <div class="card-subtitle">Min / Q1 / median / Q3 / max payout per post (HBD)</div>
+        <div class="chart-area" id="chart-boxplot" style="height:380px"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════ SECTION 6: WITNESS (bonus) -->
+  <div>
+    <div class="section-label">Witness & network</div>
+    <div class="grid-3">
+
+      <!-- 13. STEP LINE: witness rank over time -->
+      <div class="card" style="grid-column: span 2">
+        <div class="card-title">Witness rank timeline (simulated)</div>
+        <div class="card-subtitle">Rank position over 6 months — lower is better · with key events annotated</div>
+        <div class="chart-area" id="chart-witness" style="height:220px"></div>
+      </div>
+
+      <!-- 14. PIE: RC delegation usage -->
+      <div class="card">
+        <div class="card-title">RC credits usage</div>
+        <div class="card-subtitle">Resource credit consumption breakdown</div>
+        <div class="chart-area" id="chart-rc" style="height:220px"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end dash-body -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// SHARED CONFIG
+// ═══════════════════════════════════════════════════════════════════════════
+const BG      = '#0d0f14';
+const SURFACE = '#13161e';
+const S2      = '#1a1e29';
+const TEXT    = '#e8e6df';
+const MUTED   = '#6e6d67';
+const BORDER  = 'rgba(255,255,255,0.07)';
+
+const C = {
+  red:    '#e84b4b',
+  blue:   '#5b8cf7',
+  gold:   '#f0a500',
+  green:  '#3ecf8e',
+  purple: '#c084fc',
+  teal:   '#2dd4bf',
+  orange: '#fb923c',
+  pink:   '#f472b6',
+};
+
+const baseTextStyle = { color: MUTED, fontFamily: "'DM Mono', monospace", fontSize: 11 };
+const baseAxisStyle = {
+  axisLine: { lineStyle: { color: BORDER } },
+  axisTick: { show: false },
+  axisLabel: { ...baseTextStyle },
+  splitLine: { lineStyle: { color: BORDER, type: 'dashed' } },
+};
+
+function makeChart(id) {
+  return echarts.init(document.getElementById(id), null, { renderer: 'canvas' });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 1. STACKED AREA — earnings timeline
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-earnings');
+  const weeks = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'];
+  const hbd  = [18.2, 22.5, 19.8, 31.4, 26.0, 28.8, 35.2, 29.6, 41.0, 38.4, 44.1, 52.3];
+  const hp   = [14.1, 16.2, 15.4, 22.8, 19.5, 21.0, 26.4, 22.1, 30.8, 28.9, 33.1, 39.2];
+  const cur  = [4.2,  5.1,  4.8,  6.3,  5.4,  7.2,  8.8,  7.5,  9.1,  8.6,  10.2, 11.8];
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    grid: { top: 10, bottom: 40, left: 50, right: 20 },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: S2,
+      borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 12 },
+      formatter(params) {
+        let s = `<div style="font-family:monospace;font-size:11px;color:${MUTED};margin-bottom:6px">${params[0].name}</div>`;
+        let total = 0;
+        params.forEach(p => {
+          total += p.value;
+          s += `<div style="display:flex;justify-content:space-between;gap:24px"><span style="color:${p.color}">● ${p.seriesName}</span><span style="color:${TEXT}">${p.value.toFixed(2)} HBD</span></div>`;
+        });
+        s += `<div style="margin-top:6px;border-top:1px solid ${BORDER};padding-top:6px;display:flex;justify-content:space-between"><span style="color:${MUTED}">Total</span><span style="color:${C.gold};font-weight:500">${total.toFixed(2)} HBD</span></div>`;
+        return s;
+      }
+    },
+    xAxis: { type: 'category', data: weeks, ...baseAxisStyle, splitLine: { show: false } },
+    yAxis: { type: 'value', ...baseAxisStyle, name: 'HBD', nameTextStyle: baseTextStyle, nameGap: 8 },
+    series: [
+      {
+        name: 'Curation', type: 'line', stack: 'earn', data: cur,
+        smooth: 0.4,
+        areaStyle: { color: { type:'linear', x:0,y:0,x2:0,y2:1, colorStops:[{offset:0,color:'rgba(240,165,0,0.5)'},{offset:1,color:'rgba(240,165,0,0.0)'}] } },
+        lineStyle: { color: C.gold, width: 1.5 },
+        symbol: 'none', color: C.gold,
+      },
+      {
+        name: 'HP (powered up)', type: 'line', stack: 'earn', data: hp,
+        smooth: 0.4,
+        areaStyle: { color: { type:'linear', x:0,y:0,x2:0,y2:1, colorStops:[{offset:0,color:'rgba(91,140,247,0.55)'},{offset:1,color:'rgba(91,140,247,0.0)'}] } },
+        lineStyle: { color: C.blue, width: 1.5 },
+        symbol: 'none', color: C.blue,
+      },
+      {
+        name: 'HBD liquid', type: 'line', stack: 'earn', data: hbd,
+        smooth: 0.4,
+        areaStyle: { color: { type:'linear', x:0,y:0,x2:0,y2:1, colorStops:[{offset:0,color:'rgba(232,75,75,0.6)'},{offset:1,color:'rgba(232,75,75,0.0)'}] } },
+        lineStyle: { color: C.red, width: 1.5 },
+        symbol: 'none', color: C.red,
+      },
+    ],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 2. GAUGE + RINGS — voting mana
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-mana');
+  const mana = 87.4;
+  const rc   = 73.2;
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { show: false },
+    series: [
+      {
+        type: 'gauge',
+        center: ['50%', '58%'],
+        radius: '75%',
+        startAngle: 200, endAngle: -20,
+        min: 0, max: 100,
+        progress: { show: true, width: 12, itemStyle: { color: { type:'linear',x:0,y:0,x2:1,y2:0, colorStops:[{offset:0,color:C.blue},{offset:1,color:C.teal}] } } },
+        axisLine: { lineStyle: { width: 12, color: [[1, S2]] } },
+        axisTick: { show: false },
+        splitLine: { show: false },
+        axisLabel: { show: false },
+        pointer: { show: false },
+        detail: {
+          valueAnimation: true,
+          fontSize: 30,
+          fontWeight: '500',
+          color: TEXT,
+          formatter: '{value}%',
+          offsetCenter: [0, '-5%'],
+        },
+        title: {
+          offsetCenter: [0, '22%'],
+          fontSize: 11,
+          color: MUTED,
+          fontFamily: 'monospace',
+        },
+        data: [{ value: mana.toFixed(1), name: 'VOTE MANA' }],
+      },
+      {
+        type: 'gauge',
+        center: ['50%', '58%'],
+        radius: '55%',
+        startAngle: 200, endAngle: -20,
+        min: 0, max: 100,
+        progress: { show: true, width: 8, itemStyle: { color: C.purple } },
+        axisLine: { lineStyle: { width: 8, color: [[1, S2]] } },
+        axisTick: { show: false },
+        splitLine: { show: false },
+        axisLabel: { show: false },
+        pointer: { show: false },
+        detail: {
+          valueAnimation: true,
+          fontSize: 14,
+          color: C.purple,
+          formatter: 'RC {value}%',
+          offsetCenter: [0, '65%'],
+          fontFamily: 'monospace',
+        },
+        title: { show: false },
+        data: [{ value: rc.toFixed(1) }],
+      },
+    ],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 3. HEATMAP — vote timing by weekday × hour
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-heatmap');
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hours = Array.from({length:24}, (_,i) => `${String(i).padStart(2,'0')}h`);
+
+  // Simulate realistic curation pattern: more active early morning UTC & evenings
+  const data = [];
+  days.forEach((d, di) => {
+    hours.forEach((h, hi) => {
+      // Weight toward certain hours, with weekend variation
+      let base = Math.random() * 2;
+      const isWeekend = di >= 5;
+      if (hi >= 6 && hi <= 9)   base += isWeekend ? 3 : 6;
+      if (hi >= 14 && hi <= 16) base += isWeekend ? 4 : 3;
+      if (hi >= 20 && hi <= 22) base += isWeekend ? 6 : 4;
+      data.push([hi, di, Math.round(base)]);
+    });
+  });
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+      position: 'top',
+      backgroundColor: S2,
+      borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 11, fontFamily: 'monospace' },
+      formatter(p) { return `${days[p.value[1]]} ${hours[p.value[0]]} · ${p.value[2]} votes`; }
+    },
+    grid: { top: 10, bottom: 30, left: 46, right: 20 },
+    xAxis: {
+      type: 'category', data: hours,
+      ...baseAxisStyle, splitLine: { show: false },
+      axisLabel: { ...baseTextStyle, interval: 1,
+        formatter: (v, i) => i % 4 === 0 ? v : '' }
+    },
+    yAxis: { type: 'category', data: days, ...baseAxisStyle, splitLine: { show: false } },
+    visualMap: {
+      min: 0, max: 9,
+      calculable: false,
+      show: false,
+      inRange: { color: [S2, '#1a2a4a', '#1e3a6e', C.blue, C.teal] }
+    },
+    series: [{
+      type: 'heatmap',
+      data,
+      itemStyle: { borderRadius: 3, borderWidth: 1, borderColor: BG },
+      emphasis: { itemStyle: { borderColor: TEXT, borderWidth: 1.5 } },
+    }],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 4. RADAR — curation profile
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-radar');
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { show: false },
+    radar: {
+      indicator: [
+        { name: 'Timing', max: 100 },
+        { name: 'Diversity', max: 100 },
+        { name: 'ROI', max: 100 },
+        { name: 'Consistency', max: 100 },
+        { name: 'Discovery', max: 100 },
+        { name: 'Engagement', max: 100 },
+      ],
+      center: ['50%', '50%'],
+      radius: '68%',
+      startAngle: 90,
+      shape: 'polygon',
+      splitNumber: 4,
+      name: { textStyle: { ...baseTextStyle, fontSize: 11 } },
+      splitLine: { lineStyle: { color: BORDER, type: 'dashed' } },
+      splitArea: { show: true, areaStyle: {
+        color: [S2, BG, S2, BG].map((c,i) => i%2===0 ? S2 : 'transparent') }
+      },
+      axisLine: { lineStyle: { color: BORDER } },
+    },
+    series: [
+      {
+        type: 'radar',
+        data: [
+          {
+            value: [82, 74, 91, 68, 88, 76],
+            name: 'You',
+            areaStyle: { color: 'rgba(91,140,247,0.18)' },
+            lineStyle: { color: C.blue, width: 2 },
+            itemStyle: { color: C.blue },
+          },
+          {
+            value: [70, 80, 72, 82, 60, 84],
+            name: 'Top-100 avg',
+            areaStyle: { color: 'rgba(240,165,0,0.10)' },
+            lineStyle: { color: C.gold, width: 1.5, type: 'dashed' },
+            itemStyle: { color: C.gold },
+          },
+        ],
+      },
+    ],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 5. BUBBLE SCATTER — post performance
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-scatter');
+
+  // [payout HBD, vote count, word count / 100, title snippet]
+  const posts = [
+    [52.4, 184, 18, 'Hive Development Update'],
+    [38.1, 142, 12, 'Building on Web3'],
+    [12.5, 58,  8,  'Quick devlog #7'],
+    [5.2,  31,  4,  'Notes on identity'],
+    [44.0, 167, 22, 'Hivepen Studio deep-dive'],
+    [8.8,  44,  6,  'Genioo beta thoughts'],
+    [61.3, 210, 14, 'Cuba & Blockchain'],
+    [29.6, 101, 16, 'HiveCuba community recap'],
+    [3.1,  18,  3,  'Random thought thread'],
+    [19.4, 82,  10, 'Españoliz update'],
+    [33.8, 128, 20, 'The curious developer'],
+    [15.2, 65,  7,  'HBD savings strategy'],
+    [48.9, 175, 13, 'Creative coding on Hive'],
+    [7.4,  37,  5,  'Short form experiment'],
+    [22.1, 94,  11, 'Understanding Hive RC'],
+  ];
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    grid: { top: 20, bottom: 40, left: 50, right: 20 },
+    tooltip: {
+      backgroundColor: S2, borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 11, fontFamily: 'monospace' },
+      formatter(p) {
+        const d = posts[p.dataIndex];
+        return `<div style="font-weight:500;margin-bottom:4px;color:${TEXT}">${d[3]}</div>
+          <div style="color:${MUTED}">Payout: <span style="color:${C.gold}">${d[0]} HBD</span></div>
+          <div style="color:${MUTED}">Votes: <span style="color:${C.blue}">${d[1]}</span></div>
+          <div style="color:${MUTED}">Words: <span style="color:${C.green}">${d[2]*100}</span></div>`;
+      }
+    },
+    xAxis: {
+      type: 'value', name: 'Payout (HBD)', nameTextStyle: baseTextStyle, nameLocation: 'middle', nameGap: 28,
+      ...baseAxisStyle,
+    },
+    yAxis: {
+      type: 'value', name: 'Votes', nameTextStyle: baseTextStyle,
+      ...baseAxisStyle,
+    },
+    series: [{
+      type: 'scatter',
+      symbolSize(d) { return Math.sqrt(d[2]) * 14; },
+      data: posts.map(p => [p[0], p[1], p[2]]),
+      itemStyle: {
+        color(p) {
+          const v = p.data[0];
+          if (v > 45) return C.green;
+          if (v > 25) return C.blue;
+          if (v > 12) return C.gold;
+          return MUTED;
+        },
+        opacity: 0.85,
+      },
+      emphasis: { itemStyle: { opacity: 1, borderColor: TEXT, borderWidth: 1.5 } },
+    }],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 6. HORIZONTAL BAR — top curated communities
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-communities');
+  const comms = [
+    ['HiveDevs',        820, C.blue],
+    ['HiveCuba',        640, C.green],
+    ['STEMsocial',      510, C.teal],
+    ['OCD',             480, C.purple],
+    ['Writing Club',    390, C.gold],
+    ['Photography',     310, C.orange],
+    ['Natural Medicine',240, C.pink],
+    ['PeakD',           180, MUTED],
+  ].sort((a, b) => a[1] - b[1]);
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    grid: { top: 10, bottom: 30, left: 120, right: 50 },
+    tooltip: {
+      backgroundColor: S2, borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 11, fontFamily: 'monospace' },
+      formatter(p) { return `${p.name}: <b>${p.value} HP</b>`; }
+    },
+    xAxis: { type: 'value', ...baseAxisStyle, axisLabel: { ...baseTextStyle, formatter: v => v+'HP' } },
+    yAxis: { type: 'category', data: comms.map(c => c[0]), ...baseAxisStyle, splitLine: { show: false } },
+    series: [{
+      type: 'bar',
+      data: comms.map(c => ({
+        value: c[1],
+        itemStyle: {
+          color: { type:'linear', x:0,y:0,x2:1,y2:0, colorStops:[{offset:0,color:c[2]+'22'},{offset:1,color:c[2]}] },
+          borderRadius: [0, 4, 4, 0],
+        }
+      })),
+      barMaxWidth: 18,
+      label: {
+        show: true, position: 'right',
+        formatter: '{c} HP',
+        color: MUTED, fontSize: 10, fontFamily: 'monospace',
+      },
+    }],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 7. TREEMAP — incoming delegations
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-treemap');
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+      backgroundColor: S2, borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 11, fontFamily: 'monospace' },
+      formatter(p) { return `@${p.name}<br/>${p.value} HP delegated`; }
+    },
+    series: [{
+      type: 'treemap',
+      roam: false,
+      nodeClick: false,
+      breadcrumb: { show: false },
+      label: {
+        show: true,
+        formatter(p) { return p.value >= 200 ? `@${p.name}\n${p.value} HP` : `@${p.name}`; },
+        color: TEXT, fontSize: 11, fontFamily: 'monospace',
+      },
+      itemStyle: { borderWidth: 2, borderColor: BG, gapWidth: 2 },
+      levels: [{ itemStyle: { borderWidth: 0 } }],
+      data: [
+        { name: 'hivecuba',    value: 1200, itemStyle: { color: C.green } },
+        { name: 'blocktrades', value: 800,  itemStyle: { color: C.blue  } },
+        { name: 'theycallmedan', value: 580, itemStyle: { color: C.purple } },
+        { name: 'good-karma',  value: 420,  itemStyle: { color: C.teal } },
+        { name: 'ocd',         value: 390,  itemStyle: { color: C.orange} },
+        { name: 'ocdb',        value: 310,  itemStyle: { color: '#e84b4b99' } },
+        { name: 'acidyo',      value: 280,  itemStyle: { color: C.gold  } },
+        { name: 'aliento',     value: 240,  itemStyle: { color: C.pink  } },
+        { name: 'curangel',    value: 180,  itemStyle: { color: '#5b8cf799' } },
+        { name: 'leo.voter',   value: 120,  itemStyle: { color: MUTED   } },
+        { name: 'v4vapp',      value: 90,   itemStyle: { color: '#3ecf8e66' } },
+      ],
+    }],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 8. SANKEY — HP flow diagram
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-sankey');
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: S2, borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 11, fontFamily: 'monospace' },
+      formatter(p) {
+        if (p.dataType === 'edge') {
+          return `${p.data.source} → ${p.data.target}: <b>${p.data.value} HP</b>`;
+        }
+        return p.name;
+      }
+    },
+    series: [{
+      type: 'sankey',
+      layout: 'none',
+      emphasis: { focus: 'adjacency' },
+      left: 20, right: 120, top: 20, bottom: 20,
+      nodeGap: 12,
+      nodeWidth: 14,
+      lineStyle: { color: 'source', opacity: 0.3, curveness: 0.5 },
+      label: {
+        color: TEXT, fontSize: 11, fontFamily: 'monospace',
+        position: 'right',
+      },
+      data: [
+        { name: 'Total HP',      itemStyle: { color: TEXT } },
+        { name: 'Own HP',        itemStyle: { color: C.blue } },
+        { name: 'Delegated in',  itemStyle: { color: C.green } },
+        { name: 'Author rewards',itemStyle: { color: C.red } },
+        { name: 'Curation',      itemStyle: { color: C.gold } },
+        { name: 'HP savings int',itemStyle: { color: C.teal } },
+        { name: 'Delegated out', itemStyle: { color: C.purple } },
+        { name: 'Active votes',  itemStyle: { color: C.blue } },
+        { name: 'HBD savings',   itemStyle: { color: C.green } },
+      ],
+      links: [
+        { source: 'Own HP',       target: 'Total HP',       value: 10400 },
+        { source: 'Delegated in', target: 'Total HP',       value: 3820 },
+        { source: 'Total HP',     target: 'Author rewards', value: 480 },
+        { source: 'Total HP',     target: 'Curation',       value: 1840 },
+        { source: 'Total HP',     target: 'HP savings int', value: 390 },
+        { source: 'Total HP',     target: 'Delegated out',  value: 1200 },
+        { source: 'Total HP',     target: 'Active votes',   value: 10310 },
+        { source: 'Author rewards', target: 'HBD savings',  value: 240 },
+        { source: 'Author rewards', target: 'Active votes', value: 240 },
+      ],
+    }],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 9. LINE + AREA — HP growth projection
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-growth');
+  const months = ['Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'];
+  const actual  = [9800,10100,10400,10720,11060,11420,null,null,null,null,null,null,null,null,null,null,null,null];
+  const proj    = [null,null,null,null,null,11420,11794,12183,12589,13015,13463,13933,14428,14948,15494,16071,16673,17304];
+  const lower   = [null,null,null,null,null,11420,11600,11820,12100,12350,12600,12870,13140,13420,13700,13980,14260,14550];
+  const upper   = [null,null,null,null,null,11420,12050,12600,13200,13800,14420,15100,15840,16640,17500,18400,19400,20500];
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    grid: { top: 20, bottom: 40, left: 60, right: 20 },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: S2, borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 11, fontFamily: 'monospace' },
+    },
+    xAxis: { type: 'category', data: months, ...baseAxisStyle, splitLine: { show: false } },
+    yAxis: { type: 'value', ...baseAxisStyle, name: 'HP', nameTextStyle: baseTextStyle,
+      axisLabel: { ...baseTextStyle, formatter: v => (v/1000).toFixed(0)+'k' } },
+    series: [
+      {
+        name: 'Confidence band (upper)', type: 'line', data: upper,
+        lineStyle: { width: 0 }, symbol: 'none',
+        areaStyle: { color: 'rgba(91,140,247,0.08)' },
+        stack: 'band', tooltip: { show: false },
+      },
+      {
+        name: 'Confidence band (lower)', type: 'line', data: lower,
+        lineStyle: { width: 0 }, symbol: 'none',
+        areaStyle: { color: 'rgba(91,140,247,0)' },
+        stack: 'band', tooltip: { show: false },
+      },
+      {
+        name: 'Projected', type: 'line', data: proj,
+        smooth: 0.4,
+        lineStyle: { color: C.blue, width: 2, type: 'dashed' },
+        symbol: 'none', color: C.blue,
+        areaStyle: { color: 'rgba(91,140,247,0.04)' },
+      },
+      {
+        name: 'Actual HP', type: 'line', data: actual,
+        smooth: 0.3,
+        lineStyle: { color: C.green, width: 2.5 },
+        itemStyle: { color: C.green },
+        symbol: 'circle', symbolSize: 5,
+      },
+    ],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 10. DUAL-AXIS LINE — price × earnings correlation
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-price');
+  const weeks = Array.from({length:12}, (_,i) => `W${i+1}`);
+  const hivePrice  = [0.28,0.31,0.29,0.35,0.38,0.33,0.41,0.44,0.40,0.38,0.42,0.45];
+  const hbdEarned  = [42,  48,  40,  58,  65,  52,  72,  80,  70,  66,  78,  85 ];
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    grid: { top: 20, bottom: 40, left: 50, right: 55 },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: S2, borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 11, fontFamily: 'monospace' },
+    },
+    legend: { show: false },
+    xAxis: { type: 'category', data: weeks, ...baseAxisStyle, splitLine: { show: false } },
+    yAxis: [
+      {
+        type: 'value', name: 'HIVE $', nameTextStyle: { ...baseTextStyle, padding: [0,0,0,0] }, nameGap: 8,
+        ...baseAxisStyle,
+        axisLabel: { ...baseTextStyle, formatter: v => '$'+v.toFixed(2) },
+      },
+      {
+        type: 'value', name: 'HBD earned', nameTextStyle: baseTextStyle, nameGap: 8,
+        ...baseAxisStyle, position: 'right',
+        axisLabel: { ...baseTextStyle, formatter: v => v+'₄' },
+        splitLine: { show: false },
+      },
+    ],
+    series: [
+      {
+        name: 'HIVE price', type: 'line', data: hivePrice, yAxisIndex: 0,
+        smooth: 0.5,
+        lineStyle: { color: C.gold, width: 2 },
+        itemStyle: { color: C.gold },
+        symbol: 'circle', symbolSize: 4,
+        areaStyle: { color: 'rgba(240,165,0,0.06)' },
+      },
+      {
+        name: 'HBD earned', type: 'bar', data: hbdEarned, yAxisIndex: 1,
+        itemStyle: {
+          color: { type:'linear', x:0,y:0,x2:0,y2:1, colorStops:[{offset:0,color:C.blue},{offset:1,color:C.blue+'22'}] },
+          borderRadius: [4,4,0,0],
+        },
+        barMaxWidth: 24,
+        opacity: 0.7,
+      },
+    ],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 11. SUNBURST — income by community × reward type
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-sunburst');
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+      backgroundColor: S2, borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 11, fontFamily: 'monospace' },
+      formatter(p) {
+        return `<b>${p.name}</b><br/>${p.value} HBD`;
+      }
+    },
+    series: [{
+      type: 'sunburst',
+      radius: ['20%','90%'],
+      center: ['50%','50%'],
+      nodeClick: false,
+      emphasis: { focus: 'ancestor' },
+      levels: [
+        {},
+        {
+          r0: '20%', r: '50%',
+          label: { position: 'inside', fontSize: 11, fontFamily: 'monospace', color: TEXT },
+          itemStyle: { borderRadius: 8, borderWidth: 3, borderColor: BG },
+        },
+        {
+          r0: '52%', r: '90%',
+          label: { position: 'outside', fontSize: 10, fontFamily: 'monospace', color: MUTED, padding: 4 },
+          itemStyle: { borderRadius: 4, borderWidth: 2, borderColor: BG },
+        },
+      ],
+      data: [
+        {
+          name: 'HiveDevs', value: 320, itemStyle: { color: C.blue },
+          children: [
+            { name: 'Author HBD', value: 160, itemStyle: { color: C.blue+'cc' } },
+            { name: 'Author HP',  value: 110, itemStyle: { color: C.blue+'88' } },
+            { name: 'Curation',   value: 50,  itemStyle: { color: C.blue+'55' } },
+          ]
+        },
+        {
+          name: 'HiveCuba', value: 240, itemStyle: { color: C.green },
+          children: [
+            { name: 'Author HBD', value: 120, itemStyle: { color: C.green+'cc' } },
+            { name: 'Author HP',  value: 80,  itemStyle: { color: C.green+'88' } },
+            { name: 'Curation',   value: 40,  itemStyle: { color: C.green+'55' } },
+          ]
+        },
+        {
+          name: 'STEMsocial', value: 180, itemStyle: { color: C.teal },
+          children: [
+            { name: 'Author HBD', value: 90,  itemStyle: { color: C.teal+'cc' } },
+            { name: 'Author HP',  value: 60,  itemStyle: { color: C.teal+'88' } },
+            { name: 'Curation',   value: 30,  itemStyle: { color: C.teal+'55' } },
+          ]
+        },
+        {
+          name: 'OCD', value: 150, itemStyle: { color: C.purple },
+          children: [
+            { name: 'Author HBD', value: 70,  itemStyle: { color: C.purple+'cc' } },
+            { name: 'Author HP',  value: 50,  itemStyle: { color: C.purple+'88' } },
+            { name: 'Curation',   value: 30,  itemStyle: { color: C.purple+'55' } },
+          ]
+        },
+        {
+          name: 'Writing', value: 100, itemStyle: { color: C.gold },
+          children: [
+            { name: 'Author HBD', value: 50,  itemStyle: { color: C.gold+'cc' } },
+            { name: 'Author HP',  value: 35,  itemStyle: { color: C.gold+'88' } },
+            { name: 'Curation',   value: 15,  itemStyle: { color: C.gold+'55' } },
+          ]
+        },
+        {
+          name: 'Other', value: 57, itemStyle: { color: MUTED },
+          children: [
+            { name: 'Author HBD', value: 30,  itemStyle: { color: MUTED+'cc' } },
+            { name: 'Curation',   value: 27,  itemStyle: { color: MUTED+'55' } },
+          ]
+        },
+      ],
+    }],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 12. CANDLESTICK-STYLE BOXPLOT — payout distribution by week
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-boxplot');
+  const weeks = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'];
+
+  // [min, Q1, median, Q3, max]
+  const boxData = [
+    [1.2, 3.4, 6.8, 14.2, 38.1],
+    [0.8, 2.9, 5.5, 12.8, 44.0],
+    [1.5, 4.1, 7.2, 16.1, 32.4],
+    [2.1, 5.8, 11.4, 22.3, 52.4],
+    [1.8, 4.6,  9.2, 18.8, 48.9],
+    [0.6, 2.8,  5.1, 10.4, 28.6],
+    [2.4, 6.2, 12.8, 24.6, 61.3],
+    [1.9, 5.1, 10.3, 19.8, 55.2],
+    [2.8, 7.4, 14.2, 28.1, 58.7],
+    [2.2, 6.0, 12.1, 23.4, 47.8],
+    [3.1, 8.2, 16.4, 31.2, 64.1],
+    [3.8, 9.6, 18.8, 35.4, 71.2],
+  ];
+
+  const outliers = [
+    [0, 45], [0, 52],
+    [3, 65], [3, 0.2],
+    [6, 72],
+    [9, 58],
+    [11, 82], [11, 0.1],
+  ];
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    grid: { top: 20, bottom: 40, left: 50, right: 20 },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: S2, borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 11, fontFamily: 'monospace' },
+      formatter(params) {
+        const p = params[0];
+        const d = p.data;
+        return `<b>${p.name}</b><br/>
+          Max: ${d[5]}<br/>Q3: ${d[4]}<br/>Median: ${d[3]}<br/>Q1: ${d[2]}<br/>Min: ${d[1]} HBD`;
+      }
+    },
+    xAxis: { type: 'category', data: weeks, ...baseAxisStyle, splitLine: { show: false } },
+    yAxis: { type: 'value', ...baseAxisStyle, name: 'HBD/post', nameTextStyle: baseTextStyle },
+    series: [
+      {
+        name: 'Payout dist', type: 'candlestick',
+        data: boxData.map(d => [d[1], d[4], d[0], d[2]]), // open=Q1, close=Q3, low=min, high=max
+        itemStyle: {
+          color: C.green,
+          color0: C.red,
+          borderColor: C.green,
+          borderColor0: C.red,
+          opacity: 0.85,
+        },
+      },
+      {
+        name: 'Median', type: 'line',
+        data: boxData.map(d => d[2]),
+        lineStyle: { color: C.gold, width: 1.5, type: 'dotted' },
+        symbol: 'none', tooltip: { show: false },
+      },
+      {
+        name: 'Outliers', type: 'scatter',
+        data: outliers,
+        symbolSize: 6,
+        itemStyle: { color: C.purple, opacity: 0.8 },
+        tooltip: {
+          formatter(p) { return `Outlier: ${p.data[1]} HBD`; }
+        }
+      },
+    ],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 13. STEP LINE + MARKPOINTS — witness rank
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-witness');
+  const labels = ['Dec 1','Dec 15','Jan 1','Jan 15','Feb 1','Feb 15','Mar 1','Mar 15','Apr 1','Apr 15','May 1','May 15'];
+  const rank   = [94, 91, 88, 84, 81, 80, 76, 72, 74, 70, 68, 65];
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    grid: { top: 30, bottom: 40, left: 40, right: 20 },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: S2, borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 11, fontFamily: 'monospace' },
+      formatter(p) { return `Rank #${p[0].value} · ${p[0].name}`; }
+    },
+    xAxis: { type: 'category', data: labels, ...baseAxisStyle, splitLine: { show: false },
+      axisLabel: { ...baseTextStyle, rotate: 30 } },
+    yAxis: { type: 'value', inverse: true, min: 60, max: 100, ...baseAxisStyle,
+      name: 'Rank', nameTextStyle: baseTextStyle,
+      axisLabel: { ...baseTextStyle, formatter: v => '#'+v } },
+    series: [{
+      type: 'line',
+      data: rank,
+      step: 'middle',
+      lineStyle: { color: C.purple, width: 2 },
+      itemStyle: { color: C.purple },
+      symbol: 'circle', symbolSize: 6,
+      areaStyle: { color: 'rgba(192,132,252,0.1)' },
+      markPoint: {
+        symbol: 'pin', symbolSize: 28,
+        itemStyle: { color: C.red },
+        label: { fontSize: 9, fontFamily: 'monospace', color: TEXT },
+        data: [
+          { name: 'Upgrade', coord: ['Jan 1', 88],   value: '⬆', label: { formatter: 'Upgrade' } },
+          { name: 'Vote push', coord: ['Mar 15', 72], value: '★', label: { formatter: 'Vote push' } },
+        ],
+      },
+      markLine: {
+        silent: true,
+        lineStyle: { color: C.green, type: 'dashed', width: 1 },
+        label: { formatter: 'Top 50 target', color: C.green, fontSize: 10, fontFamily: 'monospace' },
+        data: [{ yAxis: 50 }],
+      },
+    }],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 14. PIE — RC credits usage
+// ═══════════════════════════════════════════════════════════════════════════
+;(() => {
+  const chart = makeChart('chart-rc');
+  const data = [
+    { value: 42, name: 'Post / comment', itemStyle: { color: C.blue } },
+    { value: 28, name: 'Votes cast',     itemStyle: { color: C.green } },
+    { value: 15, name: 'Transfers',      itemStyle: { color: C.gold } },
+    { value: 10, name: 'Delegations',    itemStyle: { color: C.purple } },
+    { value: 5,  name: 'Other ops',      itemStyle: { color: MUTED } },
+  ];
+
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+      backgroundColor: S2, borderColor: BORDER,
+      textStyle: { color: TEXT, fontSize: 11, fontFamily: 'monospace' },
+      formatter(p) { return `${p.name}<br/>${p.percent}% of RC`; }
+    },
+    series: [{
+      type: 'pie',
+      radius: ['40%', '68%'],
+      center: ['50%', '50%'],
+      padAngle: 3,
+      itemStyle: { borderRadius: 6, borderColor: BG, borderWidth: 2 },
+      label: {
+        show: true,
+        position: 'outside',
+        formatter: '{b}\n{d}%',
+        color: MUTED,
+        fontSize: 10,
+        fontFamily: 'monospace',
+        lineHeight: 16,
+      },
+      labelLine: { lineStyle: { color: BORDER } },
+      emphasis: { scale: true, scaleSize: 5 },
+      data,
+    }],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+
+</script>
+</body>
+</html>
