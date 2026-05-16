@@ -5,6 +5,7 @@ import type {
   DashboardBucket,
   DashboardBucketUnit,
   DashboardChartKind,
+  DashboardCommunityRewardBreakdown,
   DashboardDailyIncomeDay,
   DashboardHistoricalOverview,
   DashboardHistoricalSnapshot,
@@ -340,6 +341,41 @@ const getPayloadString = (
   return typeof value === 'string' && value.length > 0 ? value : undefined
 }
 
+const UNATTRIBUTED_COMMUNITY_ID = '__unattributed__'
+const UNATTRIBUTED_COMMUNITY_LABEL = 'Unattributed'
+
+const resolveCommunityBreakdownKey = (entry: PostSearchResult) =>
+  entry.communityId ||
+  entry.communityInfo?.id ||
+  entry.tags[0] ||
+  UNATTRIBUTED_COMMUNITY_ID
+
+const resolveCommunityBreakdownLabel = (entry: PostSearchResult) =>
+  entry.communityTitle ||
+  entry.communityInfo?.name ||
+  entry.tags[0] ||
+  UNATTRIBUTED_COMMUNITY_LABEL
+
+const accumulateCommunityReward = (
+  collection: Map<string, DashboardCommunityRewardBreakdown>,
+  entry: PostSearchResult,
+  reward: number,
+  rewardKind: 'postRewards' | 'commentRewards',
+) => {
+  const key = resolveCommunityBreakdownKey(entry)
+  const existing = collection.get(key) ?? {
+    id: key,
+    label: resolveCommunityBreakdownLabel(entry),
+    postRewards: 0,
+    commentRewards: 0,
+    totalRewards: 0,
+  }
+
+  existing[rewardKind] += reward
+  existing.totalRewards += reward
+  collection.set(key, existing)
+}
+
 export const selectHistoricalChartKind = (
   buckets: Array<DashboardBucket>,
   valueKey: 'totalRewards' | 'votes',
@@ -579,6 +615,7 @@ export const aggregateDashboardOverview = ({
 
   const topPosts: Array<DashboardTopPost> = []
   const payoutDistributionMap = new Map<string, DashboardPayoutDistributionBucket>()
+  const communityRewardMap = new Map<string, DashboardCommunityRewardBreakdown>()
 
   for (const bucket of buckets) {
     payoutDistributionMap.set(bucket.key, {
@@ -614,6 +651,12 @@ export const aggregateDashboardOverview = ({
       currentPostAuthorRewards += authorReward
       currentPostRewardTotal += totalReward
       payoutDistributionMap.get(bucket.key)?.rewards.push(totalReward)
+      accumulateCommunityReward(
+        communityRewardMap,
+        post,
+        authorReward,
+        'postRewards',
+      )
 
       topPosts.push({
         id: `${post.author}/${post.permlink}`,
@@ -656,6 +699,12 @@ export const aggregateDashboardOverview = ({
       day.authorRewards += authorReward
       day.totalRewards += authorReward
       currentCommentAuthorRewards += authorReward
+      accumulateCommunityReward(
+        communityRewardMap,
+        comment,
+        authorReward,
+        'commentRewards',
+      )
     } else {
       previousCommentRewards += authorReward
     }
@@ -923,6 +972,9 @@ export const aggregateDashboardOverview = ({
         : [],
     }
   })
+  const communityRewardBreakdown = Array.from(communityRewardMap.values())
+    .filter((community) => community.totalRewards > 0)
+    .sort((left, right) => right.totalRewards - left.totalRewards)
   const averagePostReward =
     publishedPosts > 0 ? currentPostRewardTotal / publishedPosts : 0
   const previousAveragePostReward =
@@ -953,6 +1005,7 @@ export const aggregateDashboardOverview = ({
     breakdown,
     incomeBreakdown,
     payoutDistribution,
+    communityRewardBreakdown,
     summary: {
       totalRewards,
       totalRewardsChange: toPercentChange(totalRewards, previousTotalRewards),

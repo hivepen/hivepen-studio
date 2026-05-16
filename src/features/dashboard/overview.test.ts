@@ -217,6 +217,29 @@ describe('aggregateDashboardOverview', () => {
       { label: 'Apr 9', rewards: [6] },
       { label: 'Apr 30', rewards: [3] },
     ])
+    expect(result.communityRewardBreakdown).toEqual([
+      {
+        id: 'hive-123',
+        label: 'Hive Developers',
+        postRewards: 4,
+        commentRewards: 0,
+        totalRewards: 4,
+      },
+      {
+        id: 'hive-456',
+        label: 'Hive News',
+        postRewards: 2,
+        commentRewards: 0,
+        totalRewards: 2,
+      },
+      {
+        id: 'reply',
+        label: 'reply',
+        postRewards: 0,
+        commentRewards: 1.5,
+        totalRewards: 1.5,
+      },
+    ])
     expect(
       result.buckets.reduce((total, bucket) => total + bucket.votes, 0),
     ).toBe(6)

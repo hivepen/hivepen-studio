@@ -53,6 +53,7 @@ import type {
   DashboardRange,
 } from '@/features/dashboard/types'
 import { DASHBOARD_INCOME_PALETTE } from '@/features/dashboard/chartPalette'
+import CommunityRewardBreakdownChart from '@/features/dashboard/CommunityRewardBreakdownChart'
 import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
 import PayoutDistributionChart from '@/features/dashboard/PayoutDistributionChart'
 import PostPerformanceScatterChart from '@/features/dashboard/PostPerformanceScatterChart'
@@ -499,6 +500,22 @@ export function AccountAnalyticsPage({
             <PayoutDistributionChart buckets={overview.payoutDistribution} />
           ) : (
             <EmptyStateMessage message="No paid posts were found for this period." />
+          )}
+        </ChartPanel>
+      ) : null}
+
+      {focus === 'all' || focus === 'publishing' ? (
+        <ChartPanel
+          title="Community reward breakdown"
+          subtitle="Author rewards by community"
+          isLoading={dashboardQuery.isLoading}
+        >
+          {overview?.communityRewardBreakdown.length ? (
+            <CommunityRewardBreakdownChart
+              communities={overview.communityRewardBreakdown}
+            />
+          ) : (
+            <EmptyStateMessage message="No community-attributed author rewards were found for this period." />
           )}
         </ChartPanel>
       ) : null}

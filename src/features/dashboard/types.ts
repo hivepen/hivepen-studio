@@ -97,6 +97,14 @@ export type DashboardPayoutDistributionBucket = {
   rewards: Array<number>
 }
 
+export type DashboardCommunityRewardBreakdown = {
+  id: string
+  label: string
+  postRewards: number
+  commentRewards: number
+  totalRewards: number
+}
+
 export type DashboardSummary = {
   totalRewards: number
   totalRewardsChange: number | null
@@ -117,6 +125,7 @@ export type DashboardHistoricalOverview = {
   incomeBreakdown: Array<DashboardIncomeBreakdownCategory>
   summary: DashboardSummary
   payoutDistribution: Array<DashboardPayoutDistributionBucket>
+  communityRewardBreakdown: Array<DashboardCommunityRewardBreakdown>
   performancePosts: Array<DashboardTopPost>
   topPosts: Array<DashboardTopPost>
   cachedAt: number
