@@ -46,15 +46,11 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Pie,
-  PieChart,
-  Sector,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
 import type { ComponentProps, ReactNode } from 'react'
-import type { Payload as RechartsTooltipPayload } from 'recharts/types/component/DefaultTooltipContent'
 import type {
   DashboardHistoricalOverview,
   DashboardRange,
@@ -434,13 +430,6 @@ function Dashboard() {
             isLoading={dashboardQuery.isLoading}
           >
             <RewardIncomeChart overview={overview} />
-          </ChartPanel>
-          <ChartPanel
-            title="Reward breakdown"
-            subtitle="% of total income"
-            isLoading={dashboardQuery.isLoading}
-          >
-            <RewardBreakdownChart overview={overview} />
           </ChartPanel>
         </SimpleGrid>
       ) : null}
@@ -964,99 +953,6 @@ function RewardIncomeChart({
           />
         ))}
       </HStack>
-    </Stack>
-  )
-}
-
-function RewardBreakdownChart({
-  overview,
-}: {
-  overview: DashboardHistoricalOverview | null
-}) {
-  if (!overview) {
-    return <EmptyStateMessage message="No reward breakdown is available yet." />
-  }
-
-  const chart = useChart({
-    data: overview.breakdown.map((item) => ({
-      ...item,
-      valuePercent: item.share * 100,
-    })),
-  })
-
-  const renderBreakdownTooltip = (
-    item: RechartsTooltipPayload<string, string>,
-  ): ReactNode => {
-    const data = item as unknown as Record<string, unknown>
-    const label = String(data.label ?? '')
-    const value = Number(data.value ?? 0)
-    const valuePercent = Number(data.valuePercent ?? 0) / 100
-
-    return (
-      <Stack gap={0.5}>
-        <Text fontWeight="medium">{label}</Text>
-        <HStack gap={2} justify="space-between">
-          <Text color="fg.muted" fontSize="xs">
-            {formatPercent(valuePercent, 1)}
-          </Text>
-          <Text
-            fontFamily="mono"
-            fontSize="sm"
-            fontVariantNumeric="tabular-nums"
-            fontWeight="medium"
-          >
-            {`${formatTokenAmount(value, 2)} HBD`}
-          </Text>
-        </HStack>
-      </Stack>
-    )
-  }
-
-  return (
-    <Stack gap={3}>
-      <Chart.Root height="13rem" chart={chart}>
-        <PieChart responsive>
-          <Tooltip
-            animationDuration={100}
-            cursor={false}
-            content={
-              <Chart.Tooltip
-                hideLabel
-                fitContent
-                hideIndicator
-                render={renderBreakdownTooltip}
-              />
-            }
-          />
-          <Pie
-            innerRadius={44}
-            outerRadius={72}
-            isAnimationActive={false}
-            data={chart.data}
-            dataKey={chart.key('value')}
-            nameKey={chart.key('label')}
-            paddingAngle={4}
-            cornerRadius={6}
-            shape={(props) => (
-              <Sector
-                {...props}
-                fill={chart.color(props.payload!.colorToken)}
-              />
-            )}
-          />
-        </PieChart>
-      </Chart.Root>
-
-      <Stack gap={2}>
-        {overview.breakdown.map((item) => (
-          <HStack key={item.id} justify="space-between">
-            <SeriesLegend color={item.colorToken} label={item.label} value="" />
-            <Text fontFamily="mono" fontSize="sm">
-              {formatPercent(item.share, 1)}
-            </Text>
-          </HStack>
-        ))}
-      </Stack>
     </Stack>
   )
 }
