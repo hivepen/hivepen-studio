@@ -1,6 +1,12 @@
 import { Box, Flex, HStack, Stack, Text, VisuallyHidden } from '@chakra-ui/react'
-import { useState } from 'react'
-import { Cell, Pie, PieChart } from 'recharts'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import * as echarts from 'echarts/core'
+import { SunburstChart } from 'echarts/charts'
+import { TooltipComponent } from 'echarts/components'
+import { SVGRenderer } from 'echarts/renderers'
+import type { EChartsType } from 'echarts/core'
+import type { SunburstSeriesOption } from 'echarts/charts'
+import type { TooltipComponentOption } from 'echarts/components'
 import type {
   DashboardIncomeBreakdownCategory,
   DashboardIncomeBreakdownCategoryId,
@@ -8,18 +14,13 @@ import type {
   DashboardRange,
 } from './types'
 
-const RANGE_LABELS: Record<DashboardRange, string> = {
-  '1M': 'Last month',
-  '3M': 'Last 3 months',
-  '6M': 'Last 6 months',
-  '1Y': 'Last year',
+echarts.use([SunburstChart, TooltipComponent, SVGRenderer])
+
+type IncomeBreakdownOption = {
+  animation: boolean
+  tooltip: TooltipComponentOption
+  series: Array<SunburstSeriesOption>
 }
-
-const tokenVar = (token: string) =>
-  `var(--chakra-colors-${token.replace(/\./g, '-')})`
-
-const semanticVar = (token: string) =>
-  `var(--chakra-colors-${token.replace(/\./g, '-')})`
 
 type CategorySlice = {
   id: DashboardIncomeBreakdownCategoryId
@@ -36,6 +37,41 @@ type SubcategorySlice = {
   colorToken: string
   palette: string
   categoryId: DashboardIncomeBreakdownCategoryId
+}
+
+const RANGE_LABELS: Record<DashboardRange, string> = {
+  '1M': 'Last month',
+  '3M': 'Last 3 months',
+  '6M': 'Last 6 months',
+  '1Y': 'Last year',
+}
+
+const CHART_WIDTH = 320
+const CHART_HEIGHT = 300
+
+const CAT_PREFIX = 'cat:'
+const SUB_PREFIX = 'sub:'
+
+const tokenVar = (token: string) =>
+  `var(--chakra-colors-${token.replace(/\./g, '-')})`
+
+const semanticVar = (token: string) =>
+  `var(--chakra-colors-${token.replace(/\./g, '-')})`
+
+function catNodeName(id: string) {
+  return `${CAT_PREFIX}${id}`
+}
+
+function subNodeName(id: string) {
+  return `${SUB_PREFIX}${id}`
+}
+
+function parseCatId(name: string) {
+  return name.startsWith(CAT_PREFIX) ? name.slice(CAT_PREFIX.length) : null
+}
+
+function parseSubId(name: string) {
+  return name.startsWith(SUB_PREFIX) ? name.slice(SUB_PREFIX.length) : null
 }
 
 function formatHbd(value: number) {
@@ -60,94 +96,59 @@ function getVisibleSubcategories(
   return subcategories.filter((subcategory) => subcategory.value > 0)
 }
 
+function resolveCssVar(varExpr: string, element: HTMLElement) {
+  const match = varExpr.match(/var\((--[^)]+)\)/)
+  if (!match) return varExpr
+  return getComputedStyle(element).getPropertyValue(match[1]).trim() || '#888888'
+}
+
 function CenterLabel({
-  cx,
-  cy,
   hovered,
   total,
-  range,
 }: {
-  cx: number
-  cy: number
   hovered: { label: string; value: number } | null
   total: number
-  range: DashboardRange
 }) {
-  const lineHeight = 21
-
   if (hovered) {
     return (
-      <g>
-        <text
-          x={cx}
-          y={cy - lineHeight * 1.6}
-          textAnchor="middle"
-          fill={semanticVar('fg.muted')}
-          fontSize="11"
-          fontFamily="var(--chakra-fonts-mono)"
-          letterSpacing="2"
+      <Stack
+        gap={0.5}
+        textAlign="center"
+        align="center"
+        maxW="150px"
+        pointerEvents="none"
+      >
+        <Text
+          color="fg.muted"
+          fontSize="11px"
+          fontFamily="mono"
+          letterSpacing="0.18em"
+          textTransform="uppercase"
         >
           {formatPercent(hovered.value, total)}
-        </text>
-        <text
-          x={cx}
-          y={cy - lineHeight * 0.35}
-          textAnchor="middle"
-          fill={semanticVar('fg')}
-          fontSize="22"
-          fontWeight="700"
-          fontFamily="var(--chakra-fonts-body)"
-        >
+        </Text>
+        <Text color="fg" fontSize="22px" fontWeight="700" lineHeight="1">
           {formatHbd(hovered.value)}
-        </text>
-        <text
-          x={cx}
-          y={cy + lineHeight * 0.85}
-          textAnchor="middle"
-          fill={semanticVar('fg.muted')}
-          fontSize="12"
-          fontFamily="var(--chakra-fonts-body)"
-        >
+        </Text>
+        <Text color="fg.muted" fontSize="12px" lineHeight="1">
           HBD
-        </text>
-        <text
-          x={cx}
-          y={cy + lineHeight * 2}
-          textAnchor="middle"
-          fill={semanticVar('fg.subtle')}
-          fontSize="11"
-          fontFamily="var(--chakra-fonts-body)"
-        >
+        </Text>
+        <Text color="fg.subtle" fontSize="11px" lineHeight="1.2">
           {hovered.label}
-        </text>
-      </g>
+        </Text>
+      </Stack>
     )
   }
 
   return (
-    <g>
-      <text
-        x={cx}
-        y={cy - lineHeight * 0.2}
-        textAnchor="middle"
-        fill={semanticVar('fg')}
-        fontSize="24"
-        fontWeight="700"
-        fontFamily="var(--chakra-fonts-body)"
-      >
+    <Stack gap={1} textAlign="center" align="center" pointerEvents="none">
+      <Text color="fg" fontSize="24px" fontWeight="700" lineHeight="1">
         {formatHbd(total)}
-      </text>
-      <text
-        x={cx}
-        y={cy + lineHeight * 1.1}
-        textAnchor="middle"
-        fill={semanticVar('fg.muted')}
-        fontSize="12"
-        fontFamily="var(--chakra-fonts-body)"
-      >
+      </Text>
+      <Text color="fg.muted" fontSize="12px" lineHeight="1">
         HBD
-      </text>
-    </g>
+      </Text>
+    </Stack>
   )
 }
 
@@ -181,7 +182,6 @@ function LegendRow({
   return (
     <Box
       as="button"
-      type="button"
       w="full"
       colorPalette={palette}
       onMouseEnter={onPreview}
@@ -253,6 +253,8 @@ export default function IncomeBreakdownChart({
   range: DashboardRange
   categories: Array<DashboardIncomeBreakdownCategory>
 }) {
+  const chartRef = useRef<HTMLDivElement>(null)
+  const instanceRef = useRef<EChartsType | null>(null)
   const [hoveredCategoryId, setHoveredCategoryId] =
     useState<DashboardIncomeBreakdownCategoryId | null>(null)
   const [hoveredSubcategoryId, setHoveredSubcategoryId] = useState<
@@ -266,115 +268,132 @@ export default function IncomeBreakdownChart({
   const chartInstructionId = 'income-breakdown-chart-instructions'
   const chartSummaryId = 'income-breakdown-chart-summary'
   const chartTitleId = 'income-breakdown-chart-body-title'
-  const chartWidth = 320
-  const chartHeight = 300
 
-  const visibleCategories = categories
-    .map((category) => {
-      const subcategories = getVisibleSubcategories(category.subcategories)
-      return {
-        ...category,
-        subcategories,
-      }
-    })
-    .filter((category) => category.value > 0 && category.subcategories.length > 0)
-
-  const chartCenterX = chartWidth / 2
-  const chartCenterY = 148
-  const totalHbd = visibleCategories.reduce(
-    (total, category) => total + category.value,
-    0,
+  const visibleCategories = useMemo(
+    () =>
+      categories
+        .map((category) => ({
+          ...category,
+          subcategories: getVisibleSubcategories(category.subcategories),
+        }))
+        .filter(
+          (category) => category.value > 0 && category.subcategories.length > 0,
+        ),
+    [categories],
   )
+
+  const totalHbd = useMemo(
+    () =>
+      visibleCategories.reduce((total, category) => total + category.value, 0),
+    [visibleCategories],
+  )
+
   const hasPinnedSelection =
     pinnedCategoryId != null || pinnedSubcategoryId != null
   const activeCategoryId = pinnedCategoryId ?? hoveredCategoryId
   const activeSubcategoryId = pinnedSubcategoryId ?? hoveredSubcategoryId
 
-  const clearPreview = () => {
+  const clearPreview = useCallback(() => {
     if (hasPinnedSelection) return
     setHoveredCategoryId(null)
     setHoveredSubcategoryId(null)
-  }
+  }, [hasPinnedSelection])
 
-  const previewCategory = (categoryId: DashboardIncomeBreakdownCategoryId) => {
-    if (hasPinnedSelection) return
-    setHoveredCategoryId(categoryId)
-    setHoveredSubcategoryId(null)
-  }
+  const previewCategory = useCallback(
+    (categoryId: DashboardIncomeBreakdownCategoryId) => {
+      if (hasPinnedSelection) return
+      setHoveredCategoryId(categoryId)
+      setHoveredSubcategoryId(null)
+    },
+    [hasPinnedSelection],
+  )
 
-  const previewSubcategory = (
-    categoryId: DashboardIncomeBreakdownCategoryId,
-    subcategoryId: string,
-  ) => {
-    if (hasPinnedSelection) return
-    setHoveredCategoryId(categoryId)
-    setHoveredSubcategoryId(subcategoryId)
-  }
+  const previewSubcategory = useCallback(
+    (
+      categoryId: DashboardIncomeBreakdownCategoryId,
+      subcategoryId: string,
+    ) => {
+      if (hasPinnedSelection) return
+      setHoveredCategoryId(categoryId)
+      setHoveredSubcategoryId(subcategoryId)
+    },
+    [hasPinnedSelection],
+  )
 
-  const clearPinnedSelection = () => {
+  const clearPinnedSelection = useCallback(() => {
     setPinnedCategoryId(null)
     setPinnedSubcategoryId(null)
-  }
+  }, [])
 
-  const togglePinnedCategory = (categoryId: DashboardIncomeBreakdownCategoryId) => {
-    if (pinnedCategoryId === categoryId && pinnedSubcategoryId == null) {
-      clearPinnedSelection()
-      return
-    }
+  const togglePinnedCategory = useCallback(
+    (categoryId: DashboardIncomeBreakdownCategoryId) => {
+      if (pinnedCategoryId === categoryId && pinnedSubcategoryId == null) {
+        clearPinnedSelection()
+        return
+      }
 
-    setPinnedCategoryId(categoryId)
-    setPinnedSubcategoryId(null)
-    setHoveredCategoryId(null)
-    setHoveredSubcategoryId(null)
-  }
+      setPinnedCategoryId(categoryId)
+      setPinnedSubcategoryId(null)
+      setHoveredCategoryId(null)
+      setHoveredSubcategoryId(null)
+    },
+    [clearPinnedSelection, pinnedCategoryId, pinnedSubcategoryId],
+  )
 
-  const togglePinnedSubcategory = (
-    categoryId: DashboardIncomeBreakdownCategoryId,
-    subcategoryId: string,
-  ) => {
-    if (
-      pinnedCategoryId === categoryId &&
-      pinnedSubcategoryId === subcategoryId
-    ) {
-      clearPinnedSelection()
-      return
-    }
+  const togglePinnedSubcategory = useCallback(
+    (
+      categoryId: DashboardIncomeBreakdownCategoryId,
+      subcategoryId: string,
+    ) => {
+      if (
+        pinnedCategoryId === categoryId &&
+        pinnedSubcategoryId === subcategoryId
+      ) {
+        clearPinnedSelection()
+        return
+      }
 
-    setPinnedCategoryId(categoryId)
-    setPinnedSubcategoryId(subcategoryId)
-    setHoveredCategoryId(null)
-    setHoveredSubcategoryId(null)
-  }
+      setPinnedCategoryId(categoryId)
+      setPinnedSubcategoryId(subcategoryId)
+      setHoveredCategoryId(null)
+      setHoveredSubcategoryId(null)
+    },
+    [clearPinnedSelection, pinnedCategoryId, pinnedSubcategoryId],
+  )
 
-  const innerSlices: Array<CategorySlice> = visibleCategories.map((category) => ({
-    id: category.id,
-    label: category.label,
-    value: category.value,
-    colorToken: category.colorToken,
-    palette: getPaletteName(category.colorToken),
-  }))
-
-  const outerSlices: Array<SubcategorySlice> = visibleCategories.flatMap(
-    (category) =>
-      category.subcategories.map((subcategory) => ({
-        id: subcategory.id,
-        label: subcategory.label,
-        value: subcategory.value,
-        colorToken: subcategory.colorToken,
-        palette: getPaletteName(subcategory.colorToken),
-        categoryId: category.id,
+  const innerSlices: Array<CategorySlice> = useMemo(
+    () =>
+      visibleCategories.map((category) => ({
+        id: category.id,
+        label: category.label,
+        value: category.value,
+        colorToken: category.colorToken,
+        palette: getPaletteName(category.colorToken),
       })),
+    [visibleCategories],
   )
 
-  const activeOuterSlice = outerSlices.find(
-    (slice) => slice.id === activeSubcategoryId,
+  const outerSlices: Array<SubcategorySlice> = useMemo(
+    () =>
+      visibleCategories.flatMap((category) =>
+        category.subcategories.map((subcategory) => ({
+          id: subcategory.id,
+          label: subcategory.label,
+          value: subcategory.value,
+          colorToken: subcategory.colorToken,
+          palette: getPaletteName(subcategory.colorToken),
+          categoryId: category.id,
+        })),
+      ),
+    [visibleCategories],
   )
 
-  const activeCenter = (() => {
+  const activeCenter = useMemo(() => {
     if (activeSubcategoryId) {
       const subcategory = outerSlices.find(
         (slice) => slice.id === activeSubcategoryId,
       )
+
       if (subcategory) {
         return { label: subcategory.label, value: subcategory.value }
       }
@@ -382,57 +401,259 @@ export default function IncomeBreakdownChart({
 
     if (activeCategoryId) {
       const category = visibleCategories.find((entry) => entry.id === activeCategoryId)
+
       if (category) {
         return { label: category.label, value: category.value }
       }
     }
 
     return null
-  })()
+  }, [activeCategoryId, activeSubcategoryId, outerSlices, visibleCategories])
 
-  const renderOuterLabel = ({
-    cx,
-    cy,
-    midAngle,
-    outerRadius,
-    percent,
-  }: {
-    cx?: number
-    cy?: number
-    midAngle?: number
-    outerRadius?: number
-    percent?: number
-  }) => {
+  useEffect(() => {
+    const container = chartRef.current
+    if (!container || visibleCategories.length === 0) return
     if (
-      cx == null ||
-      cy == null ||
-      midAngle == null ||
-      outerRadius == null ||
-      percent == null ||
-      percent < 0.07
+      typeof navigator !== 'undefined' &&
+      navigator.userAgent.toLowerCase().includes('jsdom')
     ) {
-      return null
+      return
     }
 
-    const radians = Math.PI / 180
-    const radius = outerRadius + 16
-    const x = cx + radius * Math.cos(-midAngle * radians)
-    const y = cy + radius * Math.sin(-midAngle * radians)
+    const instance = echarts.init(container, undefined, { renderer: 'svg' })
+    instanceRef.current = instance
 
-    return (
-      <text
-        x={x}
-        y={y}
-        fill={semanticVar('fg.subtle')}
-        fontSize="9.5"
-        textAnchor={x > cx ? 'start' : 'end'}
-        dominantBaseline="central"
-        fontFamily="var(--chakra-fonts-mono)"
-      >
-        {(percent * 100).toFixed(0)}%
-      </text>
-    )
-  }
+    if (typeof ResizeObserver === 'function') {
+      const observer = new ResizeObserver(() => instance.resize())
+      observer.observe(container)
+
+      return () => {
+        observer.disconnect()
+        instance.dispose()
+        instanceRef.current = null
+      }
+    }
+
+    return () => {
+      instance.dispose()
+      instanceRef.current = null
+    }
+  }, [visibleCategories.length])
+
+  useEffect(() => {
+    const instance = instanceRef.current
+    if (!instance) return
+
+    const resolveIds = (
+      params: unknown,
+    ): { catId: string | null; subId: string | null } => {
+      const payload = params as {
+        data?: { name?: string }
+        treePathInfo?: Array<{ name?: string }>
+      }
+      const name = payload.data?.name ?? ''
+      const subId = parseSubId(name)
+      const catId = parseCatId(name)
+
+      if (subId) {
+        const parentName =
+          payload.treePathInfo?.[payload.treePathInfo.length - 2]?.name ?? ''
+        return { catId: parseCatId(parentName), subId }
+      }
+
+      return { catId, subId: null }
+    }
+
+    const handleMouseover = (params: unknown) => {
+      const { catId, subId } = resolveIds(params)
+
+      if (subId && catId) {
+        previewSubcategory(catId as DashboardIncomeBreakdownCategoryId, subId)
+      } else if (catId) {
+        previewCategory(catId as DashboardIncomeBreakdownCategoryId)
+      }
+    }
+
+    const handleGlobalOut = () => clearPreview()
+
+    const handleClick = (params: unknown) => {
+      const { catId, subId } = resolveIds(params)
+
+      if (subId && catId) {
+        togglePinnedSubcategory(catId as DashboardIncomeBreakdownCategoryId, subId)
+      } else if (catId) {
+        togglePinnedCategory(catId as DashboardIncomeBreakdownCategoryId)
+      }
+    }
+
+    instance.on('mouseover', handleMouseover)
+    instance.on('globalout', handleGlobalOut)
+    instance.on('click', handleClick)
+
+    return () => {
+      instance.off('mouseover', handleMouseover)
+      instance.off('globalout', handleGlobalOut)
+      instance.off('click', handleClick)
+    }
+  }, [
+    clearPreview,
+    previewCategory,
+    previewSubcategory,
+    togglePinnedCategory,
+    togglePinnedSubcategory,
+  ])
+
+  useEffect(() => {
+    const instance = instanceRef.current
+    const container = chartRef.current
+    if (!instance || !container || visibleCategories.length === 0) return
+
+    const resolveColor = (token: string) =>
+      resolveCssVar(token, container)
+
+    const nothingActive =
+      activeCategoryId == null && activeSubcategoryId == null
+
+    const sunburstData = visibleCategories.map((category) => {
+      const categoryIsActive = activeCategoryId === category.id
+      const categoryHasActiveChild = category.subcategories.some(
+        (subcategory) => subcategory.id === activeSubcategoryId,
+      )
+
+      return {
+        name: catNodeName(category.id),
+        value: category.value,
+        itemStyle: {
+          color: resolveColor(tokenVar(category.colorToken)),
+          opacity:
+            nothingActive || categoryIsActive || categoryHasActiveChild ? 1 : 0.2,
+          borderRadius: 7,
+          borderWidth: categoryIsActive ? 2 : 0,
+          borderColor: categoryIsActive
+            ? resolveColor(semanticVar(`${getPaletteName(category.colorToken)}.border`))
+            : 'transparent',
+        },
+        label: { show: false },
+        emphasis: { disabled: true },
+        children: category.subcategories.map((subcategory) => {
+          const subcategoryIsActive = activeSubcategoryId === subcategory.id
+          const percent = subcategory.value / totalHbd
+
+          return {
+            name: subNodeName(subcategory.id),
+            value: subcategory.value,
+            itemStyle: {
+              color: resolveColor(tokenVar(subcategory.colorToken)),
+              opacity: nothingActive
+                ? 0.9
+                : subcategoryIsActive
+                  ? 1
+                  : categoryIsActive
+                    ? 0.72
+                    : 0.14,
+              borderRadius: 4,
+              borderWidth: subcategoryIsActive ? 1.5 : 0,
+              borderColor: subcategoryIsActive
+                ? resolveColor(
+                    semanticVar(`${getPaletteName(subcategory.colorToken)}.border`),
+                  )
+                : 'transparent',
+            },
+            label:
+              percent >= 0.07
+                ? {
+                    show: true,
+                    position: 'outside' as const,
+                    formatter: `${(percent * 100).toFixed(0)}%`,
+                    fontSize: 9.5,
+                    fontFamily: 'var(--chakra-fonts-mono)',
+                    color: resolveColor(semanticVar('fg.subtle')),
+                  }
+                : { show: false },
+            emphasis: { disabled: true },
+          }
+        }),
+      }
+    })
+
+    const option: IncomeBreakdownOption = {
+      animation: false,
+      tooltip: {
+        show: true,
+        borderWidth: 1,
+        backgroundColor: resolveColor(semanticVar('bg.panel')),
+        borderColor: resolveColor(semanticVar('border.subtle')),
+        textStyle: {
+          color: resolveColor(semanticVar('fg')),
+          fontFamily: 'var(--chakra-fonts-body)',
+        },
+        formatter: (params) => {
+          const payload = params as { data?: { name?: string; value?: number } }
+          const name = payload.data?.name ?? ''
+          const value = Number(payload.data?.value ?? 0)
+          const label =
+            outerSlices.find((slice) => subNodeName(slice.id) === name)?.label ??
+            innerSlices.find((slice) => catNodeName(slice.id) === name)?.label ??
+            ''
+
+          return `${label}<br/>${formatHbd(value)} HBD · ${formatPercent(value, totalHbd)}`
+        },
+      },
+      series: [
+        {
+          type: 'sunburst',
+          data: sunburstData,
+          radius: [60, '90%'],
+          center: ['50%', '49.5%'],
+          nodeClick: false,
+          sort: undefined,
+          label: {
+            rotate: 0,
+          },
+          itemStyle: {
+            borderRadius: 7,
+            borderWidth: 2,
+          },
+          levels: [
+            {},
+            {
+              r0: 68,
+              r: 104,
+              itemStyle: {
+                borderWidth: 2.5,
+                borderColor: resolveColor(semanticVar('bg')),
+              },
+              label: { show: false },
+            },
+            {
+              r0: 110,
+              r: 132,
+              itemStyle: {
+                borderWidth: 1.5,
+                borderColor: resolveColor(semanticVar('bg')),
+              },
+              label: {
+                minAngle: 8,
+              },
+            },
+          ],
+          emphasis: {
+            disabled: true,
+          },
+        },
+      ],
+    }
+
+    instance.setOption(option, { notMerge: true })
+    instance.resize()
+  }, [
+    activeCategoryId,
+    activeSubcategoryId,
+    innerSlices,
+    outerSlices,
+    totalHbd,
+    visibleCategories,
+  ])
 
   return (
     <Stack
@@ -457,7 +678,6 @@ export default function IncomeBreakdownChart({
           {hasPinnedSelection ? (
             <Box
               as="button"
-              type="button"
               onClick={clearPinnedSelection}
               px={2.5}
               py={1}
@@ -490,188 +710,101 @@ export default function IncomeBreakdownChart({
       </Flex>
 
       <Flex direction={{ base: 'column', md: 'row' }} gap={5} align="center">
-          <Box
-            position="relative"
-            w={`${chartWidth}px`}
-            h={`${chartHeight}px`}
-            flexShrink={0}
-            overflow="visible"
-          >
-            {visibleCategories.length > 0 ? (
-              <PieChart width={chartWidth} height={chartHeight}>
-                <Pie
-                  data={innerSlices}
-                  cx={chartCenterX}
-                  cy={chartCenterY}
-                  innerRadius={68}
-                  outerRadius={104}
-                  dataKey="value"
-                  paddingAngle={2.5}
-                  isAnimationActive={false}
-                  onMouseEnter={(_, index) => {
-                    const slice = innerSlices[index]
-                    previewCategory(slice.id)
-                  }}
-                  onMouseLeave={clearPreview}
-                  onClick={(_, index) => {
-                    const slice = innerSlices[index]
-                    togglePinnedCategory(slice.id)
-                  }}
-                >
-                  {innerSlices.map((slice) => (
-                    <Cell
-                      key={slice.id}
-                      fill={tokenVar(slice.colorToken)}
-                      opacity={
-                        activeCategoryId == null && activeSubcategoryId == null
-                          ? 1
-                          : activeCategoryId === slice.id ||
-                              activeOuterSlice?.categoryId === slice.id
-                            ? 1
-                            : 0.2
-                      }
-                      stroke={
-                        activeCategoryId === slice.id
-                          ? semanticVar(`${slice.palette}.border`)
-                          : 'transparent'
-                      }
-                      strokeWidth={2}
-                      style={{ transition: 'opacity 0.18s', cursor: 'pointer' }}
-                    />
-                  ))}
-                </Pie>
-
-                <Pie
-                  data={outerSlices}
-                  cx={chartCenterX}
-                  cy={chartCenterY}
-                  innerRadius={110}
-                  outerRadius={132}
-                  dataKey="value"
-                  paddingAngle={1.5}
-                  cornerRadius={3}
-                  isAnimationActive={false}
-                  onMouseEnter={(_, index) => {
-                    const slice = outerSlices[index]
-                    previewSubcategory(slice.categoryId, slice.id)
-                  }}
-                  onMouseLeave={clearPreview}
-                  onClick={(_, index) => {
-                    const slice = outerSlices[index]
-                    togglePinnedSubcategory(slice.categoryId, slice.id)
-                  }}
-                  label={renderOuterLabel}
-                  labelLine={false}
-                >
-                  {outerSlices.map((slice) => (
-                    <Cell
-                      key={slice.id}
-                      fill={tokenVar(slice.colorToken)}
-                      opacity={
-                        activeCategoryId == null && activeSubcategoryId == null
-                          ? 0.9
-                          : activeSubcategoryId === slice.id
-                            ? 1
-                            : activeCategoryId === slice.categoryId
-                              ? 0.72
-                              : 0.14
-                      }
-                      stroke={
-                        activeSubcategoryId === slice.id
-                          ? semanticVar(`${slice.palette}.border`)
-                          : 'transparent'
-                      }
-                      strokeWidth={1.5}
-                      style={{ transition: 'opacity 0.18s', cursor: 'pointer' }}
-                    />
-                  ))}
-                </Pie>
-
-                <g>
-                  <CenterLabel
-                    cx={chartCenterX}
-                    cy={chartCenterY}
-                    hovered={activeCenter}
-                    total={totalHbd}
-                    range={range}
-                  />
-                </g>
-              </PieChart>
-            ) : (
+        <Box
+          position="relative"
+          w={`${CHART_WIDTH}px`}
+          h={`${CHART_HEIGHT}px`}
+          flexShrink={0}
+          overflow="visible"
+        >
+          {visibleCategories.length > 0 ? (
+            <>
+              <Box ref={chartRef} w="full" h="full" />
               <Flex
-                h="full"
+                position="absolute"
+                inset="0"
                 align="center"
                 justify="center"
-                borderRadius="full"
-                borderWidth="1px"
-                borderColor="border.subtle"
-                bg="bg.subtle"
-                textAlign="center"
-                px={8}
+                pointerEvents="none"
+                px={12}
               >
-                <Stack gap={1.5}>
-                  <Text fontSize="sm" fontWeight="600">
-                    No cash-like income yet
-                  </Text>
-                  <Text fontSize="xs" color="fg.muted">
-                    {RANGE_LABELS[range]} does not include HBD or HIVE transfers,
-                    author rewards, curation rewards, savings interest, or witness rewards.
-                  </Text>
-                </Stack>
+                <CenterLabel hovered={activeCenter} total={totalHbd} />
               </Flex>
-            )}
-          </Box>
+            </>
+          ) : (
+            <Flex
+              h="full"
+              align="center"
+              justify="center"
+              borderRadius="full"
+              borderWidth="1px"
+              borderColor="border.subtle"
+              bg="bg.subtle"
+              textAlign="center"
+              px={8}
+            >
+              <Stack gap={1.5}>
+                <Text fontSize="sm" fontWeight="600">
+                  No cash-like income yet
+                </Text>
+                <Text fontSize="xs" color="fg.muted">
+                  {RANGE_LABELS[range]} does not include HBD or HIVE transfers,
+                  author rewards, curation rewards, savings interest, or witness rewards.
+                </Text>
+              </Stack>
+            </Flex>
+          )}
+        </Box>
 
         <Stack flex="1 1 180px" minW={0} gap={0.5} w="full">
-            {visibleCategories.map((category) => {
-              const categoryIsActive = activeCategoryId === category.id
-              const categoryPalette = getPaletteName(category.colorToken)
+          {visibleCategories.map((category) => {
+            const categoryIsActive = activeCategoryId === category.id
+            const categoryPalette = getPaletteName(category.colorToken)
 
-              return (
-                <Box key={category.id}>
+            return (
+              <Box key={category.id}>
+                <LegendRow
+                  colorToken={category.colorToken}
+                  palette={categoryPalette}
+                  label={category.label}
+                  value={category.value}
+                  total={totalHbd}
+                  isActive={categoryIsActive}
+                  isPinned={
+                    pinnedCategoryId === category.id &&
+                    pinnedSubcategoryId == null
+                  }
+                  isChild={false}
+                  onPreview={() => previewCategory(category.id)}
+                  onPreviewEnd={clearPreview}
+                  onTogglePin={() => togglePinnedCategory(category.id)}
+                />
+                {category.subcategories.map((subcategory) => (
                   <LegendRow
-                    colorToken={category.colorToken}
-                    palette={categoryPalette}
-                    label={category.label}
-                    value={category.value}
+                    key={subcategory.id}
+                    colorToken={subcategory.colorToken}
+                    palette={getPaletteName(subcategory.colorToken)}
+                    label={subcategory.label}
+                    value={subcategory.value}
                     total={totalHbd}
-                    isActive={categoryIsActive}
-                    isPinned={
-                      pinnedCategoryId === category.id &&
-                      pinnedSubcategoryId == null
+                    isActive={
+                      activeSubcategoryId === subcategory.id || categoryIsActive
                     }
-                    isChild={false}
-                    onPreview={() => previewCategory(category.id)}
+                    isPinned={pinnedSubcategoryId === subcategory.id}
+                    isChild
+                    onPreview={() =>
+                      previewSubcategory(category.id, subcategory.id)
+                    }
                     onPreviewEnd={clearPreview}
-                    onTogglePin={() => togglePinnedCategory(category.id)}
+                    onTogglePin={() =>
+                      togglePinnedSubcategory(category.id, subcategory.id)
+                    }
                   />
-                  {category.subcategories.map((subcategory) => (
-                    <LegendRow
-                      key={subcategory.id}
-                      colorToken={subcategory.colorToken}
-                      palette={getPaletteName(subcategory.colorToken)}
-                      label={subcategory.label}
-                      value={subcategory.value}
-                      total={totalHbd}
-                      isActive={
-                        activeSubcategoryId === subcategory.id || categoryIsActive
-                      }
-                      isPinned={pinnedSubcategoryId === subcategory.id}
-                      isChild
-                      onPreview={() =>
-                        previewSubcategory(category.id, subcategory.id)
-                      }
-                      onPreviewEnd={clearPreview}
-                      onTogglePin={() =>
-                        togglePinnedSubcategory(category.id, subcategory.id)
-                      }
-                    />
-                  ))}
-                  <Box h="1px" bg="border.subtle" mx={1.5} my={1} />
-                </Box>
-              )
-            })}
-
+                ))}
+                <Box h="1px" bg="border.subtle" mx={1.5} my={1} />
+              </Box>
+            )
+          })}
         </Stack>
       </Flex>
     </Stack>
