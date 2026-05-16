@@ -23,6 +23,8 @@ export const getRouter = () => {
       output: ({ url }) => localizeUrl(url),
     },
 
+    pathParamsAllowedCharacters: ['@'],
+
     defaultPreload: 'intent',
     defaultViewTransition: true,
   })
