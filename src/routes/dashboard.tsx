@@ -54,6 +54,7 @@ import type {
 } from '@/features/dashboard/types'
 import { DASHBOARD_INCOME_PALETTE } from '@/features/dashboard/chartPalette'
 import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
+import PostPerformanceScatterChart from '@/features/dashboard/PostPerformanceScatterChart'
 import RewardIncomeHeatmapChart from '@/features/dashboard/RewardIncomeHeatmapChart'
 import RewardIncomeStackedChart from '@/features/dashboard/RewardIncomeStackedChart'
 import HbdIcon from '@/components/hive/HbdIcon'
@@ -462,6 +463,20 @@ function Dashboard() {
             </ChartPanel>
           ) : null}
         </SimpleGrid>
+      ) : null}
+
+      {focus === 'all' || focus === 'rewards' || focus === 'publishing' ? (
+        <ChartPanel
+          title="Post performance map"
+          subtitle="Payout × votes · bubble = comments"
+          isLoading={dashboardQuery.isLoading}
+        >
+          {overview?.performancePosts.length ? (
+            <PostPerformanceScatterChart posts={overview.performancePosts} />
+          ) : (
+            <EmptyStateMessage message="No rewarded posts were found for this period." />
+          )}
+        </ChartPanel>
       ) : null}
 
       <SimpleGrid columns={{ base: 1, lg: 2 }} gap={2.5}>

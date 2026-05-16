@@ -948,6 +948,9 @@ export const aggregateDashboardOverview = ({
       ),
       publishedPosts,
     },
+    performancePosts: topPosts
+      .slice()
+      .sort((left, right) => right.totalReward - left.totalReward),
     topPosts: topPosts
       .sort((left, right) => right.totalReward - left.totalReward)
       .slice(0, 5),

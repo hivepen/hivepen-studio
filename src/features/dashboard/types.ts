@@ -109,6 +109,7 @@ export type DashboardHistoricalOverview = {
   breakdown: Array<DashboardBreakdownItem>
   incomeBreakdown: Array<DashboardIncomeBreakdownCategory>
   summary: DashboardSummary
+  performancePosts: Array<DashboardTopPost>
   topPosts: Array<DashboardTopPost>
   cachedAt: number
 }
