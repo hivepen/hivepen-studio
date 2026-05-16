@@ -5,6 +5,7 @@ import {
   Card,
   HStack,
   Icon,
+  Progress,
   SegmentGroup,
   Separator,
   SimpleGrid,
@@ -215,7 +216,7 @@ function Dashboard() {
           ? formatTokenAmount(wallet.metrics.effectiveHivePower, 2)
           : null,
       suffix: ' HP',
-      description: formatHivePowerContext(wallet?.metrics ?? null),
+      children: renderHivePowerCardBody(wallet?.metrics ?? null),
     },
     // TODO(stat-cards): Add a time-to-next-payout style savings cue derived
     // from the account's earning balance so the card answers "when" as well as
@@ -230,7 +231,7 @@ function Dashboard() {
           ? formatTokenAmount(wallet.metrics.savingsHbd, 3)
           : null,
       suffix: ' HBD',
-      description: formatSavingsProjection(
+      children: renderSavingsCardBody(
         wallet?.metrics.savingsHbd ?? null,
         wallet?.metrics.hbdInterestRate ?? null,
       ),
@@ -411,9 +412,11 @@ function Dashboard() {
               label={card.label}
               palette={card.palette}
               icon={card.icon}
+              media={card.media}
               value={card.value}
               suffix={card.suffix}
               description={card.description}
+              children={card.children}
               isLoading={
                 dashboardQuery.isLoading ||
                 walletQuery.isLoading ||
@@ -1364,27 +1367,7 @@ function formatFollowRatio(followers: number, following: number) {
   return `${(followers / following).toFixed(2)}x ratio`
 }
 
-function formatSavingsProjection(
-  savingsHbd: number | null,
-  interestRatePercent: number | null,
-) {
-  if (
-    savingsHbd == null ||
-    !Number.isFinite(savingsHbd) ||
-    interestRatePercent == null ||
-    !Number.isFinite(interestRatePercent)
-  ) {
-    return 'Savings balance'
-  }
-
-  const apr = interestRatePercent / 100
-  const monthlyPayout = (savingsHbd * apr) / 12
-  const compoundedYearlyGain = savingsHbd * ((1 + apr / 12) ** 12 - 1)
-
-  return `${formatPercent(apr, 0)} APR · +${formatTokenAmount(monthlyPayout, 2)}/mo · ~${formatTokenAmount(compoundedYearlyGain, 1)} HBD/year`
-}
-
-function formatHivePowerContext(
+function renderHivePowerCardBody(
   metrics:
     | {
         hivePower: number
@@ -1396,11 +1379,140 @@ function formatHivePowerContext(
     | null,
 ) {
   if (!metrics) {
-    return 'Owned stake'
+    return (
+      <Text fontSize="xs" color="fg.muted">
+        Owned stake
+      </Text>
+    )
   }
 
-  const ownedValue = metrics.hivePower * metrics.hivePriceHbd
-  return `${formatTokenAmount(metrics.hivePower, 2)} owned · ${formatTokenAmount(metrics.receivedHivePower, 2)} in · ~${formatTokenAmount(ownedValue, 0)} HBD value`
+  const ownedShare =
+    metrics.effectiveHivePower > 0
+      ? (metrics.hivePower / metrics.effectiveHivePower) * 100
+      : 0
+  const receivedShare =
+    metrics.effectiveHivePower > 0
+      ? (metrics.receivedHivePower / metrics.effectiveHivePower) * 100
+      : 0
+  const estimatedValue = metrics.effectiveHivePower * metrics.hivePriceHbd
+
+  return (
+    <Stack gap={2.5}>
+      <HStack gap={2} wrap="wrap">
+        <Badge size="sm" variant="surface" colorPalette="orange">
+          {formatTokenAmount(metrics.hivePower, 0)} owned
+        </Badge>
+        {metrics.receivedHivePower > 0 ? (
+          <Badge size="sm" variant="subtle" colorPalette="green">
+            +{formatTokenAmount(metrics.receivedHivePower, 0)} in
+          </Badge>
+        ) : null}
+        {metrics.delegatedHivePower > 0 ? (
+          <Badge size="sm" variant="outline" colorPalette="orange">
+            -{formatTokenAmount(metrics.delegatedHivePower, 0)} out
+          </Badge>
+        ) : null}
+      </HStack>
+
+      <Stack gap={1.5}>
+        <Progress.Root
+          value={Math.min(100, Math.max(0, ownedShare + receivedShare))}
+          colorPalette="orange"
+          variant="subtle"
+          size="xs"
+          shape="full"
+        >
+          <Progress.Track bg="colorPalette.subtle">
+            <HStack h="full" w="full" gap="0">
+              <Box
+                h="full"
+                bg="colorPalette.solid"
+                width={`${ownedShare}%`}
+                minW={ownedShare > 0 ? '6px' : '0'}
+              />
+              <Box
+                h="full"
+                bg="green.solid"
+                width={`${receivedShare}%`}
+                minW={receivedShare > 0 ? '6px' : '0'}
+              />
+            </HStack>
+          </Progress.Track>
+        </Progress.Root>
+
+        <HStack justify="space-between" gap={2}>
+          <Text fontSize="2xs" color="fg.muted" fontFamily="mono">
+            ~{formatTokenAmount(estimatedValue, 0)} HBD value
+          </Text>
+          <Text fontSize="2xs" color="colorPalette.fg" fontWeight="600">
+            stake online
+          </Text>
+        </HStack>
+      </Stack>
+    </Stack>
+  )
+}
+
+function renderSavingsCardBody(
+  savingsHbd: number | null,
+  interestRatePercent: number | null,
+) {
+  if (
+    savingsHbd == null ||
+    !Number.isFinite(savingsHbd) ||
+    interestRatePercent == null ||
+    !Number.isFinite(interestRatePercent)
+  ) {
+    return (
+      <Text fontSize="xs" color="fg.muted">
+        Savings balance
+      </Text>
+    )
+  }
+
+  const apr = interestRatePercent / 100
+  const monthlyPayout = (savingsHbd * apr) / 12
+  const compoundedYearlyGain = savingsHbd * ((1 + apr / 12) ** 12 - 1)
+  const monthlyProgress = Math.min(100, Math.max(8, apr * 100))
+
+  return (
+    <Stack gap={2.5}>
+      <HStack gap={2} wrap="wrap">
+        <Badge size="sm" variant="surface" colorPalette="green">
+          {formatPercent(apr, 0)} APR
+        </Badge>
+        <Badge size="sm" variant="subtle" colorPalette="green">
+          +{formatTokenAmount(monthlyPayout, 2)}/mo
+        </Badge>
+        <Badge size="sm" variant="outline" colorPalette="green">
+          ~{formatTokenAmount(compoundedYearlyGain, 1)} HBD/yr
+        </Badge>
+      </HStack>
+
+      <Stack gap={1.5}>
+        <Progress.Root
+          value={monthlyProgress}
+          colorPalette="green"
+          variant="subtle"
+          size="xs"
+          shape="full"
+        >
+          <Progress.Track bg="colorPalette.subtle">
+            <Progress.Range bg="colorPalette.solid" />
+          </Progress.Track>
+        </Progress.Root>
+
+        <HStack justify="space-between" gap={2}>
+          <Text fontSize="2xs" color="fg.muted" fontFamily="mono">
+            compounding quietly
+          </Text>
+          <Text fontSize="2xs" color="colorPalette.fg" fontWeight="600">
+            green line only goes up
+          </Text>
+        </HStack>
+      </Stack>
+    </Stack>
+  )
 }
 
 function formatRewardMixPreview(overview: DashboardHistoricalOverview | null) {
