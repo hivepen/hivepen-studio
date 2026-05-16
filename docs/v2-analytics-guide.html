@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Hivepen Studio · Dashboard Implementation Guide</title>
+<style>
+  :root {
+    --bg:         #0c0e13;
+    --surface:    #12151c;
+    --surface2:   #181c26;
+    --surface3:   #1e2230;
+    --border:     rgba(255,255,255,0.06);
+    --border2:    rgba(255,255,255,0.11);
+    --text:       #dddbd3;
+    --muted:      #6b6a64;
+    --subtle:     #4a4946;
+    --accent:     #e84b4b;
+    --green:      #3ecf8e;
+    --purple:     #b48ef7;
+    --orange:     #f0a040;
+    --blue:       #5b8cf7;
+    --teal:       #2dd4bf;
+    --red:        #e84b4b;
+    --font-mono:  'JetBrains Mono', 'Fira Mono', monospace;
+    --font-sans:  'DM Sans', system-ui, sans-serif;
+    --radius:     10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.65;
+    padding-bottom: 80px;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(12,14,19,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex; align-items: center; gap: 0; height: 52px;
+    overflow-x: auto;
+  }
+  nav a {
+    display: inline-flex; align-items: center; height: 52px;
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.06em; color: var(--muted);
+    text-decoration: none; padding: 0 14px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  nav a:hover { color: var(--text); }
+  nav a.active { color: var(--text); border-bottom-color: var(--accent); }
+  .nav-logo {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    letter-spacing: -0.01em; padding-right: 24px;
+    border-right: 1px solid var(--border); margin-right: 8px;
+    white-space: nowrap;
+  }
+
+  /* LAYOUT */
+  .page { max-width: 980px; margin: 0 auto; padding: 0 32px; }
+
+  /* SECTIONS */
+  section { padding-top: 56px; }
+  .section-header {
+    display: flex; align-items: baseline; gap: 14px;
+    margin-bottom: 28px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-number {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--subtle); letter-spacing: 0.1em;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 20px; font-weight: 500; letter-spacing: -0.02em;
+  }
+  .section-tag {
+    display: inline-flex; align-items: center;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 4px;
+    border: 1px solid;
+    margin-left: auto;
+  }
+  .tag-done    { color: var(--green);  border-color: var(--green);  background: rgba(62,207,142,0.08); }
+  .tag-phase1  { color: var(--blue);   border-color: var(--blue);   background: rgba(91,140,247,0.08); }
+  .tag-phase2  { color: var(--orange); border-color: var(--orange); background: rgba(240,160,64,0.08); }
+  .tag-avoid   { color: var(--muted);  border-color: var(--subtle); background: rgba(255,255,255,0.03); }
+  .tag-new     { color: var(--purple); border-color: var(--purple); background: rgba(180,142,247,0.08); }
+
+  /* PROSE */
+  p { color: var(--text); margin-bottom: 14px; max-width: 680px; }
+  .lead { font-size: 15px; color: var(--text); margin-bottom: 20px; max-width: 700px; }
+  .note {
+    background: var(--surface2); border-left: 3px solid var(--orange);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 12px 16px; margin: 16px 0; max-width: 700px;
+    font-size: 13px; color: var(--text);
+  }
+  .note.danger  { border-left-color: var(--red); }
+  .note.success { border-left-color: var(--green); }
+  .note.info    { border-left-color: var(--blue); }
+  .note strong  { color: #fff; }
+  strong { color: #fff; font-weight: 500; }
+  em { color: var(--muted); font-style: normal; }
+
+  /* CARDS GRID */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 20px 0; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px;
+  }
+  .card-title { font-size: 13px; font-weight: 500; color: #fff; margin-bottom: 6px; }
+  .card-body  { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .card.done   { border-left: 3px solid var(--green); }
+  .card.phase1 { border-left: 3px solid var(--blue); }
+  .card.phase2 { border-left: 3px solid var(--orange); }
+  .card.avoid  { border-left: 3px solid var(--subtle); opacity: 0.6; }
+  .card.new    { border-left: 3px solid var(--purple); }
+
+  /* CODE BLOCKS */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    margin: 16px 0;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+  .code-lang {
+    display: inline-block;
+    padding: 1px 7px; border-radius: 3px;
+    background: rgba(255,255,255,0.05);
+    font-size: 10px; color: var(--subtle);
+  }
+  pre {
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  /* SYNTAX HIGHLIGHTING (manual) */
+  .kw  { color: #c084fc; }
+  .str { color: var(--green); }
+  .cm  { color: var(--subtle); font-style: italic; }
+  .num { color: var(--orange); }
+  .fn  { color: var(--blue); }
+  .ty  { color: var(--teal); }
+  .prop{ color: #e2b77e; }
+
+  /* TABLES */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th {
+    text-align: left; padding: 8px 12px;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--border2);
+  }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td code, th code { font-family: var(--font-mono); font-size: 11px; color: var(--blue); }
+
+  /* PILL BADGES */
+  .pill {
+    display: inline-flex; align-items: center;
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 0.06em; padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid;
+  }
+  .pill-green  { color: var(--green);  border-color: rgba(62,207,142,0.3);  background: rgba(62,207,142,0.07); }
+  .pill-purple { color: var(--purple); border-color: rgba(180,142,247,0.3); background: rgba(180,142,247,0.07); }
+  .pill-orange { color: var(--orange); border-color: rgba(240,160,64,0.3);  background: rgba(240,160,64,0.07); }
+  .pill-blue   { color: var(--blue);   border-color: rgba(91,140,247,0.3);  background: rgba(91,140,247,0.07); }
+  .pill-red    { color: var(--red);    border-color: rgba(232,75,75,0.3);   background: rgba(232,75,75,0.07); }
+  .pill-muted  { color: var(--muted);  border-color: var(--border2); background: rgba(255,255,255,0.03); }
+  .pill-teal   { color: var(--teal);   border-color: rgba(45,212,191,0.3);  background: rgba(45,212,191,0.07); }
+
+  /* PALETTE SWATCHES */
+  .palette { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  .swatch {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    font-family: var(--font-mono); font-size: 9px; color: var(--muted);
+  }
+  .swatch-dot {
+    width: 32px; height: 32px; border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  /* AVATAR DEMO */
+  .avatar-demo {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px;
+    margin: 12px 0; max-width: 420px;
+  }
+  .avatar-ring {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 2px solid var(--green);
+    overflow: hidden; flex-shrink: 0;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 12px; color: var(--green);
+  }
+  .avatar-ring img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(30%); }
+
+  /* MINI CHART DEMO CONTAINER */
+  .minichart-demo {
+    display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0;
+  }
+  .minichart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+    width: 200px;
+  }
+  .minichart-label { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+  .minichart-value { font-size: 20px; font-weight: 500; color: #fff; margin-bottom: 10px; }
+  .minichart-svg { width: 100%; }
+
+  /* DIVIDER */
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* INLINE CODE */
+  code {
+    font-family: var(--font-mono); font-size: 11px;
+    background: rgba(255,255,255,0.06); color: var(--blue);
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  /* FEASIBILITY TABLE STATUS */
+  .status-done   { color: var(--green);  font-family: var(--font-mono); font-size: 11px; }
+  .status-p1     { color: var(--blue);   font-family: var(--font-mono); font-size: 11px; }
+  .status-p2     { color: var(--orange); font-family: var(--font-mono); font-size: 11px; }
+  .status-avoid  { color: var(--subtle); font-family: var(--font-mono); font-size: 11px; }
+  .status-new    { color: var(--purple); font-family: var(--font-mono); font-size: 11px; }
+
+  /* LIST */
+  ul, ol { padding-left: 20px; margin: 10px 0 14px; color: var(--text); }
+  li { margin-bottom: 5px; }
+
+  /* CHART TYPE LABEL */
+  .chart-type {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+    background: var(--surface2); padding: 2px 8px; border-radius: 4px;
+    border: 1px solid var(--border2);
+    margin-left: 8px; vertical-align: middle;
+  }
+
+  /* VISUAL SEPARATOR */
+  .dot-sep { color: var(--subtle); margin: 0 6px; }
+
+  /* FOOTNOTE */
+  .footnote { font-size: 11px; color: var(--muted); margin-top: 6px; max-width: 640px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">🐝 Hivepen Dashboard Guide</span>
+  <a href="#overview">Overview</a>
+  <a href="#palette">Palette</a>
+  <a href="#images">Images</a>
+  <a href="#minichart">Minichart cards</a>
+  <a href="#charts-done">Existing charts</a>
+  <a href="#charts-phase1">Phase 1</a>
+  <a href="#charts-phase2">Phase 2</a>
+  <a href="#delegation-sankey">Delegation sankey</a>
+  <a href="#avoid">Avoid</a>
+  <a href="#shared-patterns">Shared patterns</a>
+</nav>
+
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════════ OVERVIEW -->
+<section id="overview">
+  <div class="section-header">
+    <span class="section-number">00</span>
+    <h1 class="section-title">Dashboard implementation guide</h1>
+  </div>
+
+  <p class="lead">
+    This document is the authoritative implementation reference for the Hivepen Studio dashboard.
+    It covers every chart, minicard, visual pattern, and feasibility decision.
+    It is meant to be read by an AI agent that will implement changes, not by end users.
+  </p>
+
+  <div class="note info">
+    <strong>Golden rule:</strong> prefer a smaller set of truthful charts over a larger set of impressive
+    but weakly supported visuals. Every chart in this guide is either grounded in public Hive API data
+    we already fetch, or explicitly labeled as infeasible until a trustworthy data source is added.
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 12px">Feasibility legend</h3>
+  <table>
+    <tr><th>Status</th><th>Meaning</th></tr>
+    <tr><td><span class="status-done">● DONE</span></td><td>Already implemented and rendering real data</td></tr>
+    <tr><td><span class="status-p1">● PHASE 1</span></td><td>Build next — data is available or derivable with light aggregation</td></tr>
+    <tr><td><span class="status-p2">● PHASE 2</span></td><td>Build later — feasible but needs additional API work or verification</td></tr>
+    <tr><td><span class="status-new">● NEW</span></td><td>New addition requested in this revision</td></tr>
+    <tr><td><span class="status-avoid">✕ AVOID</span></td><td>Do not implement — data is too weak or too inferential right now</td></tr>
+  </table>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 12px">Data sources we actually have</h3>
+  <ul>
+    <li>Account posts and comments for the selected range (<code>getAccountPosts</code>)</li>
+    <li>Reward history from <code>get_account_history</code>: author, curation, savings interest, witness, inbound transfers</li>
+    <li>Outgoing delegations from <code>get_vesting_delegations</code></li>
+    <li>Global chain properties and median HIVE/HBD price</li>
+    <li>Wallet/profile-level account metrics (HP, voting mana, follower count, account age)</li>
+    <li>Post metadata: <code>coverUrl</code>, <code>communityTitle</code>, <code>communityId</code>, <code>author</code>, <code>votes</code>, <code>comments</code></li>
+    <li>Hive avatar CDN: <code>https://images.hive.blog/u/{username}/avatar</code></li>
+    <li>Community icon: <code>https://images.hive.blog/u/{communityId}/avatar</code></li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ PALETTE -->
+<section id="palette">
+  <div class="section-header">
+    <span class="section-number">01</span>
+    <h2 class="section-title">Chart palette</h2>
+  </div>
+
+  <p>All charts use Chakra UI semantic color tokens resolved at render time via <code>resolveCssVar()</code>.
+  Never hardcode hex values. The mapping below is canonical — do not deviate.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>chartPalette.ts — canonical token map</span>
+      <span class="code-lang">TS</span>
+    </div>
+    <pre><span class="kw">export const</span> <span class="fn">DASHBOARD_INCOME_PALETTE</span> = {
+  author:    { colorToken: <span class="str">'green.solid'</span>,  palette: <span class="str">'green'</span>,  label: <span class="str">'Author'</span>    },
+  curation:  { colorToken: <span class="str">'purple.solid'</span>, palette: <span class="str">'purple'</span>, label: <span class="str">'Curation'</span>  },
+  interest:  { colorToken: <span class="str">'orange.solid'</span>, palette: <span class="str">'orange'</span>, label: <span class="str">'Interest'</span>  },
+  witness:   { colorToken: <span class="str">'cyan.solid'</span>,   palette: <span class="str">'cyan'</span>,   label: <span class="str">'Witness'</span>   },
+  transfers: { colorToken: <span class="str">'red.solid'</span>,    palette: <span class="str">'red'</span>,    label: <span class="str">'Transfers'</span> },
+} <span class="kw">as const</span></pre>
+  </div>
+
+  <div class="palette">
+    <div class="swatch"><div class="swatch-dot" style="background:#3ecf8e"></div>green<br>Author</div>
+    <div class="swatch"><div class="swatch-dot" style="background:#b48ef7"></div>purple<br>Curation</div>
+    <div class="swatch"><div class="swatch-dot" style="background:#f0a040"></div>orange<br>Interest</div>
+    <div class="swatch"><div class="swatch-dot" style="background:#22d3ee"></div>cyan<br>Witness</div>
+    <div class="swatch"><div class="swatch-dot" style="background:#e84b4b"></div>red<br>Transfers</div>
+    <div class="swatch"><div class="swatch-dot" style="background:#5b8cf7"></div>blue<br>HP / general</div>
+    <div class="swatch"><div class="swatch-dot" style="background:#2dd4bf"></div>teal<br>Delegations</div>
+    <div class="swatch"><div class="swatch-dot" style="background:#4a4946"></div>gray<br>Muted / zero</div>
+  </div>
+
+  <p class="footnote">Token subcategory suffixes: <code>.solid</code> = primary color for main series,
+  <code>.emphasized</code> = brighter variant for subcategories, <code>.subtle</code> = low-contrast variant for secondary subcategories.</p>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Token variants to use per context</h3>
+  <table>
+    <tr><th>Context</th><th>Token suffix</th><th>Example</th></tr>
+    <tr><td>Primary series / category ring (sunburst inner)</td><td><code>.solid</code></td><td><code>green.solid</code></td></tr>
+    <tr><td>Subcategory / outer ring / child treemap node</td><td><code>.emphasized</code></td><td><code>green.emphasized</code></td></tr>
+    <tr><td>Secondary subcategory (e.g. comment rewards)</td><td><code>.subtle</code></td><td><code>green.subtle</code></td></tr>
+    <tr><td>Axis labels, tick text</td><td><code>fg.subtle</code></td><td>semantic token</td></tr>
+    <tr><td>Tooltip background</td><td><code>bg.panel</code></td><td>semantic token</td></tr>
+    <tr><td>Tooltip border</td><td><code>border.subtle</code></td><td>semantic token</td></tr>
+    <tr><td>Grid / split lines</td><td><code>border.muted</code></td><td>semantic token</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ IMAGES -->
+<section id="images">
+  <div class="section-header">
+    <span class="section-number">02</span>
+    <h2 class="section-title">Images with stroked avatars</h2>
+    <span class="section-tag tag-new">New pattern</span>
+  </div>
+
+  <p class="lead">
+    Use real images wherever accounts, communities, or posts appear. Apply a subtle
+    ring border and a light desaturation filter so images feel native to the dark surface
+    without being garish. This applies to: legend rows in community charts, top posts list,
+    scatter chart tooltips, and the stat card <code>media</code> slot.
+  </p>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:20px 0 10px">Avatar URL patterns</h3>
+  <table>
+    <tr><th>Resource</th><th>URL pattern</th></tr>
+    <tr><td>Hive account avatar</td><td><code>https://images.hive.blog/u/{username}/avatar/small</code></td></tr>
+    <tr><td>Community avatar (same endpoint)</td><td><code>https://images.hive.blog/u/{communityId}/avatar/small</code></td></tr>
+    <tr><td>Post cover (from <code>coverUrl</code> field)</td><td><code>post.coverUrl</code> (already fetched)</td></tr>
+  </table>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">CSS pattern — stroked avatar</h3>
+  <p>Use this CSS fragment consistently. The ring stroke uses the category color token so each avatar
+  visually associates with its series color in a chart legend.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>Avatar ring — reusable CSS-in-JS pattern</span>
+      <span class="code-lang">TSX</span>
+    </div>
+    <pre><span class="cm">// Ring color comes from the category palette</span>
+&lt;<span class="ty">Box</span>
+  <span class="prop">as</span>=<span class="str">"img"</span>
+  <span class="prop">src</span>={<span class="str">`https://images.hive.blog/u/${username}/avatar/small`</span>}
+  <span class="prop">alt</span>={username}
+  <span class="prop">boxSize</span>=<span class="str">"22px"</span>
+  <span class="prop">borderRadius</span>=<span class="str">"full"</span>
+  <span class="prop">border</span>=<span class="str">"2px solid"</span>
+  <span class="prop">borderColor</span>={tokenVar(colorToken)}  <span class="cm">// e.g. "green.solid" → CSS var</span>
+  <span class="prop">objectFit</span>=<span class="str">"cover"</span>
+  <span class="prop">filter</span>=<span class="str">"grayscale(20%) brightness(0.92)"</span>
+  <span class="prop">flexShrink</span>={<span class="num">0</span>}
+  <span class="prop">onError</span>={(e) =&gt; { e.currentTarget.style.display = <span class="str">'none'</span> }}
+/&gt;
+
+<span class="cm">// For post cover thumbnails (smaller, rounded rect)</span>
+&lt;<span class="ty">Box</span>
+  <span class="prop">as</span>=<span class="str">"img"</span>
+  <span class="prop">src</span>={post.coverUrl}
+  <span class="prop">alt</span>={post.title}
+  <span class="prop">w</span>=<span class="str">"40px"</span> <span class="prop">h</span>=<span class="str">"28px"</span>
+  <span class="prop">borderRadius</span>=<span class="str">"6px"</span>
+  <span class="prop">objectFit</span>=<span class="str">"cover"</span>
+  <span class="prop">border</span>=<span class="str">"1.5px solid"</span>
+  <span class="prop">borderColor</span>=<span class="str">"border.subtle"</span>
+  <span class="prop">filter</span>=<span class="str">"grayscale(15%) brightness(0.88)"</span>
+  <span class="prop">flexShrink</span>={<span class="num">0</span>}
+  <span class="prop">onError</span>={(e) =&gt; { e.currentTarget.style.display = <span class="str">'none'</span> }}
+/&gt;</pre>
+  </div>
+
+  <div class="note">
+    <strong>Always add an <code>onError</code> handler.</strong> Community IDs and some accounts do not have avatars.
+    Hide the image gracefully rather than showing a broken element. Never use a fallback placeholder image
+    from an external CDN.
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Avatar demo (visual reference)</h3>
+  <p>The ring color should match the series token for the item. Examples:</p>
+  <div class="avatar-demo">
+    <div class="avatar-ring" style="border-color:#3ecf8e">
+      <span>CE</span>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:500;color:#fff">@carlosepc</div>
+      <div style="font-size:11px;color:var(--muted)">Author · green ring = green.solid</div>
+    </div>
+  </div>
+  <div class="avatar-demo">
+    <div class="avatar-ring" style="border-color:#2dd4bf">
+      <span>HC</span>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:500;color:#fff">hive-196708 (HiveCuba)</div>
+      <div style="font-size:11px;color:var(--muted)">Community · teal ring = teal (delegation color)</div>
+    </div>
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Where to apply images</h3>
+  <table>
+    <tr><th>Location</th><th>Image type</th><th>Filter</th><th>Size</th></tr>
+    <tr><td>Community breakdown legend rows</td><td>Community avatar</td><td><code>grayscale(20%)</code></td><td>22×22px circle</td></tr>
+    <tr><td>Top posts list (existing)</td><td>Post cover (<code>PostCardMedia</code> already handles it)</td><td>existing</td><td>existing</td></tr>
+    <tr><td>Scatter chart tooltip</td><td>Post cover (inline HTML in tooltip formatter)</td><td><code>grayscale(15%)</code></td><td>40×28px rect</td></tr>
+    <tr><td>Delegation sankey tooltip</td><td>Account avatar per delegatee node</td><td><code>grayscale(20%)</code></td><td>20×20px circle</td></tr>
+    <tr><td>Metric card <code>media</code> slot (HP card)</td><td>Account avatar of current user</td><td><code>grayscale(10%)</code></td><td>36×36px circle with ring</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ MINICHART CARDS -->
+<section id="minichart">
+  <div class="section-header">
+    <span class="section-number">03</span>
+    <h2 class="section-title">Miniature charts for metric cards</h2>
+    <span class="section-tag tag-new">New — Phase 1</span>
+  </div>
+
+  <p class="lead">
+    The <code>MetricCard</code> component accepts a <code>media</code> prop that replaces the icon box.
+    Use it to embed a tiny ECharts canvas (80×40px) or a pure SVG sparkline showing trend context
+    directly in the card. The <code>children</code> prop below the value remains for text context.
+  </p>
+
+  <div class="note info">
+    <strong>Rule:</strong> only use a minichart when you have at least 4 data points
+    (e.g. weekly buckets) for the selected range. With fewer points, fall back to the icon.
+    The minichart must render without axis labels or tooltips — it is decoration + at-a-glance trend,
+    not an interactive chart.
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Cards that get a minichart</h3>
+  <table>
+    <tr><th>Card</th><th>Data source</th><th>Chart type</th><th>Color</th></tr>
+    <tr>
+      <td><strong>Total rewards</strong> <em>(add this card)</em></td>
+      <td><code>buckets[].totalRewards</code></td>
+      <td>Sparkline area</td>
+      <td><span class="pill pill-green">green.solid</span></td>
+    </tr>
+    <tr>
+      <td><strong>HBD Savings</strong> <em>(existing card)</em></td>
+      <td>Static — balance doesn't change per bucket. Use icon, not chart.</td>
+      <td>Icon only</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td><strong>Avg post reward</strong> <em>(existing card)</em></td>
+      <td><code>buckets[].authorRewards / buckets[].posts</code></td>
+      <td>Sparkline bar</td>
+      <td><span class="pill pill-green">green.solid</span></td>
+    </tr>
+    <tr>
+      <td><strong>Curation income</strong> <em>(add this card)</em></td>
+      <td><code>buckets[].curationRewards</code></td>
+      <td>Sparkline area</td>
+      <td><span class="pill pill-purple">purple.solid</span></td>
+    </tr>
+    <tr>
+      <td><strong>Hive Power</strong> <em>(existing card)</em></td>
+      <td>Use account avatar as <code>media</code> image instead of chart</td>
+      <td>Avatar image</td>
+      <td>ring: <span class="pill pill-orange">orange.solid</span></td>
+    </tr>
+  </table>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">MiniSparkline component — full implementation</h3>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>MiniSparkline.tsx — new component</span>
+      <span class="code-lang">TSX</span>
+    </div>
+    <pre><span class="kw">import</span> { Box } <span class="kw">from</span> <span class="str">'@chakra-ui/react'</span>
+<span class="kw">import</span> { useEffect, useRef } <span class="kw">from</span> <span class="str">'react'</span>
+<span class="kw">import</span> * <span class="kw">as</span> echarts <span class="kw">from</span> <span class="str">'echarts/core'</span>
+<span class="kw">import</span> { LineChart, BarChart } <span class="kw">from</span> <span class="str">'echarts/charts'</span>
+<span class="kw">import</span> { SVGRenderer } <span class="kw">from</span> <span class="str">'echarts/renderers'</span>
+<span class="kw">import</span> { GridComponent } <span class="kw">from</span> <span class="str">'echarts/components'</span>
+
+echarts.<span class="fn">use</span>([LineChart, BarChart, GridComponent, SVGRenderer])
+
+<span class="kw">const</span> <span class="fn">tokenVar</span> = (token: <span class="ty">string</span>) =&gt;
+  <span class="str">`var(--chakra-colors-${token.replace(/\./g, '-')})`</span>
+
+<span class="kw">function</span> <span class="fn">resolveCssVar</span>(varExpr: <span class="ty">string</span>, el: <span class="ty">HTMLElement</span>): <span class="ty">string</span> {
+  <span class="kw">const</span> match = varExpr.match(<span class="str">/var\((--[^)]+)\)/</span>)
+  <span class="kw">if</span> (!match) <span class="kw">return</span> varExpr
+  <span class="kw">return</span> getComputedStyle(el).getPropertyValue(match[<span class="num">1</span>]).trim() || <span class="str">'#888'</span>
+}
+
+<span class="kw">type</span> <span class="ty">MiniSparklineProps</span> = {
+  data: <span class="ty">number</span>[]
+  colorToken: <span class="ty">string</span>       <span class="cm">// e.g. 'green.solid'</span>
+  type?: <span class="str">'area'</span> | <span class="str">'bar'</span>
+  height?: <span class="ty">number</span>           <span class="cm">// default 36</span>
+}
+
+<span class="kw">export default function</span> <span class="fn">MiniSparkline</span>({
+  data, colorToken, type = <span class="str">'area'</span>, height = <span class="num">36</span>,
+}: <span class="ty">MiniSparklineProps</span>) {
+  <span class="kw">const</span> ref = <span class="fn">useRef</span>&lt;<span class="ty">HTMLDivElement</span>&gt;(<span class="kw">null</span>)
+
+  <span class="fn">useEffect</span>(() =&gt; {
+    <span class="kw">const</span> container = ref.current
+    <span class="kw">if</span> (!container || data.length &lt; <span class="num">2</span>) <span class="kw">return</span>
+    <span class="kw">if</span> (
+      <span class="kw">typeof</span> navigator !== <span class="str">'undefined'</span> &amp;&amp;
+      navigator.userAgent.toLowerCase().includes(<span class="str">'jsdom'</span>)
+    ) <span class="kw">return</span>
+
+    <span class="kw">const</span> instance = echarts.<span class="fn">init</span>(container, <span class="kw">undefined</span>, { renderer: <span class="str">'svg'</span> })
+    <span class="kw">const</span> resolve = (v: <span class="ty">string</span>) =&gt; <span class="fn">resolveCssVar</span>(v, container)
+    <span class="kw">const</span> c = resolve(<span class="fn">tokenVar</span>(colorToken))
+    <span class="kw">const</span> max = Math.max(...data, <span class="num">0.001</span>)
+
+    instance.<span class="fn">setOption</span>({
+      animation: <span class="kw">false</span>,
+      grid: { top: <span class="num">2</span>, bottom: <span class="num">2</span>, left: <span class="num">0</span>, right: <span class="num">0</span> },
+      xAxis: { type: <span class="str">'category'</span>, show: <span class="kw">false</span>,
+               data: data.map((_, i) =&gt; i) },
+      yAxis: { type: <span class="str">'value'</span>, show: <span class="kw">false</span>, min: <span class="num">0</span>, max },
+      series: type === <span class="str">'bar'</span>
+        ? [{
+            type: <span class="str">'bar'</span>, data,
+            itemStyle: {
+              color: c, opacity: <span class="num">0.85</span>,
+              borderRadius: [<span class="num">2</span>, <span class="num">2</span>, <span class="num">0</span>, <span class="num">0</span>],
+            },
+            barWidth: <span class="str">'60%'</span>,
+          }]
+        : [{
+            type: <span class="str">'line'</span>, data, smooth: <span class="num">0.4</span>,
+            symbol: <span class="str">'none'</span>,
+            lineStyle: { color: c, width: <span class="num">1.5</span> },
+            areaStyle: {
+              color: {
+                type: <span class="str">'linear'</span>, x: <span class="num">0</span>, y: <span class="num">0</span>, x2: <span class="num">0</span>, y2: <span class="num">1</span>,
+                colorStops: [
+                  { offset: <span class="num">0</span>, color: c + <span class="str">'55'</span> },
+                  { offset: <span class="num">1</span>, color: c + <span class="str">'00'</span> },
+                ],
+              },
+            },
+          }],
+    })
+
+    <span class="kw">return</span> () =&gt; { instance.<span class="fn">dispose</span>() }
+  }, [data, colorToken, type])
+
+  <span class="kw">return</span> &lt;<span class="ty">Box</span> ref={ref} h={`${height}px`} w=<span class="str">"full"</span> /&gt;
+}</pre>
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Usage in Dashboard.tsx stat cards</h3>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>Dashboard.tsx — updated stat cards array (additions only)</span>
+      <span class="code-lang">TSX</span>
+    </div>
+    <pre><span class="cm">// NEW card: Total rewards with sparkline</span>
+{
+  category: <span class="str">'rewards'</span>,
+  label: <span class="str">'Total rewards'</span>,
+  palette: <span class="str">'green'</span>,
+  icon: &lt;<span class="ty">Icon</span> as={Coins} boxSize={<span class="num">4</span>} /&gt;,
+  value: overview?.summary.totalRewards != <span class="kw">null</span>
+    ? formatTokenAmount(overview.summary.totalRewards, <span class="num">2</span>) : <span class="kw">null</span>,
+  suffix: <span class="str">' HBD'</span>,
+  description: overview?.summary.totalRewardsChange != <span class="kw">null</span>
+    ? <span class="fn">formatChangeLabel</span>(overview.summary.totalRewardsChange) : <span class="kw">undefined</span>,
+  <span class="cm">// ↓ sparkline replaces the icon box</span>
+  media: overview?.buckets?.length &gt;= <span class="num">4</span> ? (
+    &lt;<span class="ty">Box</span> w=<span class="str">"80px"</span> flexShrink={<span class="num">0</span>}&gt;
+      &lt;<span class="ty">MiniSparkline</span>
+        data={overview.buckets.map(b =&gt; b.totalRewards)}
+        colorToken=<span class="str">"green.solid"</span>
+        type=<span class="str">"area"</span>
+        height={<span class="num">36</span>}
+      /&gt;
+    &lt;/<span class="ty">Box</span>&gt;
+  ) : <span class="kw">undefined</span>,
+},
+
+<span class="cm">// UPDATED card: Avg post reward with sparkline</span>
+{
+  <span class="cm">// add media prop alongside existing children</span>
+  media: overview?.buckets?.length &gt;= <span class="num">4</span> ? (
+    &lt;<span class="ty">Box</span> w=<span class="str">"80px"</span> flexShrink={<span class="num">0</span>}&gt;
+      &lt;<span class="ty">MiniSparkline</span>
+        data={overview.buckets.map(b =&gt;
+          b.posts &gt; <span class="num">0</span> ? b.authorRewards / b.posts : <span class="num">0</span>
+        )}
+        colorToken=<span class="str">"green.solid"</span>
+        type=<span class="str">"bar"</span>
+        height={<span class="num">36</span>}
+      /&gt;
+    &lt;/<span class="ty">Box</span>&gt;
+  ) : <span class="kw">undefined</span>,
+},
+
+<span class="cm">// NEW card: Curation income with sparkline</span>
+{
+  category: <span class="str">'rewards'</span>,
+  label: <span class="str">'Curation income'</span>,
+  palette: <span class="str">'purple'</span>,
+  icon: &lt;<span class="ty">Icon</span> as={HandHeart} boxSize={<span class="num">4</span>} /&gt;,
+  value: overview?.breakdown.find(b =&gt; b.id === <span class="str">'curation'</span>)?.value != <span class="kw">null</span>
+    ? formatTokenAmount(overview.breakdown.find(b =&gt; b.id === <span class="str">'curation'</span>)!.value, <span class="num">2</span>) : <span class="kw">null</span>,
+  suffix: <span class="str">' HBD'</span>,
+  media: overview?.buckets?.length &gt;= <span class="num">4</span> ? (
+    &lt;<span class="ty">Box</span> w=<span class="str">"80px"</span> flexShrink={<span class="num">0</span>}&gt;
+      &lt;<span class="ty">MiniSparkline</span>
+        data={overview.buckets.map(b =&gt; b.curationRewards)}
+        colorToken=<span class="str">"purple.solid"</span>
+        type=<span class="str">"area"</span>
+        height={<span class="num">36</span>}
+      /&gt;
+    &lt;/<span class="ty">Box</span>&gt;
+  ) : <span class="kw">undefined</span>,
+},
+
+<span class="cm">// UPDATED card: Hive Power — use account avatar as media</span>
+{
+  <span class="cm">// replace icon with avatar image in media prop</span>
+  media: account ? (
+    &lt;<span class="ty">Box</span>
+      as=<span class="str">"img"</span>
+      src={<span class="str">`https://images.hive.blog/u/${account}/avatar/small`</span>}
+      alt={account}
+      boxSize=<span class="str">"36px"</span>
+      borderRadius=<span class="str">"full"</span>
+      border=<span class="str">"2px solid"</span>
+      borderColor=<span class="str">"orange.solid"</span>
+      objectFit=<span class="str">"cover"</span>
+      filter=<span class="str">"grayscale(10%) brightness(0.9)"</span>
+      flexShrink={<span class="num">0</span>}
+      onError={(e: <span class="ty">React.SyntheticEvent</span>&lt;<span class="ty">HTMLImageElement</span>&gt;) =&gt; {
+        e.currentTarget.style.display = <span class="str">'none'</span>
+      }}
+    /&gt;
+  ) : <span class="kw">undefined</span>,
+}</pre>
+  </div>
+
+  <div class="note">
+    <strong>Tip for <code>formatChangeLabel</code>:</strong> add this helper to Dashboard.tsx.
+    <br><code>function formatChangeLabel(change: number | null): string | undefined</code> →
+    returns <code>undefined</code> if null, <code>"↑ +12.4% vs prev period"</code> if positive,
+    <code>"↓ −3.1% vs prev period"</code> if negative. Apply <code>color="green.fg"</code> or
+    <code>color="red.fg"</code> on the Text wrapping it.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ EXISTING CHARTS -->
+<section id="charts-done">
+  <div class="section-header">
+    <span class="section-number">04</span>
+    <h2 class="section-title">Existing charts — improvements</h2>
+    <span class="section-tag tag-done">Already implemented</span>
+  </div>
+
+  <p class="lead">These charts exist and render real data. The changes below are refinements
+  and additions, not rewrites. Preserve all existing logic.</p>
+
+  <!-- ── STACKED BAR ── -->
+  <h3 style="font-size:15px;font-weight:500;color:#fff;margin:24px 0 10px">
+    RewardIncomeStackedChart
+    <span class="chart-type">Stacked bar · ECharts BarChart</span>
+    <span class="pill pill-green" style="margin-left:8px">DONE</span>
+  </h3>
+  <p>No structural changes. One visual fix: the top-segment <code>borderRadius</code> logic
+  already handles rounded tops correctly. Confirm that the stacked tooltip always shows
+  a "Total" row even when one series is zero.</p>
+
+  <!-- ── HEATMAP ── -->
+  <h3 style="font-size:15px;font-weight:500;color:#fff;margin:24px 0 10px">
+    RewardIncomeHeatmapChart
+    <span class="chart-type">Calendar heatmap · ECharts CalendarComponent</span>
+    <span class="pill pill-green" style="margin-left:8px">DONE</span>
+  </h3>
+  <p>This is the daily income calendar heatmap — <strong>not</strong> a vote-timing heatmap.
+  Keep the distinction clear in code comments.</p>
+  <div class="note">
+    Add a comment at the top of the file:<br>
+    <code>// NOTE: this is a daily INCOME calendar heatmap, not a vote-cast timing heatmap.</code><br>
+    <code>// Vote-cast timing is tracked in roadmap Phase 2 pending API verification.</code>
+  </div>
+
+  <!-- ── SUNBURST ── -->
+  <h3 style="font-size:15px;font-weight:500;color:#fff;margin:24px 0 10px">
+    IncomeBreakdownChart (Sunburst)
+    <span class="chart-type">Sunburst · ECharts SunburstChart</span>
+    <span class="pill pill-green" style="margin-left:8px">DONE</span>
+  </h3>
+  <p>Already migrated to ECharts SunburstChart with <code>borderRadius</code> per the earlier
+  session. No further changes needed.</p>
+
+  <!-- ── SCATTER ── -->
+  <h3 style="font-size:15px;font-weight:500;color:#fff;margin:24px 0 10px">
+    PostPerformanceScatterChart
+    <span class="chart-type">Bubble scatter · ECharts ScatterChart</span>
+    <span class="pill pill-green" style="margin-left:8px">DONE</span>
+  </h3>
+  <p>Improvement: add post cover image to the tooltip HTML. The post <code>coverUrl</code>
+  and <code>communityTitle</code> are already in the data payload.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>PostPerformanceScatterChart.tsx — tooltip formatter update</span>
+      <span class="code-lang">TSX</span>
+    </div>
+    <pre><span class="cm">// In the scatter series data mapping, add coverUrl + communityTitle:</span>
+data: chartPosts.map((post) =&gt; ({
+  value: [post.totalReward, post.votes, post.comments],
+  title: post.title,
+  totalReward: post.totalReward,
+  votes: post.votes,
+  comments: post.comments,
+  community: post.communityTitle ?? <span class="kw">null</span>,
+  coverUrl: post.coverUrl ?? <span class="kw">null</span>,   <span class="cm">// ← add this</span>
+})),
+
+<span class="cm">// In formatter:</span>
+formatter: (params) =&gt; {
+  <span class="kw">const</span> point = (params <span class="kw">as</span> { data?: <span class="ty">ScatterPoint</span> }).data
+  <span class="kw">if</span> (!point) <span class="kw">return</span> <span class="str">''</span>
+
+  <span class="kw">const</span> coverHtml = point.coverUrl
+    ? <span class="str">`&lt;img src="${point.coverUrl}"
+           style="width:100%;height:52px;object-fit:cover;border-radius:6px;
+                  margin-bottom:8px;filter:grayscale(15%) brightness(0.88);
+                  border:1px solid rgba(255,255,255,0.08)"
+           onerror="this.style.display='none'"&gt;`</span>
+    : <span class="str">''</span>
+
+  <span class="kw">return</span> [
+    coverHtml,
+    <span class="str">`&lt;div style="font-weight:600;margin-bottom:6px;"&gt;${point.title}&lt;/div&gt;`</span>,
+    point.community
+      ? <span class="str">`&lt;div style="color:${muted};margin-bottom:6px;"&gt;${point.community}&lt;/div&gt;`</span>
+      : <span class="str">''</span>,
+    <span class="cm">// ... rest of rows unchanged</span>
+  ].<span class="fn">join</span>(<span class="str">''</span>)
+}</pre>
+  </div>
+
+  <!-- ── BOXPLOT ── -->
+  <h3 style="font-size:15px;font-weight:500;color:#fff;margin:24px 0 10px">
+    PayoutDistributionChart
+    <span class="chart-type">Boxplot + scatter outliers · ECharts BoxplotChart</span>
+    <span class="pill pill-green" style="margin-left:8px">DONE</span>
+  </h3>
+  <p>No changes needed. The IQR-based whisker logic and outlier scatter are correct.
+  Ensure the chart height scales when there are many buckets: use <code>Math.max(12, buckets * 1.8) + 'rem'</code>
+  if ever switching to horizontal layout.</p>
+
+  <!-- ── TREEMAP ── -->
+  <h3 style="font-size:15px;font-weight:500;color:#fff;margin:24px 0 10px">
+    CommunityRewardBreakdownChart
+    <span class="chart-type">Treemap · ECharts TreemapChart</span>
+    <span class="pill pill-green" style="margin-left:8px">DONE</span>
+  </h3>
+  <p>Improvement: add community avatar to legend rows <em>outside</em> the ECharts canvas
+  (not inside the treemap itself — ECharts treemap doesn't support img elements).
+  Build a React legend below the chart with avatar + label + value.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>CommunityRewardBreakdownChart.tsx — add avatar legend below chart</span>
+      <span class="code-lang">TSX</span>
+    </div>
+    <pre><span class="cm">// After the &lt;Box ref={chartRef}&gt;, add:</span>
+&lt;<span class="ty">Stack</span> gap={<span class="num">1.5</span>} mt={<span class="num">3</span>}&gt;
+  {chartCommunities.slice(<span class="num">0</span>, <span class="num">6</span>).map((community) =&gt; (
+    &lt;<span class="ty">HStack</span> key={community.id} gap={<span class="num">2</span>} justify=<span class="str">"space-between"</span>&gt;
+      &lt;<span class="ty">HStack</span> gap={<span class="num">2</span>} minW={<span class="num">0</span>}&gt;
+        &lt;<span class="ty">Box</span>
+          as=<span class="str">"img"</span>
+          src={<span class="str">`https://images.hive.blog/u/${community.id}/avatar/small`</span>}
+          alt={community.label}
+          boxSize=<span class="str">"18px"</span>
+          borderRadius=<span class="str">"full"</span>
+          border=<span class="str">"1.5px solid"</span>
+          borderColor=<span class="str">"green.subtle"</span>
+          objectFit=<span class="str">"cover"</span>
+          filter=<span class="str">"grayscale(20%)"</span>
+          flexShrink={<span class="num">0</span>}
+          onError={(e) =&gt; { e.currentTarget.style.display = <span class="str">'none'</span> }}
+        /&gt;
+        &lt;<span class="ty">Text</span> fontSize=<span class="str">"xs"</span> color=<span class="str">"fg.muted"</span> lineClamp={<span class="num">1</span>}&gt;
+          {community.label}
+        &lt;/<span class="ty">Text</span>&gt;
+      &lt;/<span class="ty">HStack</span>&gt;
+      &lt;<span class="ty">Text</span> fontSize=<span class="str">"xs"</span> fontFamily=<span class="str">"mono"</span> color=<span class="str">"fg"</span> flexShrink={<span class="num">0</span>}&gt;
+        {formatTokenAmount(community.totalRewards, <span class="num">2</span>)} HBD
+      &lt;/<span class="ty">Text</span>&gt;
+    &lt;/<span class="ty">HStack</span>&gt;
+  ))}
+&lt;/<span class="ty">Stack</span>&gt;</pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ PHASE 1 CHARTS -->
+<section id="charts-phase1">
+  <div class="section-header">
+    <span class="section-number">05</span>
+    <h2 class="section-title">Phase 1 charts — implement now</h2>
+    <span class="section-tag tag-phase1">Phase 1</span>
+  </div>
+
+  <p class="lead">These charts are not yet implemented but are fully supported by existing
+  data from <code>aggregateDashboardOverview</code>. Build them next.</p>
+
+  <!-- ── PUBLISHING CADENCE ── -->
+  <h3 style="font-size:15px;font-weight:500;color:#fff;margin:24px 0 10px">
+    Publishing cadence calendar
+    <span class="chart-type">Calendar heatmap · same pattern as RewardIncomeHeatmapChart</span>
+    <span class="pill pill-blue" style="margin-left:8px">PHASE 1</span>
+  </h3>
+  <p>Show one cell per day, shaded by post count (0, 1, 2+). This uses the same ECharts
+  <code>CalendarComponent</code> pattern as <code>RewardIncomeHeatmapChart</code> but with
+  <code>bucket.posts</code> counts aggregated by day from the posts array.</p>
+
+  <div class="note info">
+    <strong>Data change required:</strong> add <code>dailyPostCounts: Array&lt;{ date: string; posts: number }&gt;</code>
+    to <code>DashboardHistoricalOverview</code> and populate it in <code>aggregateDashboardOverview</code>
+    by incrementing a day counter when iterating posts. Same shape as <code>dailyIncome</code>.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>types.ts — add to DashboardHistoricalOverview</span>
+      <span class="code-lang">TS</span>
+    </div>
+    <pre><span class="cm">// Add to DashboardHistoricalOverview type</span>
+dailyPostCounts: <span class="ty">Array</span>&lt;{
+  date: <span class="ty">string</span>   <span class="cm">// ISO date</span>
+  posts: <span class="ty">number</span>
+  comments: <span class="ty">number</span>
+}&gt;</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>PublishingCadenceChart.tsx — skeleton with key decisions</span>
+      <span class="code-lang">TSX</span>
+    </div>
+    <pre><span class="cm">// Component: PublishingCadenceChart
+// Props: dailyPostCounts: Array&lt;{ date: string; posts: number; comments: number }&gt;
+//
+// ECharts series[0]: heatmap on CalendarComponent, data = [date, postsCount]
+// ECharts series[1]: scatter on CalendarComponent for comment dots
+//   symbolSize: 4, yOffset: 6, color: purple.emphasized
+//
+// visualMap: inRange.color = ['bg.subtle hex', 'green.emphasized hex']
+//   max = Math.max(3, ...daily post counts)  ← cap at 3 so 1 post already shows color
+//
+// cellSize: ['auto', 24]  ← same as heatmap chart
+// No axis labels for days with 0 posts.
+//
+// Label: "Daily cadence" (same style as "Daily heatmap" in RewardIncomeHeatmapChart)
+// Height: 14rem  (same as RewardIncomeHeatmapChart)
+// Empty state: hide component entirely if every day has 0 posts</span></pre>
+  </div>
+
+  <p>Place this chart inside the existing <code>RewardIncomeChart</code> function,
+  below <code>RewardIncomeHeatmapChart</code>, only when <code>focus === 'publishing' || focus === 'all'</code>.</p>
+
+  <!-- ── TOP POSTS WITH AVATARS ── -->
+  <h3 style="font-size:15px;font-weight:500;color:#fff;margin:24px 0 10px">
+    Top posts list — cover image refinement
+    <span class="pill pill-blue" style="margin-left:8px">PHASE 1</span>
+  </h3>
+  <p>The top posts list already uses <code>PostCardMedia</code>. Ensure cover images have the
+  stroked border pattern from Section 02. If <code>PostCardMedia</code> doesn't support it,
+  wrap with the CSS described in Section 02 rather than modifying the shared component.</p>
+
+  <div class="note success">
+    <strong>Already nearly complete.</strong> Just verify that <code>coverUrl</code> images in
+    the top posts list render with <code>filter: grayscale(15%) brightness(0.88)</code> and a
+    <code>1.5px solid border-subtle</code> ring. If <code>PostCardMedia</code> handles this
+    natively, no change needed.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ PHASE 2 CHARTS -->
+<section id="charts-phase2">
+  <div class="section-header">
+    <span class="section-number">06</span>
+    <h2 class="section-title">Phase 2 charts — build after verification</h2>
+    <span class="section-tag tag-phase2">Phase 2</span>
+  </div>
+
+  <!-- ── VOTE TIMING HEATMAP ── -->
+  <h3 style="font-size:15px;font-weight:500;color:#fff;margin:24px 0 10px">
+    Vote-cast timing heatmap (weekday × hour)
+    <span class="chart-type">2D heatmap · ECharts HeatmapChart with GridComponent</span>
+    <span class="pill pill-orange" style="margin-left:8px">PHASE 2</span>
+  </h3>
+  <div class="note danger">
+    <strong>Gate condition:</strong> only build this after confirming that
+    <code>get_account_history</code> with <code>op_filter = ['vote']</code> returns votes <em>cast by</em>
+    the account (not votes received) at acceptable pagination cost for a 90-day window.
+    If pagination cost is prohibitive, document it and skip.
+  </div>
+  <p>If the gate passes:</p>
+  <ul>
+    <li>Add <code>voteCastHistory: Array&lt;{ timestamp: string }&gt;</code> to <code>DashboardHistoricalOverview</code></li>
+    <li>Aggregate into a 7×24 matrix in the component (not in <code>overview.ts</code>)</li>
+    <li>Use <code>xAxis</code> = hours 00–23, <code>yAxis</code> = Mon–Sun</li>
+    <li>Color ramp: <code>bg.subtle</code> → <code>purple.solid</code></li>
+    <li>Label clearly: "When you vote (UTC)" — not "curation activity" which implies HP allocation</li>
+  </ul>
+  <div class="code-block">
+    <div class="code-header">
+      <span>VoteTimingHeatmapChart.tsx — data shape</span>
+      <span class="code-lang">TS</span>
+    </div>
+    <pre><span class="cm">// Aggregate in component:</span>
+<span class="kw">const</span> matrix = <span class="ty">Array</span>.from({ length: <span class="num">7</span> }, () =&gt;
+  <span class="ty">Array</span>.from({ length: <span class="num">24</span> }, () =&gt; <span class="num">0</span>)
+)
+<span class="kw">for</span> (<span class="kw">const</span> vote <span class="kw">of</span> voteCastHistory) {
+  <span class="kw">const</span> d = <span class="kw">new</span> <span class="ty">Date</span>(vote.timestamp)
+  <span class="kw">const</span> hour = d.<span class="fn">getUTCHours</span>()
+  <span class="cm">// getUTCDay() returns 0=Sun..6=Sat; remap to 0=Mon..6=Sun</span>
+  <span class="kw">const</span> day = (d.<span class="fn">getUTCDay</span>() + <span class="num">6</span>) % <span class="num">7</span>
+  matrix[day][hour] += <span class="num">1</span>
+}
+<span class="kw">const</span> echartsData = matrix.<span class="fn">flatMap</span>((row, dayIndex) =&gt;
+  row.<span class="fn">map</span>((count, hourIndex) =&gt; [hourIndex, dayIndex, count])
+)</pre>
+  </div>
+
+  <!-- ── INCOMING DELEGATION ── -->
+  <h3 style="font-size:15px;font-weight:500;color:#fff;margin:24px 0 10px">
+    Incoming delegation list/chart
+    <span class="pill pill-orange" style="margin-left:8px">PHASE 2</span>
+  </h3>
+  <div class="note">
+    <strong>Gate condition:</strong> confirm <code>condenser_api.get_vesting_delegations</code>
+    with the account name as <em>delegatee</em> (not delegator) returns incoming delegations.
+    Currently we only fetch outgoing. Check API signature first.
+  </div>
+  <p>If feasible, render as a ranked bar list (same pattern as community breakdown) with
+  account avatars and HP amounts. <strong>Not</strong> a sankey — incoming delegations
+  to a single account are a simple ranked list, not a flow.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ DELEGATION SANKEY -->
+<section id="delegation-sankey">
+  <div class="section-header">
+    <span class="section-number">07</span>
+    <h2 class="section-title">HP Delegation Sankey</h2>
+    <span class="section-tag tag-new">New — Phase 1</span>
+  </div>
+
+  <p class="lead">
+    This is <strong>not</strong> the HP flow sankey that was flagged as too inferential.
+    This is a simple, honest visualization of <em>outgoing delegation relationships</em>:
+    which accounts this user delegates HP to, and how much. The data is real and already
+    fetched via <code>fetchOutgoingDelegations</code>.
+  </p>
+
+  <div class="note success">
+    <strong>Feasibility: High.</strong> We already have <code>outgoingDelegations: HiveVestingDelegation[]</code>
+    from <code>get_vesting_delegations</code>. Each entry has <code>delegatee</code> and
+    <code>vesting_shares</code>. Convert VESTS → HP using <code>vestsToHivePower()</code> which
+    is already imported in <code>overview.ts</code>. Add <code>outgoingDelegations</code> to
+    the <code>DashboardHistoricalOverview</code> type and pass it through.
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Data model addition</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span>types.ts — add DashboardDelegation and extend DashboardHistoricalOverview</span>
+      <span class="code-lang">TS</span>
+    </div>
+    <pre><span class="kw">export type</span> <span class="ty">DashboardDelegation</span> = {
+  delegatee: <span class="ty">string</span>     <span class="cm">// account name</span>
+  hivePower: <span class="ty">number</span>     <span class="cm">// already converted from VESTS</span>
+}
+
+<span class="cm">// In DashboardHistoricalOverview, add:</span>
+outgoingDelegations: <span class="ty">Array</span>&lt;<span class="ty">DashboardDelegation</span>&gt;</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>overview.ts — populate in aggregateDashboardOverview return value</span>
+      <span class="code-lang">TS</span>
+    </div>
+    <pre><span class="cm">// At the end of aggregateDashboardOverview(), before return:</span>
+<span class="kw">const</span> delegationSummary = outgoingDelegations
+  .<span class="fn">map</span>((d) =&gt; ({
+    delegatee: <span class="fn">normalizeUsername</span>(d.delegatee),
+    hivePower: <span class="fn">vestsToHivePower</span>(d.vesting_shares, properties),
+  }))
+  .<span class="fn">filter</span>((d) =&gt; d.hivePower &gt; <span class="num">0</span> &amp;&amp; d.delegatee !== normalized)
+  .<span class="fn">sort</span>((a, b) =&gt; b.hivePower - a.hivePower)
+
+<span class="cm">// In return object:</span>
+outgoingDelegations: delegationSummary,</pre>
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Full component implementation</h3>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>HpDelegationSankeyChart.tsx — complete implementation</span>
+      <span class="code-lang">TSX</span>
+    </div>
+    <pre><span class="kw">import</span> { Box, HStack, Stack, Text } <span class="kw">from</span> <span class="str">'@chakra-ui/react'</span>
+<span class="kw">import</span> { useEffect, useRef } <span class="kw">from</span> <span class="str">'react'</span>
+<span class="kw">import</span> * <span class="kw">as</span> echarts <span class="kw">from</span> <span class="str">'echarts/core'</span>
+<span class="kw">import</span> { SankeyChart } <span class="kw">from</span> <span class="str">'echarts/charts'</span>
+<span class="kw">import</span> { TooltipComponent } <span class="kw">from</span> <span class="str">'echarts/components'</span>
+<span class="kw">import</span> { SVGRenderer } <span class="kw">from</span> <span class="str">'echarts/renderers'</span>
+<span class="kw">import</span> <span class="kw">type</span> { <span class="ty">EChartsType</span> } <span class="kw">from</span> <span class="str">'echarts/core'</span>
+<span class="kw">import</span> <span class="kw">type</span> { <span class="ty">DashboardDelegation</span> } <span class="kw">from</span> <span class="str">'./types'</span>
+
+echarts.<span class="fn">use</span>([SankeyChart, TooltipComponent, SVGRenderer])
+
+<span class="kw">type</span> <span class="ty">Props</span> = {
+  username: <span class="ty">string</span>
+  delegations: <span class="ty">DashboardDelegation</span>[]
+  ownHivePower: <span class="ty">number</span>          <span class="cm">// wallet.metrics.hivePower</span>
+}
+
+<span class="kw">const</span> <span class="fn">tokenVar</span> = (t: <span class="ty">string</span>) =&gt; <span class="str">`var(--chakra-colors-${t.replace(/\./g, '-')})`</span>
+<span class="kw">const</span> <span class="fn">semVar</span>   = (t: <span class="ty">string</span>) =&gt; <span class="str">`var(--chakra-colors-${t.replace(/\./g, '-')})`</span>
+
+<span class="kw">function</span> <span class="fn">resolveCssVar</span>(v: <span class="ty">string</span>, el: <span class="ty">HTMLElement</span>) {
+  <span class="kw">const</span> m = v.match(<span class="str">/var\((--[^)]+)\)/</span>)
+  <span class="kw">if</span> (!m) <span class="kw">return</span> v
+  <span class="kw">return</span> getComputedStyle(el).getPropertyValue(m[<span class="num">1</span>]).trim() || <span class="str">'#888'</span>
+}
+
+<span class="kw">function</span> <span class="fn">fmt</span>(n: <span class="ty">number</span>) {
+  <span class="kw">return</span> <span class="kw">new</span> <span class="ty">Intl</span>.<span class="fn">NumberFormat</span>(<span class="kw">undefined</span>, {
+    minimumFractionDigits: <span class="num">0</span>, maximumFractionDigits: <span class="num">0</span>,
+  }).<span class="fn">format</span>(n)
+}
+
+<span class="kw">export default function</span> <span class="fn">HpDelegationSankeyChart</span>({ username, delegations, ownHivePower }: <span class="ty">Props</span>) {
+  <span class="kw">const</span> chartRef = <span class="fn">useRef</span>&lt;<span class="ty">HTMLDivElement</span>&gt;(<span class="kw">null</span>)
+  <span class="kw">const</span> instanceRef = <span class="fn">useRef</span>&lt;<span class="ty">EChartsType</span> | <span class="kw">null</span>&gt;(<span class="kw">null</span>)
+
+  <span class="kw">const</span> totalDelegated = delegations.<span class="fn">reduce</span>((s, d) =&gt; s + d.hivePower, <span class="num">0</span>)
+  <span class="kw">const</span> retained = Math.<span class="fn">max</span>(<span class="num">0</span>, ownHivePower - totalDelegated)
+
+  <span class="fn">useEffect</span>(() =&gt; {
+    <span class="kw">const</span> container = chartRef.current
+    <span class="kw">if</span> (!container || delegations.length === <span class="num">0</span>) <span class="kw">return</span>
+    <span class="kw">if</span> (
+      <span class="kw">typeof</span> navigator !== <span class="str">'undefined'</span> &amp;&amp;
+      navigator.userAgent.toLowerCase().<span class="fn">includes</span>(<span class="str">'jsdom'</span>)
+    ) <span class="kw">return</span>
+
+    <span class="kw">const</span> instance = echarts.<span class="fn">init</span>(container, <span class="kw">undefined</span>, { renderer: <span class="str">'svg'</span> })
+    instanceRef.current = instance
+
+    <span class="kw">const</span> ro = <span class="kw">typeof</span> <span class="ty">ResizeObserver</span> === <span class="str">'function'</span>
+      ? <span class="kw">new</span> <span class="ty">ResizeObserver</span>(() =&gt; instance.<span class="fn">resize</span>()) : <span class="kw">null</span>
+    ro?.observe(container)
+
+    <span class="kw">return</span> () =&gt; { ro?.disconnect(); instance.<span class="fn">dispose</span>(); instanceRef.current = <span class="kw">null</span> }
+  }, [delegations.length])
+
+  <span class="fn">useEffect</span>(() =&gt; {
+    <span class="kw">const</span> container = chartRef.current
+    <span class="kw">const</span> instance = instanceRef.current
+    <span class="kw">if</span> (!container || !instance || delegations.length === <span class="num">0</span>) <span class="kw">return</span>
+
+    <span class="kw">const</span> c = (t: <span class="ty">string</span>) =&gt; <span class="fn">resolveCssVar</span>(t, container)
+
+    <span class="cm">// SOURCE NODE: the user</span>
+    <span class="cm">// SINK NODES: each delegatee + "Retained" if any HP is not delegated out</span>
+    <span class="kw">const</span> nodes: { name: <span class="ty">string</span>; itemStyle: { color: <span class="ty">string</span> } }[] = [
+      {
+        name: <span class="str">`@${username}`</span>,
+        itemStyle: { color: c(<span class="fn">tokenVar</span>(<span class="str">'teal.solid'</span>)) },
+      },
+      ...delegations.<span class="fn">map</span>((d) =&gt; ({
+        name: d.delegatee,
+        itemStyle: { color: c(<span class="fn">tokenVar</span>(<span class="str">'teal.subtle'</span>)) },
+      })),
+    ]
+
+    <span class="kw">if</span> (retained &gt; <span class="num">0</span>) {
+      nodes.<span class="fn">push</span>({ name: <span class="str">'Retained HP'</span>, itemStyle: { color: c(<span class="fn">semVar</span>(<span class="str">'bg.subtle'</span>)) } })
+    }
+
+    <span class="kw">const</span> links = [
+      ...delegations.<span class="fn">map</span>((d) =&gt; ({
+        source: <span class="str">`@${username}`</span>, target: d.delegatee, value: d.hivePower,
+      })),
+      ...(retained &gt; <span class="num">0</span>
+        ? [{ source: <span class="str">`@${username}`</span>, target: <span class="str">'Retained HP'</span>, value: retained }]
+        : []),
+    ]
+
+    instance.<span class="fn">setOption</span>({
+      animation: <span class="kw">false</span>,
+      tooltip: {
+        backgroundColor: c(<span class="fn">semVar</span>(<span class="str">'bg.panel'</span>)),
+        borderColor: c(<span class="fn">semVar</span>(<span class="str">'border.subtle'</span>)),
+        borderWidth: <span class="num">1</span>,
+        textStyle: {
+          color: c(<span class="fn">semVar</span>(<span class="str">'fg'</span>)),
+          fontFamily: <span class="str">'var(--chakra-fonts-body)'</span>,
+        },
+        formatter: (params: <span class="kw">any</span>) =&gt; {
+          <span class="kw">if</span> (params.dataType === <span class="str">'edge'</span>) {
+            <span class="kw">return</span> [
+              <span class="str">`&lt;div style="font-weight:600;margin-bottom:4px"&gt;`</span> +
+                <span class="str">`${params.data.source} → ${params.data.target}&lt;/div&gt;`</span>,
+              <span class="str">`&lt;div&gt;${fmt(params.data.value)} HP delegated&lt;/div&gt;`</span>,
+            ].<span class="fn">join</span>(<span class="str">''</span>)
+          }
+          <span class="kw">const</span> pct = ownHivePower &gt; <span class="num">0</span>
+            ? ((<span class="kw">params</span>.value / ownHivePower) * <span class="num">100</span>).<span class="fn">toFixed</span>(<span class="num">1</span>) + <span class="str">'%'</span>
+            : <span class="str">'—'</span>
+          <span class="kw">return</span> [
+            <span class="str">`&lt;div style="font-weight:600;margin-bottom:4px"&gt;${params.name}&lt;/div&gt;`</span>,
+            <span class="str">`&lt;div&gt;${fmt(params.value)} HP · ${pct} of your stake&lt;/div&gt;`</span>,
+          ].<span class="fn">join</span>(<span class="str">''</span>)
+        },
+      },
+      series: [{
+        type: <span class="str">'sankey'</span>,
+        layout: <span class="str">'none'</span>,
+        emphasis: { focus: <span class="str">'adjacency'</span> },
+        left: <span class="num">24</span>, right: <span class="num">120</span>, top: <span class="num">16</span>, bottom: <span class="num">16</span>,
+        nodeWidth: <span class="num">12</span>,
+        nodeGap: <span class="num">10</span>,
+        lineStyle: { color: <span class="str">'source'</span>, opacity: <span class="num">0.28</span>, curveness: <span class="num">0.5</span> },
+        label: {
+          color: c(<span class="fn">semVar</span>(<span class="str">'fg.muted'</span>)),
+          fontSize: <span class="num">11</span>,
+          fontFamily: <span class="str">'var(--chakra-fonts-mono)'</span>,
+          formatter: (p: <span class="kw">any</span>) =&gt; {
+            <span class="cm">// For delegatee nodes: show avatar image is NOT possible in ECharts SVG</span>
+            <span class="cm">// Instead: truncate long names and show HP value</span>
+            <span class="kw">const</span> name = <span class="ty">String</span>(p.name)
+            <span class="kw">const</span> short = name.length &gt; <span class="num">14</span> ? name.<span class="fn">slice</span>(<span class="num">0</span>, <span class="num">13</span>) + <span class="str">'…'</span> : name
+            <span class="kw">return</span> short
+          },
+          position: <span class="str">'right'</span>,
+        },
+        data: nodes,
+        links,
+      }],
+    }, { notMerge: <span class="kw">true</span> })
+    instance.<span class="fn">resize</span>()
+  }, [delegations, username, ownHivePower, retained])
+
+  <span class="cm">// React legend with avatars lives OUTSIDE the canvas</span>
+  <span class="kw">if</span> (delegations.length === <span class="num">0</span>) <span class="kw">return null</span>
+
+  <span class="kw">return</span> (
+    &lt;<span class="ty">Stack</span> gap={<span class="num">3</span>}&gt;
+      &lt;<span class="ty">Box</span> ref={chartRef} h=<span class="str">"14rem"</span> w=<span class="str">"full"</span> /&gt;
+
+      <span class="cm">{/* Avatar legend — avatars cannot render inside ECharts SVG */}</span>
+      &lt;<span class="ty">Stack</span> gap={<span class="num">1</span>}&gt;
+        {delegations.<span class="fn">slice</span>(<span class="num">0</span>, <span class="num">8</span>).<span class="fn">map</span>((d) =&gt; (
+          &lt;<span class="ty">HStack</span> key={d.delegatee} gap={<span class="num">2</span>} justify=<span class="str">"space-between"</span>&gt;
+            &lt;<span class="ty">HStack</span> gap={<span class="num">2</span>} minW={<span class="num">0</span>}&gt;
+              &lt;<span class="ty">Box</span>
+                as=<span class="str">"img"</span>
+                src={<span class="str">`https://images.hive.blog/u/${d.delegatee}/avatar/small`</span>}
+                alt={d.delegatee}
+                boxSize=<span class="str">"20px"</span>
+                borderRadius=<span class="str">"full"</span>
+                border=<span class="str">"1.5px solid"</span>
+                borderColor=<span class="str">"teal.solid"</span>
+                objectFit=<span class="str">"cover"</span>
+                filter=<span class="str">"grayscale(20%)"</span>
+                flexShrink={<span class="num">0</span>}
+                onError={(e: <span class="ty">React.SyntheticEvent</span>&lt;<span class="ty">HTMLImageElement</span>&gt;) =&gt; {
+                  e.currentTarget.style.display = <span class="str">'none'</span>
+                }}
+              /&gt;
+              &lt;<span class="ty">Text</span> fontSize=<span class="str">"xs"</span> color=<span class="str">"fg.muted"</span> fontFamily=<span class="str">"mono"</span> lineClamp={<span class="num">1</span>}&gt;
+                @{d.delegatee}
+              &lt;/<span class="ty">Text</span>&gt;
+            &lt;/<span class="ty">HStack</span>&gt;
+            &lt;<span class="ty">Text</span> fontSize=<span class="str">"xs"</span> fontFamily=<span class="str">"mono"</span> color=<span class="str">"teal.fg"</span> flexShrink={<span class="num">0</span>}&gt;
+              {<span class="fn">fmt</span>(d.hivePower)} HP
+            &lt;/<span class="ty">Text</span>&gt;
+          &lt;/<span class="ty">HStack</span>&gt;
+        ))}
+      &lt;/<span class="ty">Stack</span>&gt;
+    &lt;/<span class="ty">Stack</span>&gt;
+  )
+}</pre>
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Placement in Dashboard.tsx</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span>Dashboard.tsx — add HpDelegationSankeyChart panel</span>
+      <span class="code-lang">TSX</span>
+    </div>
+    <pre><span class="cm">// In AccountAnalyticsPage, in the account focus section:</span>
+{(focus === <span class="str">'all'</span> || focus === <span class="str">'account'</span>) &amp;&amp;
+ overview?.outgoingDelegations.length ? (
+  &lt;<span class="ty">ChartPanel</span>
+    title=<span class="str">"HP delegated out"</span>
+    subtitle=<span class="str">"Current outgoing delegations"</span>
+    isLoading={dashboardQuery.isLoading}
+  &gt;
+    &lt;<span class="ty">HpDelegationSankeyChart</span>
+      username={account}
+      delegations={overview.outgoingDelegations}
+      ownHivePower={wallet?.metrics.hivePower ?? <span class="num">0</span>}
+    /&gt;
+  &lt;/<span class="ty">ChartPanel</span>&gt;
+) : <span class="kw">null</span>}</pre>
+  </div>
+
+  <div class="note">
+    <strong>Design decision:</strong> if the user has no outgoing delegations, hide the panel entirely
+    (the <code>delegations.length === 0</code> guard inside the component handles this).
+    Do not show an empty state for this chart — it is only meaningful when delegations exist.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ AVOID -->
+<section id="avoid">
+  <div class="section-header">
+    <span class="section-number">08</span>
+    <h2 class="section-title">Charts to explicitly avoid</h2>
+    <span class="section-tag tag-avoid">Do not implement</span>
+  </div>
+
+  <p>These charts exist in the mock dashboard HTML or were requested elsewhere.
+  Do not implement them until the data story is strong enough.</p>
+
+  <div class="cards">
+    <div class="card avoid">
+      <div class="card-title">Curator profile radar</div>
+      <div class="card-body">
+        Requires a defensible "top-100 curator benchmark" dataset. We don't have it.
+        The chart would be measuring the user against invented averages. Skip.
+      </div>
+    </div>
+    <div class="card avoid">
+      <div class="card-title">HP flow sankey (general)</div>
+      <div class="card-body">
+        Not the same as the delegation sankey. This would claim HP "flows" from
+        voting → author rewards → savings — relationships we cannot honestly model
+        from public data. Skip.
+      </div>
+    </div>
+    <div class="card avoid">
+      <div class="card-title">Witness rank timeline</div>
+      <div class="card-body">
+        Historical witness rank is not in our current data inputs. Requires
+        dedicated historical snapshots. Skip until we have a real source.
+      </div>
+    </div>
+    <div class="card avoid">
+      <div class="card-title">RC usage breakdown pie</div>
+      <div class="card-body">
+        Publicly deriving RC consumption by operation category is non-trivial
+        and easy to get wrong. Skip until a trustworthy upstream model exists.
+      </div>
+    </div>
+    <div class="card avoid">
+      <div class="card-title">HP accumulation projection</div>
+      <div class="card-body">
+        Math is easy; framing is the problem. Projections look like forecasts
+        and erode trust when wrong. If ever built, must be a scenario tool with
+        explicit user-set assumptions, never a dashboard fact view.
+      </div>
+    </div>
+    <div class="card avoid">
+      <div class="card-title">HIVE/HBD price correlation line</div>
+      <div class="card-body">
+        We only have the current median price, not a historical price series.
+        Without that, the "correlation" chart would mix real reward data with
+        a missing price axis. Skip until historical price source is added.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ SHARED PATTERNS -->
+<section id="shared-patterns">
+  <div class="section-header">
+    <span class="section-number">09</span>
+    <h2 class="section-title">Shared implementation patterns</h2>
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:20px 0 10px">ECharts init pattern (all charts)</h3>
+  <p>Every chart component follows the exact same init/cleanup/update split.
+  Do not combine effects. Do not re-init on data change.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>Standard chart component structure</span>
+      <span class="code-lang">TSX</span>
+    </div>
+    <pre><span class="cm">// Effect 1: INIT — runs only when data presence changes (not on every data update)</span>
+<span class="fn">useEffect</span>(() =&gt; {
+  <span class="kw">const</span> container = chartRef.current
+  <span class="kw">if</span> (!container || !hasData) <span class="kw">return</span>
+  <span class="kw">if</span> (navigator?.userAgent.toLowerCase().<span class="fn">includes</span>(<span class="str">'jsdom'</span>)) <span class="kw">return</span>
+
+  <span class="kw">const</span> instance = echarts.<span class="fn">init</span>(container, <span class="kw">undefined</span>, { renderer: <span class="str">'svg'</span> })
+  instanceRef.current = instance
+
+  <span class="kw">const</span> ro = <span class="kw">typeof</span> <span class="ty">ResizeObserver</span> === <span class="str">'function'</span>
+    ? <span class="kw">new</span> <span class="ty">ResizeObserver</span>(() =&gt; instance.<span class="fn">resize</span>()) : <span class="kw">null</span>
+  ro?.observe(container)
+
+  <span class="kw">return</span> () =&gt; { ro?.disconnect(); instance.<span class="fn">dispose</span>(); instanceRef.current = <span class="kw">null</span> }
+}, [hasData])  <span class="cm">// ← only dependency is whether data exists</span>
+
+<span class="cm">// Effect 2: UPDATE — runs whenever data or active state changes</span>
+<span class="fn">useEffect</span>(() =&gt; {
+  <span class="kw">const</span> container = chartRef.current
+  <span class="kw">const</span> instance = instanceRef.current
+  <span class="kw">if</span> (!container || !instance || !hasData) <span class="kw">return</span>
+
+  instance.<span class="fn">setOption</span>(option, { notMerge: <span class="kw">true</span> })
+  instance.<span class="fn">resize</span>()
+}, [chartData])  <span class="cm">// ← data dependencies only</span></pre>
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Tooltip HTML template</h3>
+  <p>All tooltips share this base structure. Keep it consistent across charts for a coherent UI.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span>Tooltip formatter — shared HTML pattern</span>
+      <span class="code-lang">TSX</span>
+    </div>
+    <pre>formatter: (params) =&gt; {
+  <span class="kw">return</span> [
+    <span class="cm">// Optional: cover/avatar image (52px tall for posts, 20px circle for accounts)</span>
+    coverHtml,
+
+    <span class="cm">// Title row</span>
+    <span class="str">`&lt;div style="font-weight:600;margin-bottom:6px;"&gt;${title}&lt;/div&gt;`</span>,
+
+    <span class="cm">// Optional: subtitle (community, date)</span>
+    <span class="str">`&lt;div style="color:${muted};margin-bottom:6px;"&gt;${subtitle}&lt;/div&gt;`</span>,
+
+    <span class="cm">// Data rows</span>
+    <span class="str">`&lt;div style="display:flex;justify-content:space-between;gap:16px;"&gt;`</span> +
+      <span class="str">`&lt;span&gt;Label&lt;/span&gt;&lt;span&gt;Value&lt;/span&gt;&lt;/div&gt;`</span>,
+
+    <span class="cm">// Optional total row with separator</span>
+    <span class="str">`&lt;div style="display:flex;justify-content:space-between;gap:16px;`</span> +
+      <span class="str">`margin-top:6px;padding-top:6px;border-top:1px solid ${borderColor};"&gt;`</span> +
+      <span class="str">`&lt;span&gt;Total&lt;/span&gt;&lt;span&gt;${total}&lt;/span&gt;&lt;/div&gt;`</span>,
+  ].<span class="fn">join</span>(<span class="str">''</span>)
+}</pre>
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">JSDOM guard</h3>
+  <p>Every chart init effect must include this guard to prevent ECharts from crashing in
+  Vitest/jsdom environments. The pattern is already used in all existing charts.</p>
+  <pre style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;font-family:var(--font-mono);font-size:12px">
+<span class="kw">if</span> (
+  <span class="kw">typeof</span> navigator !== <span class="str">'undefined'</span> &amp;&amp;
+  navigator.userAgent.toLowerCase().<span class="fn">includes</span>(<span class="str">'jsdom'</span>)
+) <span class="kw">return</span></pre>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Number formatting helpers</h3>
+  <p>All components use these — do not reinvent them.</p>
+  <table>
+    <tr><th>Helper</th><th>Output example</th><th>Use</th></tr>
+    <tr><td><code>formatTokenAmount(v, 2)</code></td><td>14,280.00</td><td>HBD, HP amounts in tooltips and labels</td></tr>
+    <tr><td><code>formatTokenAmount(v, 0)</code></td><td>14,280</td><td>Rounded HP in sankey, treemap labels</td></tr>
+    <tr><td><code>formatCompactCurrency(v)</code></td><td>14.3k</td><td>Y-axis labels in stacked chart</td></tr>
+    <tr><td><code>formatPercent(v, total)</code></td><td>38.2%</td><td>Share labels in sunburst, treemap</td></tr>
+  </table>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Chart height convention</h3>
+  <table>
+    <tr><th>Component</th><th>Height</th></tr>
+    <tr><td>MiniSparkline (in metric card)</td><td>36px (h={36})</td></tr>
+    <tr><td>RewardIncomeStackedChart</td><td>12rem</td></tr>
+    <tr><td>RewardIncomeHeatmapChart</td><td>14rem</td></tr>
+    <tr><td>PublishingCadenceChart</td><td>14rem</td></tr>
+    <tr><td>PayoutDistributionChart</td><td>16rem</td></tr>
+    <tr><td>PostPerformanceScatterChart</td><td>16rem</td></tr>
+    <tr><td>CommunityRewardBreakdownChart</td><td>18rem</td></tr>
+    <tr><td>HpDelegationSankeyChart (canvas only)</td><td>14rem</td></tr>
+    <tr><td>IncomeBreakdownChart (sunburst)</td><td>auto (internal layout)</td></tr>
+  </table>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">ECharts renderers</h3>
+  <div class="note info">
+    All charts use <strong><code>SVGRenderer</code></strong> (not Canvas). This matches existing
+    components and ensures crisp rendering on high-DPI screens without needing <code>devicePixelRatio</code>
+    management. <strong>Do not switch to CanvasRenderer</strong> unless there is a specific performance
+    reason with measured benchmarks. The MiniSparkline also uses SVGRenderer for consistency.
+  </div>
+
+  <h3 style="font-size:14px;font-weight:500;color:#fff;margin:24px 0 10px">Change summary — what to do next</h3>
+  <table>
+    <tr><th>#</th><th>File</th><th>Change</th><th>Priority</th></tr>
+    <tr>
+      <td>1</td>
+      <td><code>types.ts</code></td>
+      <td>Add <code>DashboardDelegation</code> type; add <code>outgoingDelegations</code> and <code>dailyPostCounts</code> to <code>DashboardHistoricalOverview</code></td>
+      <td><span class="pill pill-blue">P1</span></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><code>overview.ts</code></td>
+      <td>Populate <code>outgoingDelegations</code> (VESTS→HP) and <code>dailyPostCounts</code> in return value</td>
+      <td><span class="pill pill-blue">P1</span></td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><code>MiniSparkline.tsx</code></td>
+      <td>New component — see Section 03</td>
+      <td><span class="pill pill-blue">P1</span></td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><code>HpDelegationSankeyChart.tsx</code></td>
+      <td>New component — see Section 07</td>
+      <td><span class="pill pill-blue">P1</span></td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><code>PublishingCadenceChart.tsx</code></td>
+      <td>New component — calendar heatmap for daily post counts</td>
+      <td><span class="pill pill-blue">P1</span></td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><code>PostPerformanceScatterChart.tsx</code></td>
+      <td>Add <code>coverUrl</code> to series data; add cover image to tooltip HTML</td>
+      <td><span class="pill pill-blue">P1</span></td>
+    </tr>
+    <tr>
+      <td>7</td>
+      <td><code>CommunityRewardBreakdownChart.tsx</code></td>
+      <td>Add avatar legend below chart canvas</td>
+      <td><span class="pill pill-blue">P1</span></td>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td><code>Dashboard.tsx</code></td>
+      <td>Add Total rewards card (sparkline), Curation income card (sparkline), HP card (avatar media), Avg post reward card (sparkline), HpDelegationSankeyChart panel</td>
+      <td><span class="pill pill-blue">P1</span></td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td><code>RewardIncomeHeatmapChart.tsx</code></td>
+      <td>Add clarifying comment: this is income calendar, not vote-cast timing</td>
+      <td><span class="pill pill-muted">minor</span></td>
+    </tr>
+  </table>
+
+  <hr>
+  <p class="footnote" style="margin-top:24px">
+    Guide version: 2025-05 · Hivepen Studio · For agent use only — not for end users.
+    Reflects data feasibility analysis from <code>docs/DASHBOARD_ROADMAP.md</code> and
+    existing implementation in <code>src/features/dashboard/</code>.
+  </p>
+</section>
+
+</div><!-- end .page -->
+
+<script>
+// Highlight active nav link on scroll
+const sections = document.querySelectorAll('section[id]')
+const navLinks = document.querySelectorAll('nav a[href^="#"]')
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.id
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === `#${id}`)
+      })
+    }
+  })
+}, { rootMargin: '-20% 0px -70% 0px' })
+
+sections.forEach(s => observer.observe(s))
+</script>
+</body>
+</html>
