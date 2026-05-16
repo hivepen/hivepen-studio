@@ -22,6 +22,7 @@ import {
   ArrowUpToLine,
   BadgeCheck,
   Coins,
+  Gauge,
   Gem,
   HandCoins,
   HandHeart,
@@ -201,7 +202,8 @@ function Dashboard() {
     media?: ReactNode
     value: string | null
     suffix: string
-    description: string
+    description?: string
+    children?: ReactNode
   }> = [
     {
       category: 'account',
@@ -251,13 +253,7 @@ function Dashboard() {
       category: 'account',
       label: 'Voting power',
       palette: 'green',
-      media: (
-        <VotingPowerMedia
-          votingManaPercent={wallet?.metrics.votingManaPercent ?? null}
-          downvoteManaPercent={wallet?.metrics.downvoteManaPercent ?? null}
-          rcPercent={wallet?.metrics.rcPercent ?? null}
-        />
-      ),
+      icon: <Icon as={Gauge} boxSize={4} />,
       value:
         wallet?.metrics.votingManaPercent != null
           ? formatTokenAmount(wallet.metrics.votingManaPercent, 1)
@@ -680,15 +676,17 @@ function MetricCard({
   palette,
   icon,
   media,
+  children,
   isLoading,
 }: {
   label: string
   value: string | null
   suffix: string
-  description: string
+  description?: string
   palette: string
   icon?: ReactNode
   media?: ReactNode
+  children?: ReactNode
   isLoading: boolean
 }) {
   return (
@@ -738,90 +736,16 @@ function MetricCard({
               )}
             </HStack>
 
-            <Text fontSize="xs" color="fg.muted" lineClamp={2}>
-              {description}
-            </Text>
+            {description ? (
+              <Text fontSize="xs" color="fg.muted" lineClamp={2}>
+                {description}
+              </Text>
+            ) : null}
+            {children}
           </Stack>
         </Stat.Root>
       </Card.Body>
     </Card.Root>
-  )
-}
-
-function VotingPowerMedia({
-  votingManaPercent,
-  downvoteManaPercent,
-  rcPercent,
-}: {
-  votingManaPercent: number | null
-  downvoteManaPercent: number | null
-  rcPercent: number | null
-}) {
-  const bars = [
-    { label: 'VP', value: votingManaPercent, tone: 'solid' },
-    { label: 'DV', value: downvoteManaPercent, tone: 'fg' },
-    { label: 'RC', value: rcPercent, tone: 'muted' },
-  ] as const
-
-  return (
-    <Box
-      w="84px"
-      h="64px"
-      px={2}
-      py={1.5}
-      borderRadius="12px"
-      bg="colorPalette.subtle"
-      borderWidth="1px"
-      borderColor="colorPalette.border"
-      display="flex"
-      alignItems="end"
-      justifyContent="space-between"
-      gap={1.5}
-    >
-      {bars.map((bar) => {
-        const normalizedValue =
-          bar.value != null && Number.isFinite(bar.value)
-            ? Math.max(0, Math.min(100, bar.value))
-            : 0
-
-        return (
-          <Stack key={bar.label} gap={1} align="center" flex="1" minW="0">
-            <Box
-              h="38px"
-              w="100%"
-              borderRadius="full"
-              bg="bg.panel"
-              overflow="hidden"
-              position="relative"
-            >
-              <Box
-                position="absolute"
-                insetX="0"
-                bottom="0"
-                h={`${Math.max(normalizedValue, normalizedValue > 0 ? 10 : 0)}%`}
-                borderRadius="full"
-                bg={
-                  bar.tone === 'solid'
-                    ? 'colorPalette.solid'
-                    : bar.tone === 'muted'
-                      ? 'colorPalette.muted'
-                      : 'colorPalette.fg'
-                }
-                opacity={bar.tone === 'solid' ? 1 : 0.75}
-              />
-            </Box>
-            <Text
-              fontSize="2xs"
-              lineHeight="1"
-              fontFamily="mono"
-              color="colorPalette.fg"
-            >
-              {bar.label}
-            </Text>
-          </Stack>
-        )
-      })}
-    </Box>
   )
 }
 
