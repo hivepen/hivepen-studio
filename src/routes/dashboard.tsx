@@ -23,7 +23,6 @@ import {
   BadgeCheck,
   Coins,
   Crown,
-  Droplets,
   Gauge,
   Gem,
   HandCoins,
@@ -56,6 +55,7 @@ import type {
   DashboardRange,
 } from '@/features/dashboard/types'
 import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
+import HbdIcon from '@/components/hive/HbdIcon'
 import { Avatar } from '@/components/ui/avatar'
 import useDashboardQuery from '@/features/dashboard/useDashboardQuery'
 import useProfileQuery from '@/features/profile/useProfileQuery'
@@ -198,7 +198,7 @@ function Dashboard() {
     category: Exclude<DashboardFocus, 'all'>
     label: string
     palette: string
-    icon: typeof Crown
+    icon: ReactNode
     value: string | null
     suffix: string
     description: string
@@ -207,7 +207,7 @@ function Dashboard() {
       category: 'account',
       label: 'Hive Power',
       palette: 'green',
-      icon: Crown,
+      icon: <Icon as={Crown} boxSize={4} />,
       value:
         wallet?.metrics.effectiveHivePower != null
           ? formatTokenAmount(wallet.metrics.effectiveHivePower, 2)
@@ -216,40 +216,40 @@ function Dashboard() {
       description:
         wallet?.metrics.delegatedHivePower != null
           ? `${formatTokenAmount(wallet.metrics.hivePower, 2)} owned · ${formatTokenAmount(wallet.metrics.delegatedHivePower, 2)} delegated out`
-          : 'Effective stake across owned and delegated balances',
+          : 'Owned stake',
     },
     {
       category: 'rewards',
       label: 'HBD Savings',
       palette: 'yellow',
-      icon: Droplets,
+      icon: <HbdIcon boxSize={4} />,
       value:
         wallet?.metrics.savingsHbd != null
           ? formatTokenAmount(wallet.metrics.savingsHbd, 3)
           : null,
       suffix: ' HBD',
-      description:
-        wallet?.metrics.hbdInterestRate != null
-          ? `${formatPercent(wallet.metrics.hbdInterestRate / 100, 1)} APR on savings`
-          : 'Savings balance available on-chain',
+      description: formatSavingsProjection(
+        wallet?.metrics.savingsHbd ?? null,
+        wallet?.metrics.hbdInterestRate ?? null,
+      ),
     },
     {
       category: 'rewards',
       label: 'Total rewards',
       palette: 'purple',
-      icon: HandCoins,
+      icon: <Icon as={HandCoins} boxSize={4} />,
       value:
         overview?.summary.totalRewards != null
           ? formatTokenAmount(overview.summary.totalRewards, 2)
           : null,
       suffix: ' HBD',
-      description: `${rangeToDescription(range)} across author, curation, and interest income`,
+      description: `${rangeToDescription(range)} · author + curation + interest`,
     },
     {
       category: 'account',
       label: 'Voting power',
       palette: 'green',
-      icon: Gauge,
+      icon: <Icon as={Gauge} boxSize={4} />,
       value:
         wallet?.metrics.votingManaPercent != null
           ? formatTokenAmount(wallet.metrics.votingManaPercent, 1)
@@ -257,50 +257,50 @@ function Dashboard() {
       suffix: '%',
       description:
         wallet?.metrics.downvoteManaPercent != null
-          ? `${formatTokenAmount(wallet.metrics.downvoteManaPercent, 1)}% downvote mana available`
-          : 'Mana regenerates continuously over time',
+          ? `${formatTokenAmount(wallet.metrics.downvoteManaPercent, 1)}% downvote mana`
+          : 'Regenerates continuously',
     },
     {
       category: 'publishing',
       label: 'Posts published',
       palette: 'purple',
-      icon: WalletCards,
+      icon: <Icon as={WalletCards} boxSize={4} />,
       value: totalPosts != null ? String(totalPosts) : null,
       suffix: '',
       description:
         overview?.summary.publishedPosts != null
-          ? `${overview.summary.publishedPosts} published in ${rangeToDescription(range)}`
-          : 'Published posts found through public Hive APIs',
+          ? `${overview.summary.publishedPosts} in ${rangeToDescription(range)}`
+          : 'From public Hive APIs',
     },
     {
       category: 'account',
       label: 'Followers',
       palette: 'green',
-      icon: UserRound,
+      icon: <Icon as={UserRound} boxSize={4} />,
       value: followerCount != null ? formatInteger(followerCount) : null,
       suffix: '',
       description:
         followingCount != null
           ? `Following ${formatInteger(followingCount)} accounts`
-          : 'Follower count from the connected profile',
+          : 'Connected profile',
     },
     {
       category: 'publishing',
       label: 'Avg post reward',
       palette: 'yellow',
-      icon: Gem,
+      icon: <Icon as={Gem} boxSize={4} />,
       value:
         overview?.summary.averagePostReward != null
           ? formatTokenAmount(overview.summary.averagePostReward, 2)
           : null,
       suffix: ' HBD',
-      description: `Average total payout per post in ${rangeToDescription(range)}`,
+      description: `Per post in ${rangeToDescription(range)}`,
     },
     {
       category: 'account',
       label: 'Account age',
       palette: 'gray',
-      icon: Activity,
+      icon: <Icon as={Activity} boxSize={4} />,
       value: wallet?.account.created
         ? formatAccountAge(wallet.account.created)
         : null,
@@ -680,7 +680,7 @@ function MetricCard({
   suffix: string
   description: string
   palette: string
-  icon: typeof Crown
+  icon: ReactNode
   isLoading: boolean
 }) {
   return (
@@ -722,7 +722,7 @@ function MetricCard({
                 alignItems="center"
                 justifyContent="center"
               >
-                <Icon as={icon} boxSize={4} />
+                {icon}
               </Box>
             </HStack>
 
@@ -1341,6 +1341,26 @@ function formatPercent(value: number, digits = 1) {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(value)
+}
+
+function formatSavingsProjection(
+  savingsHbd: number | null,
+  interestRatePercent: number | null,
+) {
+  if (
+    savingsHbd == null ||
+    !Number.isFinite(savingsHbd) ||
+    interestRatePercent == null ||
+    !Number.isFinite(interestRatePercent)
+  ) {
+    return 'Savings balance'
+  }
+
+  const apr = interestRatePercent / 100
+  const monthlyPayout = (savingsHbd * apr) / 12
+  const compoundedYearlyGain = savingsHbd * ((1 + apr / 12) ** 12 - 1)
+
+  return `${formatPercent(apr, 0)} APR · +${formatTokenAmount(monthlyPayout, 2)}/mo · ~${formatTokenAmount(compoundedYearlyGain, 1)} HBD/year`
 }
 
 function getChartMax<T extends Record<string, unknown>>(
