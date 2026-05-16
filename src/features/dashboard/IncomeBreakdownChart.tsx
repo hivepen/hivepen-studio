@@ -1,4 +1,4 @@
-import { Box, Flex, HStack, Stack, Text } from '@chakra-ui/react'
+import { Box, Flex, HStack, Stack, Text, VisuallyHidden } from '@chakra-ui/react'
 import { useState } from 'react'
 import { Cell, Pie, PieChart } from 'recharts'
 import type {
@@ -197,6 +197,8 @@ function LegendRow({
   onPreviewEnd: () => void
   onTogglePin: () => void
 }) {
+  const summaryLabel = `${label}, ${formatPercent(value, total)} of total income, ${formatHbd(value)} HBD`
+
   return (
     <Box
       as="button"
@@ -209,6 +211,7 @@ function LegendRow({
       onBlur={onPreviewEnd}
       onClick={onTogglePin}
       aria-pressed={isPinned}
+      aria-label={summaryLabel}
       textAlign="left"
       px={1.5}
       py={isChild ? 0.75 : 1.25}
@@ -281,6 +284,8 @@ export default function IncomeBreakdownChart({
   const [pinnedSubcategoryId, setPinnedSubcategoryId] = useState<string | null>(
     null,
   )
+  const chartInstructionId = 'income-breakdown-chart-instructions'
+  const chartSummaryId = 'income-breakdown-chart-summary'
 
   const visibleCategories = categories
     .map((category) => {
@@ -458,7 +463,19 @@ export default function IncomeBreakdownChart({
         borderColor="border.subtle"
         px={{ base: 4, md: 6 }}
         py={7}
+        role="group"
+        aria-labelledby="income-breakdown-chart-title"
+        aria-describedby={`${chartInstructionId} ${chartSummaryId}`}
       >
+        <VisuallyHidden id={chartInstructionId}>
+          Hover or focus rows to preview values. Click a row to pin it, then use
+          the clear pin action to reset the chart.
+        </VisuallyHidden>
+        <VisuallyHidden id={chartSummaryId}>
+          {visibleCategories.length > 0
+            ? `Total cash-like income for ${RANGE_LABELS[range]} is ${formatHbd(totalHbd)} HBD across ${visibleCategories.length} visible categories.`
+            : `No cash-like income is available for ${RANGE_LABELS[range]}.`}
+        </VisuallyHidden>
         <Flex
           justify="space-between"
           align={{ base: 'start', sm: 'flex-start' }}
@@ -467,7 +484,12 @@ export default function IncomeBreakdownChart({
           wrap="wrap"
         >
           <Stack gap={0.5}>
-            <Text fontSize="15px" fontWeight="600" letterSpacing="-0.01em">
+            <Text
+              id="income-breakdown-chart-title"
+              fontSize="15px"
+              fontWeight="600"
+              letterSpacing="-0.01em"
+            >
               Income breakdown
             </Text>
             <Text

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { ChakraProvider } from '@chakra-ui/react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import IncomeBreakdownChart from './IncomeBreakdownChart'
 import chakraSystem from '@/theme'
@@ -120,7 +120,7 @@ describe('IncomeBreakdownChart', () => {
     )
 
     expect(screen.getByText('Income breakdown')).toBeTruthy()
-    expect(screen.getAllByText(/Last 3 months/i)).toHaveLength(2)
+    expect(screen.getByText('Last 3 months · cash-like sources')).toBeTruthy()
     expect(screen.getByText('Post rewards')).toBeTruthy()
     expect(screen.getByText('Comment rewards')).toBeTruthy()
     expect(screen.getByText('From delegatees')).toBeTruthy()
@@ -129,8 +129,47 @@ describe('IncomeBreakdownChart', () => {
       screen.getByText('Percentages show share of total income for the selected range.'),
     ).toBeTruthy()
     expect(screen.getAllByText('12.50')).toHaveLength(2)
+    expect(
+      screen.getByLabelText(
+        'From delegatees, 16.0% of total income, 2.00 HBD',
+      ),
+    ).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /From delegatees/i }))
     expect(screen.getByRole('button', { name: /Clear pin/i })).toBeTruthy()
+  })
+
+  it('renders an explicit empty state when every category is zero', () => {
+    cleanup()
+
+    render(
+      <ChakraProvider value={chakraSystem}>
+        <IncomeBreakdownChart
+          range="1M"
+          categories={categories.map((category) => ({
+            ...category,
+            value: 0,
+            subcategories: category.subcategories.map((subcategory) => ({
+              ...subcategory,
+              value: 0,
+              share: 0,
+            })),
+          }))}
+        />
+      </ChakraProvider>,
+    )
+
+    expect(screen.getByText('No cash-like income yet')).toBeTruthy()
+    expect(
+      screen.getByText(
+        /Last month does not include HBD or HIVE transfers, author rewards, curation rewards, savings interest, or witness rewards\./i,
+      ),
+    ).toBeTruthy()
+    expect(
+      screen.getByRole('group', { name: 'Income breakdown' }),
+    ).toBeTruthy()
+    expect(
+      screen.getByText('No cash-like income is available for Last month.'),
+    ).toBeTruthy()
   })
 })
