@@ -424,8 +424,8 @@ function Dashboard() {
       {matchesDashboardFocus('rewards', focus) ? (
         <SimpleGrid columns={{ base: 1, lg: 3 }} gap={2.5} alignItems="stretch">
           <ChartPanel
-            title="Reward income by type"
-            subtitle="Author · curation · interest · weekly HBD"
+            title="Reward income"
+            subtitle="Author · curation · interest"
             gridColumn={{ base: 'auto', lg: 'span 2' }}
             isLoading={dashboardQuery.isLoading}
           >
@@ -451,7 +451,7 @@ function Dashboard() {
           {matchesDashboardFocus('rewards', focus) ? (
             <ChartPanel
               title="Reward trend"
-              subtitle="Combined rewards · weekly"
+              subtitle="Total rewards"
               isLoading={dashboardQuery.isLoading}
             >
               <RewardTrendChart overview={overview} />
@@ -586,7 +586,7 @@ function Dashboard() {
                 <Stack gap={1}>
                   <Text fontWeight="600">Recent activity</Text>
                   <Text fontSize="sm" color="fg.muted">
-                    Latest wallet and reward events from the connected account
+                    Latest wallet and reward events
                   </Text>
                 </Stack>
                 <Separator />
@@ -655,7 +655,7 @@ function Dashboard() {
                     })}
                   </Timeline.Root>
                 ) : (
-                  <EmptyStateMessage message="No recent account activity was returned by the Hive API." />
+                  <EmptyStateMessage message="No recent account activity yet." />
                 )}
               </Stack>
             </Card.Body>
@@ -790,7 +790,7 @@ function RewardIncomeChart({
   overview: DashboardHistoricalOverview | null
 }) {
   if (!overview) {
-    return <EmptyStateMessage message="No reward history is available yet." />
+    return <EmptyStateMessage message="No reward history yet." />
   }
 
   const chart = useChart({
@@ -964,9 +964,7 @@ function RewardTrendChart({
   overview: DashboardHistoricalOverview | null
 }) {
   if (!overview) {
-    return (
-      <EmptyStateMessage message="No reward trend data is available yet." />
-    )
+    return <EmptyStateMessage message="No reward trend yet." />
   }
 
   const chart = useChart({
@@ -1108,7 +1106,7 @@ function EngagementChart({
   overview: DashboardHistoricalOverview | null
 }) {
   if (!overview) {
-    return <EmptyStateMessage message="No engagement data is available yet." />
+    return <EmptyStateMessage message="No engagement data yet." />
   }
 
   const chart = useChart({
