@@ -203,6 +203,9 @@ function Dashboard() {
     suffix: string
     description: string
   }> = [
+    // TODO(stat-cards): Add a compact fiat/value-context companion for HP so
+    // the user can connect effective stake to estimated wallet value without
+    // opening the wallet screen.
     {
       category: 'account',
       label: 'Hive Power',
@@ -214,14 +217,18 @@ function Dashboard() {
           : null,
       suffix: ' HP',
       description:
+        wallet?.metrics.receivedHivePower != null &&
         wallet?.metrics.delegatedHivePower != null
-          ? `${formatTokenAmount(wallet.metrics.hivePower, 2)} owned · ${formatTokenAmount(wallet.metrics.delegatedHivePower, 2)} delegated out`
+          ? `${formatTokenAmount(wallet.metrics.hivePower, 2)} owned · +${formatTokenAmount(wallet.metrics.receivedHivePower, 2)} in · -${formatTokenAmount(wallet.metrics.delegatedHivePower, 2)} out`
           : 'Owned stake',
     },
+    // TODO(stat-cards): Add a time-to-next-payout style savings cue derived
+    // from the account's earning balance so the card answers "when" as well as
+    // "how much".
     {
       category: 'rewards',
       label: 'HBD Savings',
-      palette: 'yellow',
+      palette: 'green',
       icon: <HbdIcon boxSize={4} />,
       value:
         wallet?.metrics.savingsHbd != null
@@ -233,6 +240,9 @@ function Dashboard() {
         wallet?.metrics.hbdInterestRate ?? null,
       ),
     },
+    // TODO(stat-cards): Split the reward mix inline once the breakdown is more
+    // stable, so this card can preview the biggest source instead of repeating
+    // category names generically.
     {
       category: 'rewards',
       label: 'Total rewards',
@@ -245,6 +255,8 @@ function Dashboard() {
       suffix: ' HBD',
       description: `${rangeToDescription(range)} · author + curation + interest`,
     },
+    // TODO(stat-cards): Replace the generic regen note with an ETA to full
+    // voting mana or next recommended vote threshold if we add that utility.
     {
       category: 'account',
       label: 'Voting power',
@@ -260,6 +272,8 @@ function Dashboard() {
           ? `${formatTokenAmount(wallet.metrics.downvoteManaPercent, 1)}% downvote mana`
           : 'Regenerates continuously',
     },
+    // TODO(stat-cards): Add a cadence signal such as posts per month or the
+    // share of lifetime posts published in the active range.
     {
       category: 'publishing',
       label: 'Posts published',
@@ -272,6 +286,8 @@ function Dashboard() {
           ? `${overview.summary.publishedPosts} in ${rangeToDescription(range)}`
           : 'From public Hive APIs',
     },
+    // TODO(stat-cards): Add net audience context such as follower/following
+    // ratio or recent follower delta once we have a trustworthy source.
     {
       category: 'account',
       label: 'Followers',
@@ -284,6 +300,8 @@ function Dashboard() {
           ? `Following ${formatInteger(followingCount)} accounts`
           : 'Connected profile',
     },
+    // TODO(stat-cards): Pair the average with post count and total earned in
+    // range so this card explains whether the average comes from 1 post or 30.
     {
       category: 'publishing',
       label: 'Avg post reward',
@@ -296,6 +314,8 @@ function Dashboard() {
       suffix: ' HBD',
       description: `Per post in ${rangeToDescription(range)}`,
     },
+    // TODO(stat-cards): Add a milestone-oriented age cue such as the account's
+    // next yearly anniversary window instead of only the absolute age.
     {
       category: 'account',
       label: 'Account age',
