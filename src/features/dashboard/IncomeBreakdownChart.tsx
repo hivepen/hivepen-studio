@@ -286,6 +286,7 @@ export default function IncomeBreakdownChart({
   )
   const chartInstructionId = 'income-breakdown-chart-instructions'
   const chartSummaryId = 'income-breakdown-chart-summary'
+  const chartTitleId = 'income-breakdown-chart-body-title'
 
   const visibleCategories = categories
     .map((category) => {
@@ -453,93 +454,71 @@ export default function IncomeBreakdownChart({
   }
 
   return (
-    <Stack gap={4} align="center" py={2}>
-      <Box
-        w="full"
-        maxW="680px"
-        bg="bg.panel"
-        borderRadius="20px"
-        borderWidth="1px"
-        borderColor="border.subtle"
-        px={{ base: 4, md: 6 }}
-        py={7}
-        role="group"
-        aria-labelledby="income-breakdown-chart-title"
-        aria-describedby={`${chartInstructionId} ${chartSummaryId}`}
-      >
-        <VisuallyHidden id={chartInstructionId}>
-          Hover or focus rows to preview values. Click a row to pin it, then use
-          the clear pin action to reset the chart.
-        </VisuallyHidden>
-        <VisuallyHidden id={chartSummaryId}>
-          {visibleCategories.length > 0
-            ? `Total cash-like income for ${RANGE_LABELS[range]} is ${formatHbd(totalHbd)} HBD across ${visibleCategories.length} visible categories.`
-            : `No cash-like income is available for ${RANGE_LABELS[range]}.`}
-        </VisuallyHidden>
-        <Flex
-          justify="space-between"
-          align={{ base: 'start', sm: 'flex-start' }}
-          mb={6}
-          gap={3}
-          wrap="wrap"
-        >
-          <Stack gap={0.5}>
-            <Text
-              id="income-breakdown-chart-title"
-              fontSize="15px"
-              fontWeight="600"
-              letterSpacing="-0.01em"
-            >
-              Income breakdown
-            </Text>
-            <Text
-              fontSize="10px"
-              color="fg.muted"
-              fontFamily="mono"
-              letterSpacing="0.1em"
-              textTransform="uppercase"
-            >
-              {RANGE_LABELS[range]} · cash-like sources
-            </Text>
-          </Stack>
+    <Stack
+      gap={5}
+      role="group"
+      aria-labelledby={chartTitleId}
+      aria-describedby={`${chartInstructionId} ${chartSummaryId}`}
+    >
+      <VisuallyHidden id={chartTitleId}>Income breakdown chart</VisuallyHidden>
+      <VisuallyHidden id={chartInstructionId}>
+        Hover or focus rows to preview values. Click a row to pin it, then use
+        the clear pin action to reset the chart.
+      </VisuallyHidden>
+      <VisuallyHidden id={chartSummaryId}>
+        {visibleCategories.length > 0
+          ? `Total cash-like income for ${RANGE_LABELS[range]} is ${formatHbd(totalHbd)} HBD across ${visibleCategories.length} visible categories.`
+          : `No cash-like income is available for ${RANGE_LABELS[range]}.`}
+      </VisuallyHidden>
 
-          <HStack gap={2} wrap="wrap" justify="end">
-            {hasPinnedSelection ? (
-              <Box
-                as="button"
-                type="button"
-                onClick={clearPinnedSelection}
-                px={2.5}
-                py={1}
-                borderRadius="md"
-                borderWidth="1px"
-                borderColor="border.subtle"
-                bg="bg.subtle"
-                fontSize="11px"
-                color="fg.muted"
-                fontFamily="mono"
-                _hover={{ bg: 'bg.muted', color: 'fg' }}
-              >
-                Clear pin
-              </Box>
-            ) : null}
+      <Flex justify="space-between" align={{ base: 'start', sm: 'center' }} gap={3} wrap="wrap">
+        <Text
+          fontSize="10px"
+          color="fg.muted"
+          fontFamily="mono"
+          letterSpacing="0.1em"
+          textTransform="uppercase"
+        >
+          {RANGE_LABELS[range]} · cash-like sources
+        </Text>
+
+        <HStack gap={2} wrap="wrap" justify="end">
+          {hasPinnedSelection ? (
             <Box
-              bg="bg.subtle"
+              as="button"
+              type="button"
+              onClick={clearPinnedSelection}
+              px={2.5}
+              py={1}
+              borderRadius="md"
               borderWidth="1px"
               borderColor="border.subtle"
-              borderRadius="8px"
-              px={3}
-              py={1}
-              fontSize="13px"
+              bg="bg.subtle"
+              fontSize="11px"
               color="fg.muted"
               fontFamily="mono"
+              _hover={{ bg: 'bg.muted', color: 'fg' }}
             >
-              {formatHbd(totalHbd)} <Text as="span" color="fg.subtle">HBD</Text>
+              Clear pin
             </Box>
-          </HStack>
-        </Flex>
+          ) : null}
+          <Box
+            bg="bg.subtle"
+            borderWidth="1px"
+            borderColor="border.subtle"
+            borderRadius="8px"
+            px={3}
+            py={1}
+            fontSize="13px"
+            color="fg.muted"
+            fontFamily="mono"
+          >
+            {formatHbd(totalHbd)} <Text as="span" color="fg.subtle">HBD</Text>
+          </Box>
+        </HStack>
+      </Flex>
 
-        <Flex direction={{ base: 'column', md: 'row' }} gap={5} align="center">
+      <Flex direction={{ base: 'column', md: 'row' }} gap={5} align="center">
           <Box position="relative" w="280px" h="280px" flexShrink={0}>
             {visibleCategories.length > 0 ? (
               <PieChart width={280} height={280}>
@@ -666,7 +645,7 @@ export default function IncomeBreakdownChart({
             )}
           </Box>
 
-          <Stack flex="1 1 180px" minW={0} gap={0.5} w="full">
+        <Stack flex="1 1 180px" minW={0} gap={0.5} w="full">
             {visibleCategories.map((category) => {
               const categoryIsActive = activeCategoryId === category.id
               const categoryPalette = getPaletteName(category.colorToken)
@@ -719,9 +698,8 @@ export default function IncomeBreakdownChart({
             <Text px={1.5} pt={1} fontSize="11px" color="fg.muted">
               Percentages show share of total income for the selected range.
             </Text>
-          </Stack>
-        </Flex>
-      </Box>
+        </Stack>
+      </Flex>
     </Stack>
   )
 }

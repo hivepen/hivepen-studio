@@ -112,16 +112,17 @@ const categories: Array<DashboardIncomeBreakdownCategory> = [
 ]
 
 describe('IncomeBreakdownChart', () => {
-  it('renders the dashboard-owned range and hides empty categories', () => {
+  it('renders the chart body metadata and hides empty categories', () => {
     render(
       <ChakraProvider value={chakraSystem}>
         <IncomeBreakdownChart range="3M" categories={categories} />
       </ChakraProvider>,
     )
 
-    expect(screen.getByText('Income breakdown')).toBeTruthy()
+    expect(screen.getByText('Last 3 months · cash-like sources')).toBeTruthy()
     expect(screen.getByText('Post rewards')).toBeTruthy()
     expect(screen.queryByText('Witness')).toBeNull()
+    expect(screen.getAllByText('12.50')).toHaveLength(2)
   })
 
   it('renders an explicit empty state when every category is zero', () => {
@@ -151,7 +152,7 @@ describe('IncomeBreakdownChart', () => {
       ),
     ).toBeTruthy()
     expect(
-      screen.getByRole('group', { name: 'Income breakdown' }),
+      screen.getByRole('group', { name: 'Income breakdown chart' }),
     ).toBeTruthy()
     expect(
       screen.getByText('No cash-like income is available for Last month.'),

@@ -446,10 +446,16 @@ function Dashboard() {
       ) : null}
 
       {matchesDashboardFocus('rewards', focus) && overview ? (
-        <IncomeBreakdownChart
-          range={overview.range}
-          categories={overview.incomeBreakdown}
-        />
+        <ChartPanel
+          title="Income breakdown"
+          subtitle="Cash-like sources · two-level view"
+          isLoading={dashboardQuery.isLoading}
+        >
+          <IncomeBreakdownChart
+            range={overview.range}
+            categories={overview.incomeBreakdown}
+          />
+        </ChartPanel>
       ) : null}
 
       {focus === 'all' || focus === 'rewards' || focus === 'publishing' ? (
