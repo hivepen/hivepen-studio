@@ -234,8 +234,6 @@ function Dashboard() {
         wallet?.metrics.hbdInterestRate ?? null,
       ),
     },
-    // TODO(stat-cards): Replace the generic regen note with an ETA to full
-    // voting mana or next recommended vote threshold if we add that utility.
     {
       category: 'account',
       label: 'Voting power',
@@ -246,7 +244,6 @@ function Dashboard() {
           ? formatTokenAmount(wallet.metrics.votingManaPercent, 1)
           : null,
       suffix: '%',
-      description: formatVotingPowerContext(wallet?.metrics ?? null),
     },
     {
       category: 'publishing',
@@ -275,7 +272,7 @@ function Dashboard() {
           ? `Following ${formatInteger(followingCount)} · ${formatFollowRatio(followerCount, followingCount)}`
           : followingCount != null
             ? `Following ${formatInteger(followingCount)} accounts`
-          : 'Connected profile',
+            : undefined,
     },
     {
       category: 'publishing',
@@ -291,7 +288,7 @@ function Dashboard() {
         overview?.summary.publishedPosts != null &&
         overview?.summary.totalRewards != null
           ? `${overview.summary.publishedPosts} posts · ${formatTokenAmount(overview.summary.totalRewards, 2)} HBD total`
-          : `Per post in ${rangeToDescription(range)}`,
+          : undefined,
     },
     {
       category: 'account',
@@ -1505,43 +1502,6 @@ function matchesDashboardFocus(
   return focus === 'all' || focus === category
 }
 
-function formatVotingPowerContext(
-  metrics:
-    | {
-        votingManaPercent: number | null
-        downvoteManaPercent: number | null
-        rcPercent: number | null
-      }
-    | null,
-) {
-  if (
-    metrics?.votingManaPercent == null ||
-    !Number.isFinite(metrics.votingManaPercent)
-  ) {
-    return 'Regenerates continuously'
-  }
-
-  const remainder = Math.max(0, 100 - metrics.votingManaPercent)
-  const hoursToFull = (remainder / 100) * 24 * 5
-  const recoveryText =
-    remainder <= 0.2
-      ? 'Full now'
-      : `${formatDurationShort(hoursToFull)} to full`
-
-  if (metrics.rcPercent != null && Number.isFinite(metrics.rcPercent)) {
-    return `${recoveryText} · ${formatTokenAmount(metrics.rcPercent, 0)}% RC`
-  }
-
-  if (
-    metrics.downvoteManaPercent != null &&
-    Number.isFinite(metrics.downvoteManaPercent)
-  ) {
-    return `${recoveryText} · ${formatTokenAmount(metrics.downvoteManaPercent, 0)}% downvote`
-  }
-
-  return recoveryText
-}
-
 function formatAccountAge(value: string) {
   const createdAt = new Date(value)
   if (Number.isNaN(createdAt.getTime())) return '—'
@@ -1604,22 +1564,6 @@ function formatAccountMilestone(value: string | null) {
   return `Turns ${milestoneYears} in ${nextAnniversary.toLocaleDateString(undefined, {
     month: 'short',
   })}`
-}
-
-function formatDurationShort(hours: number) {
-  if (!Number.isFinite(hours) || hours <= 0) {
-    return '0h'
-  }
-
-  if (hours >= 48) {
-    return `${Math.round(hours / 24)}d`
-  }
-
-  if (hours >= 1) {
-    return `${Math.round(hours)}h`
-  }
-
-  return `${Math.max(1, Math.round(hours * 60))}m`
 }
 
 function getActivityPalette(type: string) {
