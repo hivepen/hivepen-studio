@@ -287,6 +287,8 @@ export default function IncomeBreakdownChart({
   const chartInstructionId = 'income-breakdown-chart-instructions'
   const chartSummaryId = 'income-breakdown-chart-summary'
   const chartTitleId = 'income-breakdown-chart-body-title'
+  const chartWidth = 320
+  const chartHeight = 300
 
   const visibleCategories = categories
     .map((category) => {
@@ -298,8 +300,8 @@ export default function IncomeBreakdownChart({
     })
     .filter((category) => category.value > 0 && category.subcategories.length > 0)
 
-  const chartCenterX = 140
-  const chartCenterY = 140
+  const chartCenterX = chartWidth / 2
+  const chartCenterY = 148
   const totalHbd = visibleCategories.reduce(
     (total, category) => total + category.value,
     0,
@@ -519,9 +521,15 @@ export default function IncomeBreakdownChart({
       </Flex>
 
       <Flex direction={{ base: 'column', md: 'row' }} gap={5} align="center">
-          <Box position="relative" w="280px" h="280px" flexShrink={0}>
+          <Box
+            position="relative"
+            w={`${chartWidth}px`}
+            h={`${chartHeight}px`}
+            flexShrink={0}
+            overflow="visible"
+          >
             {visibleCategories.length > 0 ? (
-              <PieChart width={280} height={280}>
+              <PieChart width={chartWidth} height={chartHeight}>
                 <Pie
                   data={innerSlices}
                   cx={chartCenterX}
