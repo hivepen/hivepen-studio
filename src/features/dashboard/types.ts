@@ -4,8 +4,6 @@ export type DashboardRange = '1M' | '3M' | '6M' | '1Y'
 
 export type DashboardBucketUnit = 'week' | 'month'
 
-export type DashboardChartKind = 'line' | 'bar'
-
 export type DashboardBucket = {
   key: string
   shortLabel: string
@@ -116,9 +114,6 @@ export type DashboardSummary = {
 export type DashboardHistoricalOverview = {
   range: DashboardRange
   bucketUnit: DashboardBucketUnit
-  rewardIncomeChartKind: DashboardChartKind
-  rewardTrendChartKind: DashboardChartKind
-  engagementChartKind: DashboardChartKind
   buckets: Array<DashboardBucket>
   dailyIncome: Array<DashboardDailyIncomeDay>
   breakdown: Array<DashboardBreakdownItem>

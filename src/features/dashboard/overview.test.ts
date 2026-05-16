@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   aggregateDashboardOverview,
   buildBuckets,
-  selectHistoricalChartKind,
 } from './overview'
 import type { PostSearchResult } from '@/lib/hive/search'
 
@@ -246,24 +245,5 @@ describe('aggregateDashboardOverview', () => {
     expect(
       result.buckets.reduce((total, bucket) => total + bucket.comments, 0),
     ).toBe(2)
-  })
-})
-
-describe('selectHistoricalChartKind', () => {
-  it('uses bars for sparse weekly series and lines for denser series', () => {
-    const sparse = buildBuckets('1M', new Date('2026-05-13T12:00:00.000Z'))
-    sparse[0].totalRewards = 1
-    sparse[1].totalRewards = 2
-
-    const dense = buildBuckets('1Y', new Date('2026-05-13T12:00:00.000Z'))
-    dense[0].votes = 1
-    dense[1].votes = 1
-    dense[2].votes = 1
-    dense[3].votes = 1
-
-    expect(selectHistoricalChartKind(sparse, 'totalRewards', 'week')).toBe(
-      'bar',
-    )
-    expect(selectHistoricalChartKind(dense, 'votes', 'month')).toBe('line')
   })
 })

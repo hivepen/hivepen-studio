@@ -14,7 +14,6 @@ import {
   Text,
   Timeline,
 } from '@chakra-ui/react'
-import { Chart, useChart } from '@chakra-ui/charts'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import {
   Activity,
@@ -37,22 +36,11 @@ import {
   WalletCards,
 } from 'lucide-react'
 import { useState } from 'react'
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import type { ComponentProps, ReactNode } from 'react'
 import type {
   DashboardHistoricalOverview,
   DashboardRange,
 } from '@/features/dashboard/types'
-import { DASHBOARD_INCOME_PALETTE } from '@/features/dashboard/chartPalette'
 import CommunityRewardBreakdownChart from '@/features/dashboard/CommunityRewardBreakdownChart'
 import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
 import PayoutDistributionChart from '@/features/dashboard/PayoutDistributionChart'
@@ -86,35 +74,10 @@ const RANGE_OPTIONS: Array<{ label: DashboardRange; value: DashboardRange }> = [
   { label: '1Y', value: '1Y' },
 ]
 
-const CHART_SERIES = {
-  author: {
-    color: DASHBOARD_INCOME_PALETTE.author.colorToken,
-    label: DASHBOARD_INCOME_PALETTE.author.label,
-    key: 'authorRewards',
-  },
-  curation: {
-    color: DASHBOARD_INCOME_PALETTE.curation.colorToken,
-    label: DASHBOARD_INCOME_PALETTE.curation.label,
-    key: 'curationRewards',
-  },
-  interest: {
-    color: DASHBOARD_INCOME_PALETTE.interest.colorToken,
-    label: DASHBOARD_INCOME_PALETTE.interest.label,
-    key: 'savingsInterest',
-  },
-  total: { color: 'teal.solid', label: 'Total', key: 'totalRewards' },
-  votes: { color: 'green.solid', label: 'Votes', key: 'votes' },
-  comments: { color: 'purple.solid', label: 'Comments', key: 'comments' },
-  posts: { color: 'blue.solid', label: 'Posts', key: 'posts' },
-} as const
-
 type DashboardFocus = 'all' | 'rewards' | 'publishing' | 'account'
 
 const PAGE_MAX_WIDTH = '1240px'
 const SURFACE_RADIUS = '16px'
-const CHART_MARGIN = { top: 8, right: 10, left: -18, bottom: 0 }
-const BAR_CHART_MARGIN = { top: 8, right: 10, left: -10, bottom: 0 }
-
 const FOCUS_OPTIONS: Array<{ label: string; value: DashboardFocus }> = [
   { label: 'All', value: 'all' },
   { label: 'Rewards', value: 'rewards' },
@@ -451,29 +414,6 @@ export function AccountAnalyticsPage({
             categories={overview.incomeBreakdown}
           />
         </ChartPanel>
-      ) : null}
-
-      {focus === 'all' || focus === 'rewards' || focus === 'publishing' ? (
-        <SimpleGrid columns={{ base: 1, lg: 2 }} gap={2.5}>
-          {matchesDashboardFocus('rewards', focus) ? (
-            <ChartPanel
-              title="Reward trend"
-              subtitle="Total rewards"
-              isLoading={dashboardQuery.isLoading}
-            >
-              <RewardTrendChart overview={overview} />
-            </ChartPanel>
-          ) : null}
-          {matchesDashboardFocus('publishing', focus) ? (
-            <ChartPanel
-              title="Engagement trend"
-              subtitle="Votes · comments · posts"
-              isLoading={dashboardQuery.isLoading}
-            >
-              <EngagementChart overview={overview} />
-            </ChartPanel>
-          ) : null}
-        </SimpleGrid>
       ) : null}
 
       {focus === 'all' || focus === 'rewards' || focus === 'publishing' ? (
@@ -878,308 +818,6 @@ function RewardIncomeChart({
   )
 }
 
-function RewardTrendChart({
-  overview,
-}: {
-  overview: DashboardHistoricalOverview | null
-}) {
-  if (!overview) {
-    return <EmptyStateMessage message="No reward trend yet." />
-  }
-
-  const chart = useChart({
-    data: overview.buckets,
-    series: [{ name: CHART_SERIES.total.key, color: CHART_SERIES.total.color }],
-  })
-  const maxValue = getChartMax(overview.buckets, [CHART_SERIES.total.key])
-  const upperBound = getPaddedUpperBound(maxValue, 0.18, 0.8)
-
-  return (
-    <Chart.Root height="11.5rem" chart={chart}>
-      {overview.rewardTrendChartKind === 'bar' ? (
-        <BarChart data={chart.data} margin={BAR_CHART_MARGIN} responsive>
-          <CartesianGrid
-            stroke={chart.color('border.muted')}
-            vertical={false}
-          />
-          <XAxis
-            axisLine={false}
-            tickLine={false}
-            dataKey={chart.key('shortLabel')}
-            stroke={chart.color('border')}
-            minTickGap={20}
-            tick={{ fontSize: 11 }}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tickMargin={8}
-            stroke={chart.color('border')}
-            width={30}
-            tick={{ fontSize: 11 }}
-            domain={[0, upperBound]}
-            tickFormatter={(value) =>
-              formatCompactCurrency(
-                typeof value === 'number' ? value : Number(value),
-              )
-            }
-          />
-          <Tooltip
-            animationDuration={100}
-            cursor={false}
-            content={
-              <Chart.Tooltip
-                formatter={(value) =>
-                  `${formatTokenAmount(Number(value), 2)} HBD`
-                }
-              />
-            }
-          />
-          <Bar
-            isAnimationActive={false}
-            dataKey={chart.key(CHART_SERIES.total.key)}
-            fill={chart.color(CHART_SERIES.total.color)}
-            radius={6}
-          />
-        </BarChart>
-      ) : (
-        <AreaChart data={chart.data} margin={CHART_MARGIN} responsive>
-          <CartesianGrid
-            stroke={chart.color('border.muted')}
-            vertical={false}
-          />
-          <XAxis
-            axisLine={false}
-            tickLine={false}
-            dataKey={chart.key('shortLabel')}
-            stroke={chart.color('border')}
-            minTickGap={20}
-            tick={{ fontSize: 11 }}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tickMargin={8}
-            stroke={chart.color('border')}
-            width={30}
-            tick={{ fontSize: 11 }}
-            domain={[0, upperBound]}
-            tickFormatter={(value) =>
-              formatCompactCurrency(
-                typeof value === 'number' ? value : Number(value),
-              )
-            }
-          />
-          <Tooltip
-            animationDuration={100}
-            cursor={false}
-            content={
-              <Chart.Tooltip
-                formatter={(value) =>
-                  `${formatTokenAmount(Number(value), 2)} HBD`
-                }
-              />
-            }
-          />
-          <defs>
-            <Chart.Gradient
-              id="reward-trend-gradient"
-              stops={[
-                {
-                  offset: '0%',
-                  color: CHART_SERIES.total.color,
-                  opacity: 0.28,
-                },
-                {
-                  offset: '100%',
-                  color: CHART_SERIES.total.color,
-                  opacity: 0.04,
-                },
-              ]}
-            />
-          </defs>
-          <Area
-            type="monotone"
-            isAnimationActive={false}
-            dataKey={chart.key(CHART_SERIES.total.key)}
-            fill="url(#reward-trend-gradient)"
-            stroke={chart.color(CHART_SERIES.total.color)}
-            strokeWidth={2.5}
-            dot={false}
-            activeDot={{
-              r: 4,
-              stroke: chart.color('bg'),
-              strokeWidth: 2,
-            }}
-            baseValue={0}
-            strokeLinecap="round"
-          />
-        </AreaChart>
-      )}
-    </Chart.Root>
-  )
-}
-
-function EngagementChart({
-  overview,
-}: {
-  overview: DashboardHistoricalOverview | null
-}) {
-  if (!overview) {
-    return <EmptyStateMessage message="No engagement data yet." />
-  }
-
-  const chart = useChart({
-    data: overview.buckets,
-    series: [
-      { name: CHART_SERIES.votes.key, color: CHART_SERIES.votes.color },
-      {
-        name: CHART_SERIES.comments.key,
-        color: CHART_SERIES.comments.color,
-      },
-      { name: CHART_SERIES.posts.key, color: CHART_SERIES.posts.color },
-    ],
-  })
-  const maxValue = getChartMax(overview.buckets, [
-    CHART_SERIES.votes.key,
-    CHART_SERIES.comments.key,
-    CHART_SERIES.posts.key,
-  ])
-  const upperBound = getPaddedUpperBound(maxValue, 0.15, 4)
-
-  return (
-    <Stack gap={3}>
-      <Chart.Root height="11.5rem" chart={chart}>
-        {overview.engagementChartKind === 'bar' ? (
-          <BarChart
-            data={chart.data}
-            barGap={10}
-            margin={BAR_CHART_MARGIN}
-            responsive
-          >
-            <CartesianGrid
-              stroke={chart.color('border.muted')}
-              vertical={false}
-            />
-            <XAxis
-              axisLine={false}
-              tickLine={false}
-              dataKey={chart.key('shortLabel')}
-              stroke={chart.color('border')}
-              minTickGap={20}
-              tick={{ fontSize: 11 }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tickMargin={8}
-              stroke={chart.color('border')}
-              width={30}
-              tick={{ fontSize: 11 }}
-              domain={[0, upperBound]}
-            />
-            <Tooltip
-              animationDuration={100}
-              cursor={false}
-              content={<Chart.Tooltip />}
-            />
-            {chart.series.map((item) => (
-              <Bar
-                key={item.name}
-                isAnimationActive={false}
-                dataKey={chart.key(item.name)}
-                fill={chart.color(item.color)}
-                radius={6}
-              />
-            ))}
-          </BarChart>
-        ) : (
-          <AreaChart data={chart.data} margin={CHART_MARGIN} responsive>
-            <CartesianGrid
-              stroke={chart.color('border.muted')}
-              vertical={false}
-            />
-            <XAxis
-              axisLine={false}
-              tickLine={false}
-              dataKey={chart.key('shortLabel')}
-              stroke={chart.color('border')}
-              minTickGap={20}
-              tick={{ fontSize: 11 }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tickMargin={8}
-              stroke={chart.color('border')}
-              width={30}
-              tick={{ fontSize: 11 }}
-              domain={[0, upperBound]}
-            />
-            <Tooltip
-              animationDuration={100}
-              cursor={false}
-              content={<Chart.Tooltip />}
-            />
-            {chart.series.map((item) => (
-              <defs key={`engagement-gradient-${item.name}`}>
-                <Chart.Gradient
-                  id={`engagement-gradient-${item.name}`}
-                  stops={[
-                    { offset: '0%', color: item.color, opacity: 0.2 },
-                    { offset: '100%', color: item.color, opacity: 0.03 },
-                  ]}
-                />
-              </defs>
-            ))}
-            {chart.series.map((item) => (
-              <Area
-                key={item.name}
-                type="monotone"
-                isAnimationActive={false}
-                dataKey={chart.key(item.name)}
-                fill={`url(#engagement-gradient-${item.name})`}
-                stroke={chart.color(item.color)}
-                strokeWidth={2.2}
-                dot={false}
-                baseValue={0}
-                strokeLinecap="round"
-              />
-            ))}
-          </AreaChart>
-        )}
-      </Chart.Root>
-
-      <HStack gap={5} wrap="wrap">
-        <SeriesLegend
-          color={CHART_SERIES.votes.color}
-          label="Votes"
-          value={String(
-            overview.buckets.reduce((total, bucket) => total + bucket.votes, 0),
-          )}
-        />
-        <SeriesLegend
-          color={CHART_SERIES.comments.color}
-          label="Comments"
-          value={String(
-            overview.buckets.reduce(
-              (total, bucket) => total + bucket.comments,
-              0,
-            ),
-          )}
-        />
-        <SeriesLegend
-          color={CHART_SERIES.posts.color}
-          label="Posts"
-          value={String(
-            overview.buckets.reduce((total, bucket) => total + bucket.posts, 0),
-          )}
-        />
-      </HStack>
-    </Stack>
-  )
-}
-
 function SeriesLegend({
   color,
   label,
@@ -1240,14 +878,6 @@ function formatTokenAmount(value: number, digits = 2) {
   return new Intl.NumberFormat(undefined, {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
-  }).format(value)
-}
-
-function formatCompactCurrency(value: number) {
-  return new Intl.NumberFormat(undefined, {
-    notation: 'compact',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 1,
   }).format(value)
 }
 
@@ -1393,27 +1023,6 @@ function formatPublishingContext(
   }
 
   return `${publishedPosts} in ${rangeToDescription(range)} · ${cadence}`
-}
-
-function getChartMax<T extends Record<string, unknown>>(
-  rows: Array<T>,
-  keys: Array<string>,
-) {
-  return rows.reduce((max, row) => {
-    const rowMax = keys.reduce((current, key) => {
-      const value = row[key]
-      return typeof value === 'number' && Number.isFinite(value)
-        ? Math.max(current, value)
-        : current
-    }, 0)
-
-    return Math.max(max, rowMax)
-  }, 0)
-}
-
-function getPaddedUpperBound(value: number, ratio: number, minPad: number) {
-  if (value <= 0) return minPad * 4
-  return Number((value + Math.max(minPad, value * ratio)).toFixed(2))
 }
 
 function matchesDashboardFocus(

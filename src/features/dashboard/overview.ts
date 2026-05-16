@@ -4,7 +4,6 @@ import type {
   DashboardBreakdownItem,
   DashboardBucket,
   DashboardBucketUnit,
-  DashboardChartKind,
   DashboardCommunityRewardBreakdown,
   DashboardDailyIncomeDay,
   DashboardHistoricalOverview,
@@ -284,9 +283,6 @@ const getDailyIncomeDayForDate = (
   return days.find((day) => day.date === dayKey) ?? null
 }
 
-const toFiniteNumber = (value: number | null | undefined) =>
-  typeof value === 'number' && Number.isFinite(value) ? value : 0
-
 const toPercentChange = (current: number, previous: number) => {
   if (previous <= 0) return current > 0 ? 1 : null
   return (current - previous) / previous
@@ -374,22 +370,6 @@ const accumulateCommunityReward = (
   existing[rewardKind] += reward
   existing.totalRewards += reward
   collection.set(key, existing)
-}
-
-export const selectHistoricalChartKind = (
-  buckets: Array<DashboardBucket>,
-  valueKey: 'totalRewards' | 'votes',
-  bucketUnit: DashboardBucketUnit,
-): DashboardChartKind => {
-  const nonZeroPoints = buckets.filter(
-    (bucket) => toFiniteNumber(bucket[valueKey]) > 0,
-  ).length
-
-  if (bucketUnit === 'week' && nonZeroPoints <= 3) {
-    return 'bar'
-  }
-
-  return 'line'
 }
 
 const fetchDashboardEntries = async (
@@ -985,21 +965,6 @@ export const aggregateDashboardOverview = ({
   return {
     range,
     bucketUnit: RANGE_BUCKET_CONFIG[range].bucketUnit,
-    rewardIncomeChartKind: selectHistoricalChartKind(
-      buckets,
-      'totalRewards',
-      RANGE_BUCKET_CONFIG[range].bucketUnit,
-    ),
-    rewardTrendChartKind: selectHistoricalChartKind(
-      buckets,
-      'totalRewards',
-      RANGE_BUCKET_CONFIG[range].bucketUnit,
-    ),
-    engagementChartKind: selectHistoricalChartKind(
-      buckets,
-      'votes',
-      RANGE_BUCKET_CONFIG[range].bucketUnit,
-    ),
     buckets,
     dailyIncome,
     breakdown,
