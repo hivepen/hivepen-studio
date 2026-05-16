@@ -21,6 +21,14 @@ export type DashboardBucket = {
   comments: number
 }
 
+export type DashboardDailyIncomeDay = {
+  date: string
+  authorRewards: number
+  curationRewards: number
+  savingsInterest: number
+  totalRewards: number
+}
+
 export type DashboardBreakdownItem = {
   id: 'author' | 'curation' | 'interest'
   label: string
@@ -97,6 +105,7 @@ export type DashboardHistoricalOverview = {
   rewardTrendChartKind: DashboardChartKind
   engagementChartKind: DashboardChartKind
   buckets: Array<DashboardBucket>
+  dailyIncome: Array<DashboardDailyIncomeDay>
   breakdown: Array<DashboardBreakdownItem>
   incomeBreakdown: Array<DashboardIncomeBreakdownCategory>
   summary: DashboardSummary

@@ -1,70 +1,69 @@
 import { Box, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useMemo, useRef } from 'react'
 import * as echarts from 'echarts/core'
-import { HeatmapChart } from 'echarts/charts'
+import { HeatmapChart, ScatterChart } from 'echarts/charts'
 import {
-  GridComponent,
+  CalendarComponent,
   TooltipComponent,
   VisualMapComponent,
 } from 'echarts/components'
 import { SVGRenderer } from 'echarts/renderers'
 import type { EChartsType } from 'echarts/core'
-import type { HeatmapSeriesOption } from 'echarts/charts'
+import type { HeatmapSeriesOption, ScatterSeriesOption } from 'echarts/charts'
 import type {
-  GridComponentOption,
+  CalendarComponentOption,
   TooltipComponentOption,
   VisualMapComponentOption,
 } from 'echarts/components'
 import { DASHBOARD_INCOME_PALETTE } from './chartPalette'
-import type { DashboardBucket } from './types'
+import type { DashboardDailyIncomeDay } from './types'
 
 echarts.use([
   HeatmapChart,
-  GridComponent,
+  ScatterChart,
+  CalendarComponent,
   TooltipComponent,
   VisualMapComponent,
   SVGRenderer,
 ])
 
 type RewardIncomeHeatmapChartProps = {
-  buckets: Array<DashboardBucket>
+  dailyIncome: Array<DashboardDailyIncomeDay>
 }
 
-type HeatmapSeriesDefinition = {
+type OverlayDefinition = {
   key: 'authorRewards' | 'curationRewards' | 'savingsInterest'
   label: string
   colorToken: string
-  scale: [string, string]
+  yOffset: number
 }
 
 type RewardIncomeHeatmapOption = {
   animation: boolean
-  grid: GridComponentOption
+  calendar: CalendarComponentOption
   tooltip: TooltipComponentOption
-  visualMap: Array<VisualMapComponentOption>
-  xAxis: object
-  yAxis: object
-  series: Array<HeatmapSeriesOption>
+  visualMap: VisualMapComponentOption
+  series: Array<HeatmapSeriesOption | ScatterSeriesOption>
 }
 
-const SERIES: Array<HeatmapSeriesDefinition> = [
+const OVERLAYS: Array<OverlayDefinition> = [
   {
     key: 'authorRewards',
     label: DASHBOARD_INCOME_PALETTE.author.label,
     colorToken: DASHBOARD_INCOME_PALETTE.author.colorToken,
-    scale: ['#eef9f1', '#27ae60'],
+    yOffset: -7,
   },
   {
     key: 'curationRewards',
     label: DASHBOARD_INCOME_PALETTE.curation.label,
     colorToken: DASHBOARD_INCOME_PALETTE.curation.colorToken,
-    scale: ['#f3efff', '#8b5cf6'],
+    yOffset: 0,
   },
   {
     key: 'savingsInterest',
     label: DASHBOARD_INCOME_PALETTE.interest.label,
     colorToken: DASHBOARD_INCOME_PALETTE.interest.colorToken,
-    scale: ['#fff4e8', '#f08c2e'],
+    yOffset: 7,
   },
 ]
 
@@ -87,26 +86,30 @@ function formatTokenAmount(value: number, digits = 2) {
   }).format(value)
 }
 
+function formatRange(dailyIncome: Array<DashboardDailyIncomeDay>) {
+  const first = dailyIncome[0]
+  const last = dailyIncome[dailyIncome.length - 1]
+  if (!first || !last) return ''
+
+  const start = first.date.slice(0, 10)
+  const end = last.date.slice(0, 10)
+  return start === end ? start : [start, end]
+}
+
 export default function RewardIncomeHeatmapChart({
-  buckets,
+  dailyIncome,
 }: RewardIncomeHeatmapChartProps) {
   const chartRef = useRef<HTMLDivElement>(null)
   const instanceRef = useRef<EChartsType | null>(null)
 
   const hasData = useMemo(
-    () =>
-      buckets.some(
-        (bucket) =>
-          bucket.authorRewards > 0 ||
-          bucket.curationRewards > 0 ||
-          bucket.savingsInterest > 0,
-      ),
-    [buckets],
+    () => dailyIncome.some((day) => day.totalRewards > 0),
+    [dailyIncome],
   )
 
   useEffect(() => {
     const container = chartRef.current
-    if (!container || !hasData) return
+    if (!container || dailyIncome.length === 0) return
     if (
       typeof navigator !== 'undefined' &&
       navigator.userAgent.toLowerCase().includes('jsdom')
@@ -129,61 +132,79 @@ export default function RewardIncomeHeatmapChart({
       instance.dispose()
       instanceRef.current = null
     }
-  }, [hasData])
+  }, [dailyIncome.length])
 
   useEffect(() => {
     const container = chartRef.current
     const instance = instanceRef.current
-    if (!container || !instance || !hasData) return
+    if (!container || !instance || dailyIncome.length === 0) return
 
     const color = (token: string) => resolveCssVar(token, container)
-    const labels = buckets.map((bucket) => bucket.shortLabel)
-    const borderColor = color(semanticVar('bg'))
+    const maxTotal = Math.max(...dailyIncome.map((day) => day.totalRewards), 0)
 
-    const series: Array<HeatmapSeriesOption> = SERIES.map((definition, seriesIndex) => ({
-      name: definition.label,
-      type: 'heatmap',
-      coordinateSystem: 'cartesian2d',
-      seriesIndex,
-      progressive: 0,
-      emphasis: { disabled: true },
-      itemStyle: {
-        borderRadius: 6,
-        borderWidth: 2,
-        borderColor,
-      },
-      data: buckets.map((bucket, bucketIndex) => [
-        bucketIndex,
-        seriesIndex,
-        bucket[definition.key],
-      ]),
-    }))
+    const totalHeatmapData = dailyIncome.map((day) => [day.date.slice(0, 10), day.totalRewards])
 
-    const visualMap: Array<VisualMapComponentOption> = SERIES.map(
-      (definition, seriesIndex) => {
-        const max = Math.max(...buckets.map((bucket) => bucket[definition.key]), 0)
+    const overlaySeries: Array<ScatterSeriesOption> = OVERLAYS.map((overlay) => {
+      const maxForType = Math.max(...dailyIncome.map((day) => day[overlay.key]), 0)
 
-        return {
-          show: false,
-          type: 'continuous',
-          seriesIndex,
-          min: 0,
-          max: max <= 0 ? 1 : Number(max.toFixed(2)),
-          inRange: {
-            color: definition.scale,
-          },
-        }
-      },
-    )
+      return {
+        name: overlay.label,
+        type: 'scatter',
+        coordinateSystem: 'calendar',
+        symbol: 'roundRect',
+        symbolSize: [14, 4],
+        symbolOffset: [0, overlay.yOffset],
+        itemStyle: {
+          color: color(tokenVar(overlay.colorToken)),
+          borderRadius: 999,
+        },
+        emphasis: { disabled: true },
+        data: dailyIncome
+          .filter((day) => day[overlay.key] > 0)
+          .map((day) => ({
+            value: [day.date.slice(0, 10), day[overlay.key]],
+            itemStyle: {
+              opacity:
+                maxForType <= 0
+                  ? 0
+                  : 0.25 + 0.75 * (day[overlay.key] / maxForType),
+            },
+          })),
+      }
+    })
 
     const option: RewardIncomeHeatmapOption = {
       animation: false,
-      grid: {
+      calendar: {
         top: 8,
-        right: 8,
-        bottom: 0,
         left: 8,
-        containLabel: true,
+        right: 8,
+        bottom: 8,
+        range: formatRange(dailyIncome),
+        orient: 'horizontal',
+        splitLine: {
+          show: false,
+        },
+        itemStyle: {
+          color: color(semanticVar('bg.subtle')),
+          borderWidth: 2,
+          borderColor: color(semanticVar('bg')),
+          borderRadius: 8,
+        },
+        dayLabel: {
+          firstDay: 1,
+          nameMap: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+          color: color(semanticVar('fg.subtle')),
+          margin: 10,
+        },
+        monthLabel: {
+          color: color(semanticVar('fg.muted')),
+          margin: 12,
+        },
+        yearLabel: {
+          show: false,
+        },
+        cellSize: ['auto', 24],
       },
       tooltip: {
         trigger: 'item',
@@ -195,70 +216,63 @@ export default function RewardIncomeHeatmapChart({
           fontFamily: 'var(--chakra-fonts-body)',
         },
         formatter: (params) => {
-          const payload = params as {
-            value?: [number, number, number]
-            seriesName?: string
-            seriesIndex?: number
-          }
-          const [xIndex, , rawValue] = payload.value ?? [0, 0, 0]
-          const bucket = buckets[Number(xIndex)]
-          const definition = SERIES[Number(payload.seriesIndex ?? 0)]
-          const total =
-            (bucket?.authorRewards ?? 0) +
-            (bucket?.curationRewards ?? 0) +
-            (bucket?.savingsInterest ?? 0)
+          const payload = params as { value?: Array<string | number> | string | number }
+          const raw = payload.value
+          const dateKey = Array.isArray(raw) ? String(raw[0] ?? '') : ''
+          const day = dailyIncome.find((entry) => entry.date.startsWith(dateKey))
+          if (!day) return ''
 
-          return `
-            <div style="font-weight:600;margin-bottom:6px;">${bucket?.longLabel ?? ''}</div>
-            <div style="display:flex;justify-content:space-between;gap:16px;align-items:center;">
-              <span style="display:inline-flex;align-items:center;gap:8px;">
-                <span style="width:9px;height:9px;border-radius:999px;background:${color(
-                  tokenVar(definition.colorToken),
-                )};display:inline-block;"></span>
-                <span>${payload.seriesName ?? definition.label}</span>
-              </span>
-              <span>${formatTokenAmount(Number(rawValue ?? 0), 2)} HBD</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;gap:16px;margin-top:6px;padding-top:6px;border-top:1px solid ${color(
+          const rows = OVERLAYS.map(
+            (overlay) => `
+              <div style="display:flex;justify-content:space-between;gap:16px;align-items:center;">
+                <span style="display:inline-flex;align-items:center;gap:8px;">
+                  <span style="width:9px;height:9px;border-radius:999px;background:${color(
+                    tokenVar(overlay.colorToken),
+                  )};display:inline-block;"></span>
+                  <span>${overlay.label}</span>
+                </span>
+                <span>${formatTokenAmount(day[overlay.key], 2)} HBD</span>
+              </div>
+            `,
+          )
+
+          return [
+            `<div style="font-weight:600;margin-bottom:6px;">${dateKey}</div>`,
+            ...rows,
+            `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:6px;padding-top:6px;border-top:1px solid ${color(
               semanticVar('border.subtle'),
             )};">
               <span>Total</span>
-              <span>${formatTokenAmount(total, 2)} HBD</span>
-            </div>
-          `
+              <span>${formatTokenAmount(day.totalRewards, 2)} HBD</span>
+            </div>`,
+          ].join('')
         },
       },
-      visualMap,
-      xAxis: {
-        type: 'category',
-        data: labels,
-        splitArea: { show: false },
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: {
-          color: color(semanticVar('fg.subtle')),
-          fontSize: 11,
-          margin: 12,
+      visualMap: {
+        show: false,
+        min: 0,
+        max: maxTotal <= 0 ? 1 : Number(maxTotal.toFixed(2)),
+        seriesIndex: 0,
+        inRange: {
+          color: ['#f4f7ff', '#5b7cfa'],
         },
       },
-      yAxis: {
-        type: 'category',
-        data: SERIES.map((definition) => definition.label),
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: {
-          color: color(semanticVar('fg.muted')),
-          fontSize: 11,
-          margin: 12,
+      series: [
+        {
+          name: 'Total rewards',
+          type: 'heatmap',
+          coordinateSystem: 'calendar',
+          data: totalHeatmapData,
+          progressive: 0,
+          emphasis: { disabled: true },
         },
-        splitArea: { show: false },
-      },
-      series,
+        ...overlaySeries,
+      ],
     }
 
     instance.setOption(option, { notMerge: true })
     instance.resize()
-  }, [buckets, hasData])
+  }, [dailyIncome])
 
   if (!hasData) {
     return null
@@ -273,11 +287,11 @@ export default function RewardIncomeHeatmapChart({
         letterSpacing="0.16em"
         fontFamily="mono"
       >
-        Heatmap
+        Daily heatmap
       </Text>
       <Box
         ref={chartRef}
-        h="10.5rem"
+        h="14rem"
         w="full"
         borderRadius="16px"
         borderWidth="1px"

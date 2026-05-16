@@ -5,6 +5,7 @@ import type {
   DashboardBucket,
   DashboardBucketUnit,
   DashboardChartKind,
+  DashboardDailyIncomeDay,
   DashboardHistoricalOverview,
   DashboardHistoricalSnapshot,
   DashboardIncomeBreakdownCategory,
@@ -22,7 +23,7 @@ import { hiveClient } from '@/lib/hive/client'
 import { parseAssetAmount } from '@/lib/hive/payouts'
 import { vestsToHivePower } from '@/lib/hive/wallet'
 
-const DASHBOARD_STORAGE_KEY = 'hivepen.dashboard.overview.v2'
+const DASHBOARD_STORAGE_KEY = 'hivepen.dashboard.overview.v3'
 export const DASHBOARD_TTL_MS = 15 * 60 * 1000
 
 const POSTS_PAGE_SIZE = 20
@@ -173,6 +174,32 @@ export const buildBuckets = (
   return buckets
 }
 
+export const buildDailyIncomeDays = (
+  range: DashboardRange,
+  now = new Date(),
+): Array<DashboardDailyIncomeDay> => {
+  const buckets = buildBuckets(range, now)
+  const currentStart = new Date(buckets[0]?.startAt ?? now.toISOString())
+  const periodEnd = addUtcDays(startOfUtcDay(now), 1)
+  const days: Array<DashboardDailyIncomeDay> = []
+
+  for (
+    let day = currentStart;
+    day.getTime() < periodEnd.getTime();
+    day = addUtcDays(day, 1)
+  ) {
+    days.push({
+      date: day.toISOString(),
+      authorRewards: 0,
+      curationRewards: 0,
+      savingsInterest: 0,
+      totalRewards: 0,
+    })
+  }
+
+  return days
+}
+
 export const getExtendedStart = (range: DashboardRange, now = new Date()) => {
   const currentBuckets = buildBuckets(range, now)
   const currentStart = new Date(currentBuckets[0]?.startAt ?? now.toISOString())
@@ -245,6 +272,14 @@ const getBucketForDate = (
     }
   }
   return null
+}
+
+const getDailyIncomeDayForDate = (
+  days: Array<DashboardDailyIncomeDay>,
+  value: Date,
+): DashboardDailyIncomeDay | null => {
+  const dayKey = startOfUtcDay(value).toISOString()
+  return days.find((day) => day.date === dayKey) ?? null
 }
 
 const toFiniteNumber = (value: number | null | undefined) =>
@@ -509,6 +544,7 @@ export const aggregateDashboardOverview = ({
   now?: Date
 }): DashboardHistoricalOverview => {
   const buckets = buildBuckets(range, now)
+  const dailyIncome = buildDailyIncomeDays(range, now)
   const currentStart = new Date(buckets[0]?.startAt ?? now.toISOString())
   const previousStart = getExtendedStart(range, now)
   const normalized = normalizeUsername(username)
@@ -553,10 +589,13 @@ export const aggregateDashboardOverview = ({
 
     if (createdAt >= currentStart) {
       const bucket = getBucketForDate(buckets, createdAt)
-      if (!bucket) continue
+      const day = getDailyIncomeDayForDate(dailyIncome, createdAt)
+      if (!bucket || !day) continue
 
       bucket.authorRewards += authorReward
       bucket.totalRewards += authorReward
+      day.authorRewards += authorReward
+      day.totalRewards += authorReward
       bucket.posts += 1
       bucket.votes += post.votes ?? 0
       bucket.comments += post.comments ?? 0
@@ -597,10 +636,13 @@ export const aggregateDashboardOverview = ({
 
     if (createdAt >= currentStart) {
       const bucket = getBucketForDate(buckets, createdAt)
-      if (!bucket) continue
+      const day = getDailyIncomeDayForDate(dailyIncome, createdAt)
+      if (!bucket || !day) continue
 
       bucket.authorRewards += authorReward
       bucket.totalRewards += authorReward
+      day.authorRewards += authorReward
+      day.totalRewards += authorReward
       currentCommentAuthorRewards += authorReward
     } else {
       previousCommentRewards += authorReward
@@ -640,16 +682,21 @@ export const aggregateDashboardOverview = ({
 
     if (timestamp >= currentStart) {
       const bucket = getBucketForDate(buckets, timestamp)
-      if (!bucket) continue
+      const day = getDailyIncomeDayForDate(dailyIncome, timestamp)
+      if (!bucket || !day) continue
 
       if (operation.type === 'curation_reward') {
         bucket.curationRewards += amount
         currentCurationRewards += amount
         bucket.totalRewards += amount
+        day.curationRewards += amount
+        day.totalRewards += amount
       } else if (operation.type === 'interest') {
         bucket.savingsInterest += amount
         currentSavingsInterest += amount
         bucket.totalRewards += amount
+        day.savingsInterest += amount
+        day.totalRewards += amount
       } else if (operation.type === 'producer_reward') {
         currentWitnessRewards += amount
       } else if (
@@ -888,6 +935,7 @@ export const aggregateDashboardOverview = ({
       RANGE_BUCKET_CONFIG[range].bucketUnit,
     ),
     buckets,
+    dailyIncome,
     breakdown,
     incomeBreakdown,
     summary: {

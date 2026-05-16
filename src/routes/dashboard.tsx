@@ -802,7 +802,7 @@ function RewardIncomeChart({
   return (
     <Stack gap={3}>
       <RewardIncomeStackedChart buckets={overview.buckets} />
-      <RewardIncomeHeatmapChart buckets={overview.buckets} />
+      <RewardIncomeHeatmapChart dailyIncome={overview.dailyIncome ?? []} />
 
       <HStack gap={5} wrap="wrap">
         {overview.breakdown.map((item) => (
