@@ -11,6 +11,7 @@ import type {
   DashboardIncomeBreakdownCategory,
   DashboardIncomeBreakdownCategoryId,
   DashboardIncomeBreakdownSubcategory,
+  DashboardPayoutDistributionBucket,
   DashboardRange,
   DashboardTopPost,
 } from './types'
@@ -407,11 +408,11 @@ const fetchDashboardComments = (username: string, range: DashboardRange) =>
 
 const fetchOutgoingDelegations = async (username: string) => {
   const normalized = normalizeUsername(username)
-  return ((await hiveClient.call('condenser_api', 'get_vesting_delegations', [
+  return (await hiveClient.call('condenser_api', 'get_vesting_delegations', [
     normalized,
     '',
     100,
-  ])) as Array<HiveVestingDelegation>) ?? []
+  ])) as Array<HiveVestingDelegation>
 }
 
 const fetchRewardHistory = async (username: string, range: DashboardRange) => {
@@ -577,6 +578,16 @@ export const aggregateDashboardOverview = ({
   let currentOtherTransfers = 0
 
   const topPosts: Array<DashboardTopPost> = []
+  const payoutDistributionMap = new Map<string, DashboardPayoutDistributionBucket>()
+
+  for (const bucket of buckets) {
+    payoutDistributionMap.set(bucket.key, {
+      key: bucket.key,
+      shortLabel: bucket.shortLabel,
+      longLabel: bucket.longLabel,
+      rewards: [],
+    })
+  }
 
   for (const post of posts) {
     const createdAt = new Date(post.created)
@@ -602,6 +613,7 @@ export const aggregateDashboardOverview = ({
 
       currentPostAuthorRewards += authorReward
       currentPostRewardTotal += totalReward
+      payoutDistributionMap.get(bucket.key)?.rewards.push(totalReward)
 
       topPosts.push({
         id: `${post.author}/${post.permlink}`,
@@ -699,12 +711,7 @@ export const aggregateDashboardOverview = ({
         day.totalRewards += amount
       } else if (operation.type === 'producer_reward') {
         currentWitnessRewards += amount
-      } else if (
-        (operation.type === 'transfer' ||
-          operation.type === 'transfer_from_savings') &&
-        operation.to === normalized &&
-        operation.from !== normalized
-      ) {
+      } else if (operation.to === normalized && operation.from !== normalized) {
         // We treat transfers from current delegatees as attributable relationship
         // signals, but we do not infer that delegation operations themselves are income.
         if (operation.from && delegatees.has(normalizeUsername(operation.from))) {
@@ -719,12 +726,7 @@ export const aggregateDashboardOverview = ({
       previousSavingsInterest += amount
     } else if (operation.type === 'producer_reward') {
       previousWitnessRewards += amount
-    } else if (
-      (operation.type === 'transfer' ||
-        operation.type === 'transfer_from_savings') &&
-      operation.to === normalized &&
-      operation.from !== normalized
-    ) {
+    } else if (operation.to === normalized && operation.from !== normalized) {
       if (operation.from && delegatees.has(normalizeUsername(operation.from))) {
         previousTransfersFromDelegatees += amount
       } else {
@@ -909,6 +911,18 @@ export const aggregateDashboardOverview = ({
     (total, bucket) => total + bucket.posts,
     0,
   )
+  const payoutDistribution = buckets.map((bucket) => {
+    const distributionBucket = payoutDistributionMap.get(bucket.key)
+
+    return {
+      key: bucket.key,
+      shortLabel: bucket.shortLabel,
+      longLabel: bucket.longLabel,
+      rewards: distributionBucket
+        ? distributionBucket.rewards.slice().sort((left, right) => left - right)
+        : [],
+    }
+  })
   const averagePostReward =
     publishedPosts > 0 ? currentPostRewardTotal / publishedPosts : 0
   const previousAveragePostReward =
@@ -938,6 +952,7 @@ export const aggregateDashboardOverview = ({
     dailyIncome,
     breakdown,
     incomeBreakdown,
+    payoutDistribution,
     summary: {
       totalRewards,
       totalRewardsChange: toPercentChange(totalRewards, previousTotalRewards),

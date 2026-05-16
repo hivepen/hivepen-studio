@@ -207,6 +207,17 @@ describe('aggregateDashboardOverview', () => {
       'Hive News',
     ])
     expect(
+      result.payoutDistribution
+        .filter((bucket) => bucket.rewards.length > 0)
+        .map((bucket) => ({
+          label: bucket.shortLabel,
+          rewards: bucket.rewards,
+        })),
+    ).toEqual([
+      { label: 'Apr 9', rewards: [6] },
+      { label: 'Apr 30', rewards: [3] },
+    ])
+    expect(
       result.buckets.reduce((total, bucket) => total + bucket.votes, 0),
     ).toBe(6)
     expect(

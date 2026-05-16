@@ -54,6 +54,7 @@ import type {
 } from '@/features/dashboard/types'
 import { DASHBOARD_INCOME_PALETTE } from '@/features/dashboard/chartPalette'
 import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
+import PayoutDistributionChart from '@/features/dashboard/PayoutDistributionChart'
 import PostPerformanceScatterChart from '@/features/dashboard/PostPerformanceScatterChart'
 import RewardIncomeHeatmapChart from '@/features/dashboard/RewardIncomeHeatmapChart'
 import RewardIncomeStackedChart from '@/features/dashboard/RewardIncomeStackedChart'
@@ -484,6 +485,20 @@ export function AccountAnalyticsPage({
             <PostPerformanceScatterChart posts={overview.performancePosts} />
           ) : (
             <EmptyStateMessage message="No rewarded posts were found for this period." />
+          )}
+        </ChartPanel>
+      ) : null}
+
+      {focus === 'all' || focus === 'publishing' ? (
+        <ChartPanel
+          title="Payout distribution"
+          subtitle="Median and spread by period"
+          isLoading={dashboardQuery.isLoading}
+        >
+          {overview?.payoutDistribution.some((bucket) => bucket.rewards.length > 0) ? (
+            <PayoutDistributionChart buckets={overview.payoutDistribution} />
+          ) : (
+            <EmptyStateMessage message="No paid posts were found for this period." />
           )}
         </ChartPanel>
       ) : null}

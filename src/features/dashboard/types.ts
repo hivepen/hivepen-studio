@@ -90,6 +90,13 @@ export type DashboardTopPost = Pick<
   primaryTag?: string
 }
 
+export type DashboardPayoutDistributionBucket = {
+  key: string
+  shortLabel: string
+  longLabel: string
+  rewards: Array<number>
+}
+
 export type DashboardSummary = {
   totalRewards: number
   totalRewardsChange: number | null
@@ -109,6 +116,7 @@ export type DashboardHistoricalOverview = {
   breakdown: Array<DashboardBreakdownItem>
   incomeBreakdown: Array<DashboardIncomeBreakdownCategory>
   summary: DashboardSummary
+  payoutDistribution: Array<DashboardPayoutDistributionBucket>
   performancePosts: Array<DashboardTopPost>
   topPosts: Array<DashboardTopPost>
   cachedAt: number
