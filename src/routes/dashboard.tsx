@@ -296,8 +296,10 @@ function Dashboard() {
       value: followerCount != null ? formatInteger(followerCount) : null,
       suffix: '',
       description:
-        followingCount != null
-          ? `Following ${formatInteger(followingCount)} accounts`
+        followingCount != null && followerCount != null
+          ? `Following ${formatInteger(followingCount)} · ${formatFollowRatio(followerCount, followingCount)}`
+          : followingCount != null
+            ? `Following ${formatInteger(followingCount)} accounts`
           : 'Connected profile',
     },
     // TODO(stat-cards): Pair the average with post count and total earned in
@@ -1365,6 +1367,14 @@ function formatPercent(value: number, digits = 1) {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(value)
+}
+
+function formatFollowRatio(followers: number, following: number) {
+  if (!Number.isFinite(followers) || !Number.isFinite(following) || following <= 0) {
+    return 'ratio —'
+  }
+
+  return `${(followers / following).toFixed(2)}x ratio`
 }
 
 function formatSavingsProjection(
