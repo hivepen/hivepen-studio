@@ -510,6 +510,7 @@ export default function IncomeBreakdownChart({
 
     const resolveColor = (token: string) =>
       resolveCssVar(token, container)
+    const surfaceColor = resolveColor(semanticVar('bg'))
 
     const nothingActive =
       activeCategoryId == null && activeSubcategoryId == null
@@ -528,10 +529,12 @@ export default function IncomeBreakdownChart({
           opacity:
             nothingActive || categoryIsActive || categoryHasActiveChild ? 1 : 0.2,
           borderRadius: 7,
-          borderWidth: categoryIsActive ? 2 : 0,
+          borderWidth: categoryIsActive ? 3 : 2.5,
           borderColor: categoryIsActive
-            ? resolveColor(semanticVar(`${getPaletteName(category.colorToken)}.border`))
-            : 'transparent',
+            ? resolveColor(
+                semanticVar(`${getPaletteName(category.colorToken)}.border`),
+              )
+            : surfaceColor,
         },
         label: { show: false },
         emphasis: { disabled: true },
@@ -552,12 +555,12 @@ export default function IncomeBreakdownChart({
                     ? 0.72
                     : 0.14,
               borderRadius: 4,
-              borderWidth: subcategoryIsActive ? 1.5 : 0,
+              borderWidth: subcategoryIsActive ? 2.25 : 1.5,
               borderColor: subcategoryIsActive
                 ? resolveColor(
                     semanticVar(`${getPaletteName(subcategory.colorToken)}.border`),
                   )
-                : 'transparent',
+                : surfaceColor,
             },
             label:
               percent >= 0.07
@@ -612,26 +615,18 @@ export default function IncomeBreakdownChart({
           },
           itemStyle: {
             borderRadius: 7,
-            borderWidth: 2,
+            borderWidth: 0,
           },
           levels: [
             {},
             {
               r0: 68,
               r: 104,
-              itemStyle: {
-                borderWidth: 2.5,
-                borderColor: resolveColor(semanticVar('bg')),
-              },
               label: { show: false },
             },
             {
               r0: 110,
               r: 132,
-              itemStyle: {
-                borderWidth: 1.5,
-                borderColor: resolveColor(semanticVar('bg')),
-              },
               label: {
                 minAngle: 8,
               },
