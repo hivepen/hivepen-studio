@@ -128,18 +128,7 @@ function CenterLabel({
     <g>
       <text
         x={cx}
-        y={cy - lineHeight * 1.3}
-        textAnchor="middle"
-        fill={semanticVar('fg.subtle')}
-        fontSize="10"
-        fontFamily="var(--chakra-fonts-mono)"
-        letterSpacing="2"
-      >
-        TOTAL INCOME
-      </text>
-      <text
-        x={cx}
-        y={cy - lineHeight * 0.1}
+        y={cy - lineHeight * 0.2}
         textAnchor="middle"
         fill={semanticVar('fg')}
         fontSize="24"
@@ -157,16 +146,6 @@ function CenterLabel({
         fontFamily="var(--chakra-fonts-body)"
       >
         HBD
-      </text>
-      <text
-        x={cx}
-        y={cy + lineHeight * 2.2}
-        textAnchor="middle"
-        fill={semanticVar('fg.subtle')}
-        fontSize="10"
-        fontFamily="var(--chakra-fonts-body)"
-      >
-        {RANGE_LABELS[range]}
       </text>
     </g>
   )
