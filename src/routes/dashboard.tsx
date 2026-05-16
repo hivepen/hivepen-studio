@@ -120,21 +120,31 @@ const FOCUS_OPTIONS: Array<{ label: string; value: DashboardFocus }> = [
   { label: 'Account', value: 'account' },
 ]
 
-function Dashboard() {
-  const [account, , accountReady] = useLocalStorageState<string | null>(
+export function AccountAnalyticsPage({
+  accountname,
+}: {
+  accountname?: string
+}) {
+  const [activeAccount, , accountReady] = useLocalStorageState<string | null>(
     'hivepen.account',
     null,
   )
   const [range, setRange] = useState<DashboardRange>('3M')
   const [focus, setFocus] = useState<DashboardFocus>('all')
   const locale = getLocale()
+  const routeAccount = accountname?.replace(/^@/, '') ?? null
+  const isScopedAccountView = routeAccount !== null
+  const account = isScopedAccountView
+    ? routeAccount
+    : accountReady
+      ? activeAccount
+      : null
 
-  const normalizedAccount = accountReady ? account : null
-  const profileQuery = useProfileQuery(normalizedAccount)
-  const walletQuery = useWalletQuery(normalizedAccount)
-  const dashboardQuery = useDashboardQuery(normalizedAccount, range)
+  const profileQuery = useProfileQuery(account)
+  const walletQuery = useWalletQuery(account)
+  const dashboardQuery = useDashboardQuery(account, range)
 
-  if (!accountReady) {
+  if (!isScopedAccountView && !accountReady) {
     return (
       <Stack gap={6} p={6}>
         <Skeleton height="96px" borderRadius="24px" />
@@ -293,8 +303,7 @@ function Dashboard() {
           : null,
       suffix: ' HBD',
       description:
-        overview?.summary.publishedPosts != null &&
-        overview?.summary.totalRewards != null
+        overview?.summary.publishedPosts != null
           ? `${overview.summary.publishedPosts} posts · ${formatTokenAmount(overview.summary.totalRewards, 2)} HBD total`
           : undefined,
     },
@@ -676,6 +685,10 @@ function Dashboard() {
   )
 }
 
+function Dashboard() {
+  return <AccountAnalyticsPage />
+}
+
 function MetricCard({
   label,
   value,
@@ -817,7 +830,7 @@ function RewardIncomeChart({
   return (
     <Stack gap={3}>
       <RewardIncomeStackedChart buckets={overview.buckets} />
-      <RewardIncomeHeatmapChart dailyIncome={overview.dailyIncome ?? []} />
+      <RewardIncomeHeatmapChart dailyIncome={overview.dailyIncome} />
 
       <HStack gap={5} wrap="wrap">
         {overview.breakdown.map((item) => (
