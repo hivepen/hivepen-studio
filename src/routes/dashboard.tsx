@@ -56,6 +56,7 @@ import type {
 } from '@/features/dashboard/types'
 import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
 import HbdIcon from '@/components/hive/HbdIcon'
+import HiveIcon from '@/components/hive/HiveIcon'
 import { Avatar } from '@/components/ui/avatar'
 import useDashboardQuery from '@/features/dashboard/useDashboardQuery'
 import useProfileQuery from '@/features/profile/useProfileQuery'
@@ -209,8 +210,8 @@ function Dashboard() {
     {
       category: 'account',
       label: 'Hive Power',
-      palette: 'green',
-      icon: <Icon as={Crown} boxSize={4} />,
+      palette: 'orange',
+      icon: <HiveIcon boxSize={4} color="orange.fg" />,
       value:
         wallet?.metrics.effectiveHivePower != null
           ? formatTokenAmount(wallet.metrics.effectiveHivePower, 2)
@@ -253,7 +254,7 @@ function Dashboard() {
           ? formatTokenAmount(overview.summary.totalRewards, 2)
           : null,
       suffix: ' HBD',
-      description: `${rangeToDescription(range)} · author + curation + interest`,
+      description: formatTopRewardSource(overview),
     },
     // TODO(stat-cards): Replace the generic regen note with an ETA to full
     // voting mana or next recommended vote threshold if we add that utility.
@@ -283,7 +284,7 @@ function Dashboard() {
       suffix: '',
       description:
         overview?.summary.publishedPosts != null
-          ? `${overview.summary.publishedPosts} in ${rangeToDescription(range)}`
+          ? `${overview.summary.publishedPosts} in ${rangeToDescription(range)} · ${formatPostingCadence(overview.summary.publishedPosts, range)}`
           : 'From public Hive APIs',
     },
     // TODO(stat-cards): Add net audience context such as follower/following
@@ -1395,6 +1396,33 @@ function formatSavingsProjection(
   const compoundedYearlyGain = savingsHbd * ((1 + apr / 12) ** 12 - 1)
 
   return `${formatPercent(apr, 0)} APR · +${formatTokenAmount(monthlyPayout, 2)}/mo · ~${formatTokenAmount(compoundedYearlyGain, 1)} HBD/year`
+}
+
+function formatTopRewardSource(overview: DashboardHistoricalOverview | null) {
+  if (!overview?.breakdown.length) {
+    return 'No rewards yet'
+  }
+
+  const topSource = overview.breakdown.reduce((top, item) =>
+    item.value > top.value ? item : top,
+  )
+
+  return `${rangeToDescription(overview.range)} · ${topSource.label.toLowerCase()} lead`
+}
+
+function formatPostingCadence(posts: number, range: DashboardRange) {
+  const months =
+    range === '1M' ? 1 : range === '3M' ? 3 : range === '6M' ? 6 : 12
+  const perMonth = posts / months
+
+  if (perMonth >= 1) {
+    return `~${formatTokenAmount(perMonth, 1)}/mo`
+  }
+
+  const weeks =
+    range === '1M' ? 4 : range === '3M' ? 13 : range === '6M' ? 26 : 52
+  const perWeek = posts / weeks
+  return `~${formatTokenAmount(perWeek, 1)}/wk`
 }
 
 function getChartMax<T extends Record<string, unknown>>(
