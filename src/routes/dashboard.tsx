@@ -54,6 +54,7 @@ import type {
 } from '@/features/dashboard/types'
 import { DASHBOARD_INCOME_PALETTE } from '@/features/dashboard/chartPalette'
 import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
+import RewardIncomeHeatmapChart from '@/features/dashboard/RewardIncomeHeatmapChart'
 import RewardIncomeStackedChart from '@/features/dashboard/RewardIncomeStackedChart'
 import HbdIcon from '@/components/hive/HbdIcon'
 import HiveIcon from '@/components/hive/HiveIcon'
@@ -801,6 +802,7 @@ function RewardIncomeChart({
   return (
     <Stack gap={3}>
       <RewardIncomeStackedChart buckets={overview.buckets} />
+      <RewardIncomeHeatmapChart buckets={overview.buckets} />
 
       <HStack gap={5} wrap="wrap">
         {overview.breakdown.map((item) => (
