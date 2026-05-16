@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { zodValidator } from '@tanstack/zod-adapter'
 import { z } from 'zod'
 import {
@@ -86,7 +86,7 @@ const readStoredState = (): StoredSearchState | null => {
 }
 
 function Search() {
-  const navigate = useNavigate()
+  const navigate = Route.useNavigate()
   const searchParams = Route.useSearch()
   const { scope, setScope, username, setUsername } = usePostsListState()
   const readyRef = useRef(false)
@@ -175,7 +175,8 @@ function Search() {
           : nextFilters.author.trim() || undefined
       navigate({
         replace: true,
-        search: {
+        search: (prev) => ({
+          ...prev,
           sort: nextFilters.sort,
           tag: nextFilters.tag || undefined,
           community: nextFilters.community || undefined,
@@ -183,7 +184,7 @@ function Search() {
           dateFrom: nextFilters.dateFrom || undefined,
           dateTo: nextFilters.dateTo || undefined,
           scope: nextScope,
-        },
+        }),
       })
     },
     [navigate, scope, username],
@@ -381,14 +382,15 @@ function Search() {
         totalPosts={cardResults.length}
         hasNextPage={postsQuery.hasNextPage}
         isFetchingNextPage={postsQuery.isFetchingNextPage}
-        lastPost={
-          cardResults.length > 0
+        lastPost={(() => {
+          const lastPost = cardResults[cardResults.length - 1]
+          return lastPost?.permlink
             ? {
-                author: cardResults[cardResults.length - 1].author,
-                permlink: cardResults[cardResults.length - 1].permlink,
+                author: lastPost.author,
+                permlink: lastPost.permlink,
               }
             : undefined
-        }
+        })()}
       />
 
       <Box

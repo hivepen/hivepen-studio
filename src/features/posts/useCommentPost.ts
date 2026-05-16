@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { Operation } from '@hiveio/dhive'
 import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
 import { buildCommentOperations } from '@/lib/hive/operations'
 import { m } from '@/paraglide/messages'
@@ -37,7 +38,10 @@ export default function useCommentPost({
       body: body.trim(),
     })
 
-    const response = await signAndBroadcastOperations(operations, 'Posting')
+    const response = await signAndBroadcastOperations(
+      operations as unknown as Array<Operation>,
+      'Posting',
+    )
     if (!response.success) {
       setError(response.error ?? m.post_actions_comment_failed())
     } else {

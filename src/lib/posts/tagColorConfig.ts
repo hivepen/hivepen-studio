@@ -1,5 +1,5 @@
-import { BitcoinIcon, CameraIcon } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react';
+import { CameraIcon } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 export const TAG_PALETTES = [
   'gray',

@@ -4,8 +4,6 @@ export type DashboardRange = '1M' | '3M' | '6M' | '1Y'
 
 export type DashboardBucketUnit = 'week' | 'month'
 
-export type DashboardChartKind = 'line' | 'bar'
-
 export type DashboardBucket = {
   key: string
   shortLabel: string
@@ -21,12 +19,54 @@ export type DashboardBucket = {
   comments: number
 }
 
+export type DashboardDailyIncomeDay = {
+  date: string
+  authorRewards: number
+  curationRewards: number
+  savingsInterest: number
+  totalRewards: number
+}
+
 export type DashboardBreakdownItem = {
   id: 'author' | 'curation' | 'interest'
   label: string
   value: number
   share: number
   colorToken: string
+}
+
+export type DashboardIncomeBreakdownCategoryId =
+  | 'author'
+  | 'curation'
+  | 'interest'
+  | 'witness'
+  | 'transfers'
+
+export type DashboardIncomeBreakdownSubcategoryId =
+  | 'post_rewards'
+  | 'comment_rewards'
+  | 'curation_votes'
+  | 'hbd_savings'
+  | 'witness_blocks'
+  | 'delegation_income'
+  | 'other_transfers'
+
+export type DashboardIncomeBreakdownSubcategory = {
+  id: DashboardIncomeBreakdownSubcategoryId
+  parentId: DashboardIncomeBreakdownCategoryId
+  label: string
+  value: number
+  share: number
+  colorToken: string
+}
+
+export type DashboardIncomeBreakdownCategory = {
+  id: DashboardIncomeBreakdownCategoryId
+  label: string
+  value: number
+  share: number
+  colorToken: string
+  subcategories: Array<DashboardIncomeBreakdownSubcategory>
 }
 
 export type DashboardTopPost = Pick<
@@ -48,6 +88,21 @@ export type DashboardTopPost = Pick<
   primaryTag?: string
 }
 
+export type DashboardPayoutDistributionBucket = {
+  key: string
+  shortLabel: string
+  longLabel: string
+  rewards: Array<number>
+}
+
+export type DashboardCommunityRewardBreakdown = {
+  id: string
+  label: string
+  postRewards: number
+  commentRewards: number
+  totalRewards: number
+}
+
 export type DashboardSummary = {
   totalRewards: number
   totalRewardsChange: number | null
@@ -59,12 +114,14 @@ export type DashboardSummary = {
 export type DashboardHistoricalOverview = {
   range: DashboardRange
   bucketUnit: DashboardBucketUnit
-  rewardIncomeChartKind: DashboardChartKind
-  rewardTrendChartKind: DashboardChartKind
-  engagementChartKind: DashboardChartKind
   buckets: Array<DashboardBucket>
+  dailyIncome: Array<DashboardDailyIncomeDay>
   breakdown: Array<DashboardBreakdownItem>
+  incomeBreakdown: Array<DashboardIncomeBreakdownCategory>
   summary: DashboardSummary
+  payoutDistribution: Array<DashboardPayoutDistributionBucket>
+  communityRewardBreakdown: Array<DashboardCommunityRewardBreakdown>
+  performancePosts: Array<DashboardTopPost>
   topPosts: Array<DashboardTopPost>
   cachedAt: number
 }

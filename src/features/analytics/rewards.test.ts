@@ -12,6 +12,7 @@ describe('aggregateMonthlyPostRewards', () => {
         title: 'April',
         created: '2026-04-10T12:00:00.000Z',
         tags: [],
+        images: [],
         payout: { pending: '0.000 HBD', total: '4.000 HBD' },
       },
       {
@@ -20,6 +21,7 @@ describe('aggregateMonthlyPostRewards', () => {
         title: 'March',
         created: '2026-03-15T12:00:00.000Z',
         tags: [],
+        images: [],
         payout: { pending: '0.000 HBD', total: '2.500 HBD' },
       },
       {
@@ -28,6 +30,7 @@ describe('aggregateMonthlyPostRewards', () => {
         title: 'Old',
         created: '2025-03-01T12:00:00.000Z',
         tags: [],
+        images: [],
         payout: { pending: '0.000 HBD', total: '9.000 HBD' },
       },
     ]
@@ -62,6 +65,7 @@ describe('aggregateMonthlyPostRewards', () => {
         title: 'Draft',
         created: '2026-04-01T12:00:00.000Z',
         tags: [],
+        images: [],
       },
     ]
 

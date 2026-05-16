@@ -17,31 +17,31 @@ import {
   Wrap,
 } from '@chakra-ui/react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { Link } from '@tanstack/react-router'
 import {
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
+  ChevronUp,
+  MessageCircle,
+  Send,
+  ThumbsUp,
+} from 'lucide-react'
+import {
   useEffect,
   useRef,
   useState,
 } from 'react'
-import {
-  ChevronUp,
-  MessageCircle,
-  Ruler,
-  Send,
-  SlidersHorizontal,
-  ThumbsUp,
-} from 'lucide-react'
-import { Link } from '@tanstack/react-router'
+import type {
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+} from 'react'
+import type { VoteDetail } from '@/lib/posts/votes'
 import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
+import AccountAvatar from '@/components/AccountAvatar'
+import { Tooltip } from '@/components/ui/tooltip'
 import useVotePost from '@/features/posts/useVotePost'
 import useCommentPost from '@/features/posts/useCommentPost'
 import usePostVoteDetails from '@/hooks/usePostVoteDetails'
-import { Tooltip } from '@/components/ui/tooltip'
-import type { VoteDetail } from '@/lib/posts/votes'
 import { formatVotePercent, sortVoteDetailsByPercent } from '@/lib/posts/votes'
 import { m } from '@/paraglide/messages'
-import AccountAvatar from '@/components/AccountAvatar'
 
 export type VoteFeedbackOrigin = {
   clientX: number
@@ -167,7 +167,7 @@ export default function PostActions({
       onVoteSuccess?.()
     } else {
       onVotePressEnd?.()
-      onVoteError?.(response.error ?? m.post_actions_vote_failed())
+      onVoteError?.(response.error)
     }
   }
 

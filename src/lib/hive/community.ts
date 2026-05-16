@@ -15,7 +15,8 @@ export type HiveCommunityDetail = {
 export const fetchCommunity = async (name: string) => {
   const result = (await hiveClient.hivemind.getCommunity({
     name,
-  })) as HiveCommunityDetail | null
+    observer: '',
+  })) as unknown as HiveCommunityDetail | null
 
   return result ?? null
 }

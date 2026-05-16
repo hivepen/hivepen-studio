@@ -24,6 +24,7 @@ import { Route as AccountnameIndexRouteImport } from './routes/$accountname.inde
 import { Route as ProfileAccountnameRouteImport } from './routes/profile.$accountname'
 import { Route as CommunitiesCommunityIdRouteImport } from './routes/communities.$communityId'
 import { Route as AccountnameWalletRouteImport } from './routes/$accountname.wallet'
+import { Route as AccountnameAnalyticsRouteImport } from './routes/$accountname.analytics'
 import { Route as AccountnameWalletIndexRouteImport } from './routes/$accountname.wallet.index'
 import { Route as PostAuthorPermlinkRouteImport } from './routes/post.$author.$permlink'
 import { Route as AccountnameWalletHpRouteImport } from './routes/$accountname.wallet.hp'
@@ -105,6 +106,11 @@ const AccountnameWalletRoute = AccountnameWalletRouteImport.update({
   path: '/$accountname/wallet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountnameAnalyticsRoute = AccountnameAnalyticsRouteImport.update({
+  id: '/$accountname/analytics',
+  path: '/$accountname/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountnameWalletIndexRoute = AccountnameWalletIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
+  '/$accountname/analytics': typeof AccountnameAnalyticsRoute
   '/$accountname/wallet': typeof AccountnameWalletRouteWithChildren
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
+  '/$accountname/analytics': typeof AccountnameAnalyticsRoute
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
   '/$accountname': typeof AccountnameIndexRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
   '/users': typeof UsersRoute
+  '/$accountname/analytics': typeof AccountnameAnalyticsRoute
   '/$accountname/wallet': typeof AccountnameWalletRouteWithChildren
   '/communities/$communityId': typeof CommunitiesCommunityIdRoute
   '/profile/$accountname': typeof ProfileAccountnameRoute
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/users'
+    | '/$accountname/analytics'
     | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/users'
+    | '/$accountname/analytics'
     | '/communities/$communityId'
     | '/profile/$accountname'
     | '/$accountname'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/users'
+    | '/$accountname/analytics'
     | '/$accountname/wallet'
     | '/communities/$communityId'
     | '/profile/$accountname'
@@ -274,6 +286,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
   UsersRoute: typeof UsersRoute
+  AccountnameAnalyticsRoute: typeof AccountnameAnalyticsRoute
   AccountnameWalletRoute: typeof AccountnameWalletRouteWithChildren
   ProfileAccountnameRoute: typeof ProfileAccountnameRoute
   AccountnameIndexRoute: typeof AccountnameIndexRoute
@@ -387,6 +400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountnameWalletRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$accountname/analytics': {
+      id: '/$accountname/analytics'
+      path: '/$accountname/analytics'
+      fullPath: '/$accountname/analytics'
+      preLoaderRoute: typeof AccountnameAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$accountname/wallet/': {
       id: '/$accountname/wallet/'
       path: '/'
@@ -467,6 +487,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,
   UsersRoute: UsersRoute,
+  AccountnameAnalyticsRoute: AccountnameAnalyticsRoute,
   AccountnameWalletRoute: AccountnameWalletRouteWithChildren,
   ProfileAccountnameRoute: ProfileAccountnameRoute,
   AccountnameIndexRoute: AccountnameIndexRoute,

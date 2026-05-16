@@ -258,6 +258,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
   const breadcrumb = useMemo(() => {
     const segments = pathname.split('/').filter(Boolean)
     const map: Record<string, string> = {
+      analytics: 'Analytics',
       dashboard: m.breadcrumb_dashboard(),
       drafts: m.breadcrumb_drafts(),
       editor: m.breadcrumb_editor(),

@@ -14,7 +14,6 @@ import {
   Text,
   Timeline,
 } from '@chakra-ui/react'
-import { Chart, useChart } from '@chakra-ui/charts'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import {
   Activity,
@@ -22,11 +21,8 @@ import {
   ArrowUpToLine,
   BadgeCheck,
   Coins,
-  Crown,
-  Droplets,
   Gauge,
   Gem,
-  HandCoins,
   HandHeart,
   Landmark,
   PiggyBank,
@@ -40,25 +36,19 @@ import {
   WalletCards,
 } from 'lucide-react'
 import { useState } from 'react'
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Pie,
-  PieChart,
-  Sector,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import type { ComponentProps, ReactNode } from 'react'
-import type { Payload as RechartsTooltipPayload } from 'recharts/types/component/DefaultTooltipContent'
 import type {
   DashboardHistoricalOverview,
   DashboardRange,
 } from '@/features/dashboard/types'
+import CommunityRewardBreakdownChart from '@/features/dashboard/CommunityRewardBreakdownChart'
+import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
+import PayoutDistributionChart from '@/features/dashboard/PayoutDistributionChart'
+import PostPerformanceScatterChart from '@/features/dashboard/PostPerformanceScatterChart'
+import RewardIncomeHeatmapChart from '@/features/dashboard/RewardIncomeHeatmapChart'
+import RewardIncomeStackedChart from '@/features/dashboard/RewardIncomeStackedChart'
+import HbdIcon from '@/components/hive/HbdIcon'
+import HiveIcon from '@/components/hive/HiveIcon'
 import { Avatar } from '@/components/ui/avatar'
 import useDashboardQuery from '@/features/dashboard/useDashboardQuery'
 import useProfileQuery from '@/features/profile/useProfileQuery'
@@ -84,31 +74,10 @@ const RANGE_OPTIONS: Array<{ label: DashboardRange; value: DashboardRange }> = [
   { label: '1Y', value: '1Y' },
 ]
 
-const CHART_SERIES = {
-  author: { color: 'green.solid', label: 'Author', key: 'authorRewards' },
-  curation: {
-    color: 'purple.solid',
-    label: 'Curation',
-    key: 'curationRewards',
-  },
-  interest: {
-    color: 'yellow.solid',
-    label: 'Interest',
-    key: 'savingsInterest',
-  },
-  total: { color: 'teal.solid', label: 'Total', key: 'totalRewards' },
-  votes: { color: 'green.solid', label: 'Votes', key: 'votes' },
-  comments: { color: 'purple.solid', label: 'Comments', key: 'comments' },
-  posts: { color: 'blue.solid', label: 'Posts', key: 'posts' },
-} as const
-
 type DashboardFocus = 'all' | 'rewards' | 'publishing' | 'account'
 
 const PAGE_MAX_WIDTH = '1240px'
 const SURFACE_RADIUS = '16px'
-const CHART_MARGIN = { top: 8, right: 10, left: -18, bottom: 0 }
-const BAR_CHART_MARGIN = { top: 8, right: 10, left: -10, bottom: 0 }
-
 const FOCUS_OPTIONS: Array<{ label: string; value: DashboardFocus }> = [
   { label: 'All', value: 'all' },
   { label: 'Rewards', value: 'rewards' },
@@ -116,21 +85,31 @@ const FOCUS_OPTIONS: Array<{ label: string; value: DashboardFocus }> = [
   { label: 'Account', value: 'account' },
 ]
 
-function Dashboard() {
-  const [account, , accountReady] = useLocalStorageState<string | null>(
+export function AccountAnalyticsPage({
+  accountname,
+}: {
+  accountname?: string
+}) {
+  const [activeAccount, , accountReady] = useLocalStorageState<string | null>(
     'hivepen.account',
     null,
   )
   const [range, setRange] = useState<DashboardRange>('3M')
   const [focus, setFocus] = useState<DashboardFocus>('all')
   const locale = getLocale()
+  const routeAccount = accountname?.replace(/^@/, '') ?? null
+  const isScopedAccountView = routeAccount !== null
+  const account = isScopedAccountView
+    ? routeAccount
+    : accountReady
+      ? activeAccount
+      : null
 
-  const normalizedAccount = accountReady ? account : null
-  const profileQuery = useProfileQuery(normalizedAccount)
-  const walletQuery = useWalletQuery(normalizedAccount)
-  const dashboardQuery = useDashboardQuery(normalizedAccount, range)
+  const profileQuery = useProfileQuery(account)
+  const walletQuery = useWalletQuery(account)
+  const dashboardQuery = useDashboardQuery(account, range)
 
-  if (!accountReady) {
+  if (!isScopedAccountView && !accountReady) {
     return (
       <Stack gap={6} p={6}>
         <Skeleton height="96px" borderRadius="24px" />
@@ -201,122 +180,108 @@ function Dashboard() {
     category: Exclude<DashboardFocus, 'all'>
     label: string
     palette: string
-    icon: typeof Crown
+    icon?: ReactNode
+    media?: ReactNode
     value: string | null
     suffix: string
-    description: string
+    description?: string
+    children?: ReactNode
   }> = [
     {
       category: 'account',
       label: 'Hive Power',
-      palette: 'green',
-      icon: Crown,
+      palette: 'orange',
+      icon: <HiveIcon boxSize={4} color="orange.fg" />,
       value:
         wallet?.metrics.effectiveHivePower != null
           ? formatTokenAmount(wallet.metrics.effectiveHivePower, 2)
           : null,
       suffix: ' HP',
-      description:
-        wallet?.metrics.delegatedHivePower != null
-          ? `${formatTokenAmount(wallet.metrics.hivePower, 2)} owned · ${formatTokenAmount(wallet.metrics.delegatedHivePower, 2)} delegated out`
-          : 'Effective stake across owned and delegated balances',
+      children: renderHivePowerCardBody(wallet?.metrics ?? null),
     },
+    // TODO(stat-cards): Add a time-to-next-payout style savings cue derived
+    // from the account's earning balance so the card answers "when" as well as
+    // "how much".
     {
       category: 'rewards',
       label: 'HBD Savings',
-      palette: 'yellow',
-      icon: Droplets,
+      palette: 'green',
+      icon: <HbdIcon boxSize={4} />,
       value:
         wallet?.metrics.savingsHbd != null
           ? formatTokenAmount(wallet.metrics.savingsHbd, 3)
           : null,
       suffix: ' HBD',
-      description:
-        wallet?.metrics.hbdInterestRate != null
-          ? `${formatPercent(wallet.metrics.hbdInterestRate / 100, 1)} APR on savings`
-          : 'Savings balance available on-chain',
-    },
-    {
-      category: 'rewards',
-      label: 'Total rewards',
-      palette: 'purple',
-      icon: HandCoins,
-      value:
-        overview?.summary.totalRewards != null
-          ? formatTokenAmount(overview.summary.totalRewards, 2)
-          : null,
-      suffix: ' HBD',
-      description: `${rangeToDescription(range)} across author, curation, and interest income`,
+      children: renderSavingsCardBody(
+        wallet?.metrics.savingsHbd ?? null,
+        wallet?.metrics.hbdInterestRate ?? null,
+      ),
     },
     {
       category: 'account',
       label: 'Voting power',
       palette: 'green',
-      icon: Gauge,
+      icon: <Icon as={Gauge} boxSize={4} />,
       value:
         wallet?.metrics.votingManaPercent != null
           ? formatTokenAmount(wallet.metrics.votingManaPercent, 1)
           : null,
       suffix: '%',
-      description:
-        wallet?.metrics.downvoteManaPercent != null
-          ? `${formatTokenAmount(wallet.metrics.downvoteManaPercent, 1)}% downvote mana available`
-          : 'Mana regenerates continuously over time',
     },
     {
       category: 'publishing',
       label: 'Posts published',
       palette: 'purple',
-      icon: WalletCards,
+      icon: <Icon as={WalletCards} boxSize={4} />,
       value: totalPosts != null ? String(totalPosts) : null,
       suffix: '',
-      description:
-        overview?.summary.publishedPosts != null
-          ? `${overview.summary.publishedPosts} published in ${rangeToDescription(range)}`
-          : 'Published posts found through public Hive APIs',
+      description: formatPublishingContext(
+        overview?.summary.publishedPosts ?? null,
+        totalPosts,
+        range,
+      ),
     },
+    // TODO(stat-cards): Add net audience context such as follower/following
+    // ratio or recent follower delta once we have a trustworthy source.
     {
       category: 'account',
       label: 'Followers',
       palette: 'green',
-      icon: UserRound,
+      icon: <Icon as={UserRound} boxSize={4} />,
       value: followerCount != null ? formatInteger(followerCount) : null,
       suffix: '',
       description:
-        followingCount != null
-          ? `Following ${formatInteger(followingCount)} accounts`
-          : 'Follower count from the connected profile',
+        followingCount != null && followerCount != null
+          ? `Following ${formatInteger(followingCount)} · ${formatFollowRatio(followerCount, followingCount)}`
+          : followingCount != null
+            ? `Following ${formatInteger(followingCount)} accounts`
+            : undefined,
     },
     {
       category: 'publishing',
       label: 'Avg post reward',
       palette: 'yellow',
-      icon: Gem,
+      icon: <Icon as={Gem} boxSize={4} />,
       value:
         overview?.summary.averagePostReward != null
           ? formatTokenAmount(overview.summary.averagePostReward, 2)
           : null,
       suffix: ' HBD',
-      description: `Average total payout per post in ${rangeToDescription(range)}`,
+      description:
+        overview?.summary.publishedPosts != null
+          ? `${overview.summary.publishedPosts} posts · ${formatTokenAmount(overview.summary.totalRewards, 2)} HBD total`
+          : undefined,
     },
     {
       category: 'account',
       label: 'Account age',
       palette: 'gray',
-      icon: Activity,
+      icon: <Icon as={Activity} boxSize={4} />,
       value: wallet?.account.created
         ? formatAccountAge(wallet.account.created)
         : null,
       suffix: '',
-      description: wallet?.account.created
-        ? `Member since ${new Date(wallet.account.created).toLocaleDateString(
-            undefined,
-            {
-              month: 'long',
-              year: 'numeric',
-            },
-          )}`
-        : 'Age based on on-chain account creation time',
+      description: formatAccountMilestone(wallet?.account.created ?? null),
     },
   ]
 
@@ -412,9 +377,11 @@ function Dashboard() {
               label={card.label}
               palette={card.palette}
               icon={card.icon}
+              media={card.media}
               value={card.value}
               suffix={card.suffix}
               description={card.description}
+              children={card.children}
               isLoading={
                 dashboardQuery.isLoading ||
                 walletQuery.isLoading ||
@@ -427,44 +394,70 @@ function Dashboard() {
       {matchesDashboardFocus('rewards', focus) ? (
         <SimpleGrid columns={{ base: 1, lg: 3 }} gap={2.5} alignItems="stretch">
           <ChartPanel
-            title="Reward income by type"
-            subtitle="Author · curation · interest · weekly HBD"
+            title="Reward income"
+            subtitle="Author · curation · interest"
             gridColumn={{ base: 'auto', lg: 'span 2' }}
             isLoading={dashboardQuery.isLoading}
           >
             <RewardIncomeChart overview={overview} />
           </ChartPanel>
-          <ChartPanel
-            title="Reward breakdown"
-            subtitle="% of total income"
-            isLoading={dashboardQuery.isLoading}
-          >
-            <RewardBreakdownChart overview={overview} />
-          </ChartPanel>
         </SimpleGrid>
       ) : null}
 
+      {matchesDashboardFocus('rewards', focus) && overview ? (
+        <ChartPanel
+          title="Income breakdown"
+          isLoading={dashboardQuery.isLoading}
+        >
+          <IncomeBreakdownChart
+            range={overview.range}
+            categories={overview.incomeBreakdown}
+          />
+        </ChartPanel>
+      ) : null}
+
       {focus === 'all' || focus === 'rewards' || focus === 'publishing' ? (
-        <SimpleGrid columns={{ base: 1, lg: 2 }} gap={2.5}>
-          {matchesDashboardFocus('rewards', focus) ? (
-            <ChartPanel
-              title="Reward trend"
-              subtitle="Combined rewards · weekly"
-              isLoading={dashboardQuery.isLoading}
-            >
-              <RewardTrendChart overview={overview} />
-            </ChartPanel>
-          ) : null}
-          {matchesDashboardFocus('publishing', focus) ? (
-            <ChartPanel
-              title="Engagement trend"
-              subtitle="Votes · comments · posts"
-              isLoading={dashboardQuery.isLoading}
-            >
-              <EngagementChart overview={overview} />
-            </ChartPanel>
-          ) : null}
-        </SimpleGrid>
+        <ChartPanel
+          title="Post performance map"
+          subtitle="Payout × votes · bubble = comments"
+          isLoading={dashboardQuery.isLoading}
+        >
+          {overview?.performancePosts.length ? (
+            <PostPerformanceScatterChart posts={overview.performancePosts} />
+          ) : (
+            <EmptyStateMessage message="No rewarded posts were found for this period." />
+          )}
+        </ChartPanel>
+      ) : null}
+
+      {focus === 'all' || focus === 'publishing' ? (
+        <ChartPanel
+          title="Payout distribution"
+          subtitle="Median and spread by period"
+          isLoading={dashboardQuery.isLoading}
+        >
+          {overview?.payoutDistribution.some((bucket) => bucket.rewards.length > 0) ? (
+            <PayoutDistributionChart buckets={overview.payoutDistribution} />
+          ) : (
+            <EmptyStateMessage message="No paid posts were found for this period." />
+          )}
+        </ChartPanel>
+      ) : null}
+
+      {focus === 'all' || focus === 'publishing' ? (
+        <ChartPanel
+          title="Community reward breakdown"
+          subtitle="Author rewards by community"
+          isLoading={dashboardQuery.isLoading}
+        >
+          {overview?.communityRewardBreakdown.length ? (
+            <CommunityRewardBreakdownChart
+              communities={overview.communityRewardBreakdown}
+            />
+          ) : (
+            <EmptyStateMessage message="No community-attributed author rewards were found for this period." />
+          )}
+        </ChartPanel>
       ) : null}
 
       <SimpleGrid columns={{ base: 1, lg: 2 }} gap={2.5}>
@@ -584,7 +577,7 @@ function Dashboard() {
                 <Stack gap={1}>
                   <Text fontWeight="600">Recent activity</Text>
                   <Text fontSize="sm" color="fg.muted">
-                    Latest wallet and reward events from the connected account
+                    Latest wallet and reward events
                   </Text>
                 </Stack>
                 <Separator />
@@ -653,7 +646,7 @@ function Dashboard() {
                     })}
                   </Timeline.Root>
                 ) : (
-                  <EmptyStateMessage message="No recent account activity was returned by the Hive API." />
+                  <EmptyStateMessage message="No recent account activity yet." />
                 )}
               </Stack>
             </Card.Body>
@@ -664,6 +657,10 @@ function Dashboard() {
   )
 }
 
+function Dashboard() {
+  return <AccountAnalyticsPage />
+}
+
 function MetricCard({
   label,
   value,
@@ -671,14 +668,18 @@ function MetricCard({
   description,
   palette,
   icon,
+  media,
+  children,
   isLoading,
 }: {
   label: string
   value: string | null
   suffix: string
-  description: string
+  description?: string
   palette: string
-  icon: typeof Crown
+  icon?: ReactNode
+  media?: ReactNode
+  children?: ReactNode
   isLoading: boolean
 }) {
   return (
@@ -701,9 +702,9 @@ function MetricCard({
                 {isLoading ? (
                   <Skeleton height="32px" width="70%" />
                 ) : (
-                  <Stat.ValueText fontSize="xl" lineHeight="1.05">
-                    {value ?? '—'}
-                    {suffix ? (
+                <Stat.ValueText fontSize="xl" lineHeight="1.05">
+                  {value ?? '—'}
+                  {suffix ? (
                       <Stat.ValueUnit color="fg.muted" fontSize="xs">
                         {suffix}
                       </Stat.ValueUnit>
@@ -711,22 +712,29 @@ function MetricCard({
                   </Stat.ValueText>
                 )}
               </Stack>
-              <Box
-                boxSize="8"
-                borderRadius="9px"
-                bg="colorPalette.subtle"
-                color="colorPalette.fg"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <Icon as={icon} boxSize={4} />
-              </Box>
+              {media ? (
+                media
+              ) : (
+                <Box
+                  boxSize="8"
+                  borderRadius="9px"
+                  bg="colorPalette.subtle"
+                  color="colorPalette.fg"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  {icon}
+                </Box>
+              )}
             </HStack>
 
-            <Text fontSize="xs" color="fg.muted" lineClamp={2}>
-              {description}
-            </Text>
+            {description ? (
+              <Text fontSize="xs" color="fg.muted" lineClamp={2}>
+                {description}
+              </Text>
+            ) : null}
+            {children}
           </Stack>
         </Stat.Root>
       </Card.Body>
@@ -742,7 +750,7 @@ function ChartPanel({
   isLoading,
 }: {
   title: string
-  subtitle: string
+  subtitle?: string
   children: ReactNode
   gridColumn?: ComponentProps<typeof Card.Root>['gridColumn']
   isLoading: boolean
@@ -759,15 +767,17 @@ function ChartPanel({
         <Stack gap={3}>
           <Stack gap={1}>
             <Text fontWeight="600">{title}</Text>
-            <Text
-              fontSize="xs"
-              color="fg.muted"
-              textTransform="uppercase"
-              letterSpacing="0.16em"
-              fontFamily="mono"
-            >
-              {subtitle}
-            </Text>
+            {subtitle ? (
+              <Text
+                fontSize="xs"
+                color="fg.muted"
+                textTransform="uppercase"
+                letterSpacing="0.16em"
+                fontFamily="mono"
+              >
+                {subtitle}
+              </Text>
+            ) : null}
           </Stack>
           {isLoading ? (
             <Skeleton height="220px" borderRadius="16px" />
@@ -786,159 +796,13 @@ function RewardIncomeChart({
   overview: DashboardHistoricalOverview | null
 }) {
   if (!overview) {
-    return <EmptyStateMessage message="No reward history is available yet." />
+    return <EmptyStateMessage message="No reward history yet." />
   }
-
-  const chart = useChart({
-    data: overview.buckets,
-    series: [
-      {
-        name: CHART_SERIES.author.key,
-        color: CHART_SERIES.author.color,
-        label: CHART_SERIES.author.label,
-      },
-      {
-        name: CHART_SERIES.curation.key,
-        color: CHART_SERIES.curation.color,
-        label: CHART_SERIES.curation.label,
-      },
-      {
-        name: CHART_SERIES.interest.key,
-        color: CHART_SERIES.interest.color,
-        label: CHART_SERIES.interest.label,
-      },
-    ],
-  })
-  const maxValue = getChartMax(overview.buckets, [
-    CHART_SERIES.author.key,
-    CHART_SERIES.curation.key,
-    CHART_SERIES.interest.key,
-  ])
-  const upperBound = getPaddedUpperBound(maxValue, 0.18, 0.8)
 
   return (
     <Stack gap={3}>
-      <Chart.Root height="13rem" chart={chart}>
-        {overview.rewardIncomeChartKind === 'bar' ? (
-          <BarChart
-            data={chart.data}
-            barGap={10}
-            margin={BAR_CHART_MARGIN}
-            responsive
-          >
-            <CartesianGrid
-              stroke={chart.color('border.muted')}
-              vertical={false}
-            />
-            <XAxis
-              axisLine={false}
-              tickLine={false}
-              dataKey={chart.key('shortLabel')}
-              stroke={chart.color('border')}
-              minTickGap={20}
-              tick={{ fontSize: 11 }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tickMargin={8}
-              stroke={chart.color('border')}
-              width={30}
-              tick={{ fontSize: 11 }}
-              domain={[0, upperBound]}
-              tickFormatter={(value) =>
-                formatCompactCurrency(
-                  typeof value === 'number' ? value : Number(value),
-                )
-              }
-            />
-            <Tooltip
-              animationDuration={100}
-              cursor={false}
-              content={
-                <Chart.Tooltip
-                  formatter={(value) =>
-                    `${formatTokenAmount(Number(value), 2)} HBD`
-                  }
-                />
-              }
-            />
-            {chart.series.map((item) => (
-              <Bar
-                key={item.name}
-                isAnimationActive={false}
-                dataKey={chart.key(item.name)}
-                fill={chart.color(item.color)}
-                radius={6}
-              />
-            ))}
-          </BarChart>
-        ) : (
-          <AreaChart data={chart.data} margin={CHART_MARGIN} responsive>
-            <CartesianGrid
-              stroke={chart.color('border.muted')}
-              vertical={false}
-            />
-            <XAxis
-              axisLine={false}
-              tickLine={false}
-              dataKey={chart.key('shortLabel')}
-              stroke={chart.color('border')}
-              minTickGap={20}
-              tick={{ fontSize: 11 }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tickMargin={8}
-              stroke={chart.color('border')}
-              width={30}
-              tick={{ fontSize: 11 }}
-              domain={[0, upperBound]}
-              tickFormatter={(value) =>
-                formatCompactCurrency(
-                  typeof value === 'number' ? value : Number(value),
-                )
-              }
-            />
-            <Tooltip
-              animationDuration={100}
-              cursor={false}
-              content={
-                <Chart.Tooltip
-                  formatter={(value) =>
-                    `${formatTokenAmount(Number(value), 2)} HBD`
-                  }
-                />
-              }
-            />
-            {chart.series.map((item) => (
-              <defs key={`reward-gradient-${item.name}`}>
-                <Chart.Gradient
-                  id={`reward-gradient-${item.name}`}
-                  stops={[
-                    { offset: '0%', color: item.color, opacity: 0.3 },
-                    { offset: '100%', color: item.color, opacity: 0.04 },
-                  ]}
-                />
-              </defs>
-            ))}
-            {chart.series.map((item) => (
-              <Area
-                key={item.name}
-                type="monotone"
-                isAnimationActive={false}
-                dataKey={chart.key(item.name)}
-                fill={`url(#reward-gradient-${item.name})`}
-                stroke={chart.color(item.color)}
-                strokeWidth={2}
-                baseValue={0}
-                strokeLinecap="round"
-              />
-            ))}
-          </AreaChart>
-        )}
-      </Chart.Root>
+      <RewardIncomeStackedChart buckets={overview.buckets} />
+      <RewardIncomeHeatmapChart dailyIncome={overview.dailyIncome} />
 
       <HStack gap={5} wrap="wrap">
         {overview.breakdown.map((item) => (
@@ -949,403 +813,6 @@ function RewardIncomeChart({
             value={`${formatTokenAmount(item.value, 2)} HBD`}
           />
         ))}
-      </HStack>
-    </Stack>
-  )
-}
-
-function RewardBreakdownChart({
-  overview,
-}: {
-  overview: DashboardHistoricalOverview | null
-}) {
-  if (!overview) {
-    return <EmptyStateMessage message="No reward breakdown is available yet." />
-  }
-
-  const chart = useChart({
-    data: overview.breakdown.map((item) => ({
-      ...item,
-      valuePercent: item.share * 100,
-    })),
-  })
-
-  const renderBreakdownTooltip = (
-    item: RechartsTooltipPayload<string, string>,
-  ): ReactNode => {
-    const data = item as unknown as Record<string, unknown>
-    const label = String(data.label ?? '')
-    const value = Number(data.value ?? 0)
-    const valuePercent = Number(data.valuePercent ?? 0) / 100
-
-    return (
-      <Stack gap={0.5}>
-        <Text fontWeight="medium">{label}</Text>
-        <HStack gap={2} justify="space-between">
-          <Text color="fg.muted" fontSize="xs">
-            {formatPercent(valuePercent, 1)}
-          </Text>
-          <Text
-            fontFamily="mono"
-            fontSize="sm"
-            fontVariantNumeric="tabular-nums"
-            fontWeight="medium"
-          >
-            {`${formatTokenAmount(value, 2)} HBD`}
-          </Text>
-        </HStack>
-      </Stack>
-    )
-  }
-
-  return (
-    <Stack gap={3}>
-      <Chart.Root height="13rem" chart={chart}>
-        <PieChart responsive>
-          <Tooltip
-            animationDuration={100}
-            cursor={false}
-            content={
-              <Chart.Tooltip
-                hideLabel
-                fitContent
-                hideIndicator
-                render={renderBreakdownTooltip}
-              />
-            }
-          />
-          <Pie
-            innerRadius={44}
-            outerRadius={72}
-            isAnimationActive={false}
-            data={chart.data}
-            dataKey={chart.key('value')}
-            nameKey={chart.key('label')}
-            paddingAngle={4}
-            cornerRadius={6}
-            shape={(props) => (
-              <Sector
-                {...props}
-                fill={chart.color(props.payload!.colorToken)}
-              />
-            )}
-          />
-        </PieChart>
-      </Chart.Root>
-
-      <Stack gap={2}>
-        {overview.breakdown.map((item) => (
-          <HStack key={item.id} justify="space-between">
-            <SeriesLegend color={item.colorToken} label={item.label} value="" />
-            <Text fontFamily="mono" fontSize="sm">
-              {formatPercent(item.share, 1)}
-            </Text>
-          </HStack>
-        ))}
-      </Stack>
-    </Stack>
-  )
-}
-
-function RewardTrendChart({
-  overview,
-}: {
-  overview: DashboardHistoricalOverview | null
-}) {
-  if (!overview) {
-    return (
-      <EmptyStateMessage message="No reward trend data is available yet." />
-    )
-  }
-
-  const chart = useChart({
-    data: overview.buckets,
-    series: [{ name: CHART_SERIES.total.key, color: CHART_SERIES.total.color }],
-  })
-  const maxValue = getChartMax(overview.buckets, [CHART_SERIES.total.key])
-  const upperBound = getPaddedUpperBound(maxValue, 0.18, 0.8)
-
-  return (
-    <Chart.Root height="11.5rem" chart={chart}>
-      {overview.rewardTrendChartKind === 'bar' ? (
-        <BarChart data={chart.data} margin={BAR_CHART_MARGIN} responsive>
-          <CartesianGrid
-            stroke={chart.color('border.muted')}
-            vertical={false}
-          />
-          <XAxis
-            axisLine={false}
-            tickLine={false}
-            dataKey={chart.key('shortLabel')}
-            stroke={chart.color('border')}
-            minTickGap={20}
-            tick={{ fontSize: 11 }}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tickMargin={8}
-            stroke={chart.color('border')}
-            width={30}
-            tick={{ fontSize: 11 }}
-            domain={[0, upperBound]}
-            tickFormatter={(value) =>
-              formatCompactCurrency(
-                typeof value === 'number' ? value : Number(value),
-              )
-            }
-          />
-          <Tooltip
-            animationDuration={100}
-            cursor={false}
-            content={
-              <Chart.Tooltip
-                formatter={(value) =>
-                  `${formatTokenAmount(Number(value), 2)} HBD`
-                }
-              />
-            }
-          />
-          <Bar
-            isAnimationActive={false}
-            dataKey={chart.key(CHART_SERIES.total.key)}
-            fill={chart.color(CHART_SERIES.total.color)}
-            radius={6}
-          />
-        </BarChart>
-      ) : (
-        <AreaChart data={chart.data} margin={CHART_MARGIN} responsive>
-          <CartesianGrid
-            stroke={chart.color('border.muted')}
-            vertical={false}
-          />
-          <XAxis
-            axisLine={false}
-            tickLine={false}
-            dataKey={chart.key('shortLabel')}
-            stroke={chart.color('border')}
-            minTickGap={20}
-            tick={{ fontSize: 11 }}
-          />
-          <YAxis
-            axisLine={false}
-            tickLine={false}
-            tickMargin={8}
-            stroke={chart.color('border')}
-            width={30}
-            tick={{ fontSize: 11 }}
-            domain={[0, upperBound]}
-            tickFormatter={(value) =>
-              formatCompactCurrency(
-                typeof value === 'number' ? value : Number(value),
-              )
-            }
-          />
-          <Tooltip
-            animationDuration={100}
-            cursor={false}
-            content={
-              <Chart.Tooltip
-                formatter={(value) =>
-                  `${formatTokenAmount(Number(value), 2)} HBD`
-                }
-              />
-            }
-          />
-          <defs>
-            <Chart.Gradient
-              id="reward-trend-gradient"
-              stops={[
-                {
-                  offset: '0%',
-                  color: CHART_SERIES.total.color,
-                  opacity: 0.28,
-                },
-                {
-                  offset: '100%',
-                  color: CHART_SERIES.total.color,
-                  opacity: 0.04,
-                },
-              ]}
-            />
-          </defs>
-          <Area
-            type="monotone"
-            isAnimationActive={false}
-            dataKey={chart.key(CHART_SERIES.total.key)}
-            fill="url(#reward-trend-gradient)"
-            stroke={chart.color(CHART_SERIES.total.color)}
-            strokeWidth={2.5}
-            dot={false}
-            activeDot={{
-              r: 4,
-              stroke: chart.color('bg'),
-              strokeWidth: 2,
-            }}
-            baseValue={0}
-            strokeLinecap="round"
-          />
-        </AreaChart>
-      )}
-    </Chart.Root>
-  )
-}
-
-function EngagementChart({
-  overview,
-}: {
-  overview: DashboardHistoricalOverview | null
-}) {
-  if (!overview) {
-    return <EmptyStateMessage message="No engagement data is available yet." />
-  }
-
-  const chart = useChart({
-    data: overview.buckets,
-    series: [
-      { name: CHART_SERIES.votes.key, color: CHART_SERIES.votes.color },
-      {
-        name: CHART_SERIES.comments.key,
-        color: CHART_SERIES.comments.color,
-      },
-      { name: CHART_SERIES.posts.key, color: CHART_SERIES.posts.color },
-    ],
-  })
-  const maxValue = getChartMax(overview.buckets, [
-    CHART_SERIES.votes.key,
-    CHART_SERIES.comments.key,
-    CHART_SERIES.posts.key,
-  ])
-  const upperBound = getPaddedUpperBound(maxValue, 0.15, 4)
-
-  return (
-    <Stack gap={3}>
-      <Chart.Root height="11.5rem" chart={chart}>
-        {overview.engagementChartKind === 'bar' ? (
-          <BarChart
-            data={chart.data}
-            barGap={10}
-            margin={BAR_CHART_MARGIN}
-            responsive
-          >
-            <CartesianGrid
-              stroke={chart.color('border.muted')}
-              vertical={false}
-            />
-            <XAxis
-              axisLine={false}
-              tickLine={false}
-              dataKey={chart.key('shortLabel')}
-              stroke={chart.color('border')}
-              minTickGap={20}
-              tick={{ fontSize: 11 }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tickMargin={8}
-              stroke={chart.color('border')}
-              width={30}
-              tick={{ fontSize: 11 }}
-              domain={[0, upperBound]}
-            />
-            <Tooltip
-              animationDuration={100}
-              cursor={false}
-              content={<Chart.Tooltip />}
-            />
-            {chart.series.map((item) => (
-              <Bar
-                key={item.name}
-                isAnimationActive={false}
-                dataKey={chart.key(item.name)}
-                fill={chart.color(item.color)}
-                radius={6}
-              />
-            ))}
-          </BarChart>
-        ) : (
-          <AreaChart data={chart.data} margin={CHART_MARGIN} responsive>
-            <CartesianGrid
-              stroke={chart.color('border.muted')}
-              vertical={false}
-            />
-            <XAxis
-              axisLine={false}
-              tickLine={false}
-              dataKey={chart.key('shortLabel')}
-              stroke={chart.color('border')}
-              minTickGap={20}
-              tick={{ fontSize: 11 }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tickMargin={8}
-              stroke={chart.color('border')}
-              width={30}
-              tick={{ fontSize: 11 }}
-              domain={[0, upperBound]}
-            />
-            <Tooltip
-              animationDuration={100}
-              cursor={false}
-              content={<Chart.Tooltip />}
-            />
-            {chart.series.map((item) => (
-              <defs key={`engagement-gradient-${item.name}`}>
-                <Chart.Gradient
-                  id={`engagement-gradient-${item.name}`}
-                  stops={[
-                    { offset: '0%', color: item.color, opacity: 0.2 },
-                    { offset: '100%', color: item.color, opacity: 0.03 },
-                  ]}
-                />
-              </defs>
-            ))}
-            {chart.series.map((item) => (
-              <Area
-                key={item.name}
-                type="monotone"
-                isAnimationActive={false}
-                dataKey={chart.key(item.name)}
-                fill={`url(#engagement-gradient-${item.name})`}
-                stroke={chart.color(item.color)}
-                strokeWidth={2.2}
-                dot={false}
-                baseValue={0}
-                strokeLinecap="round"
-              />
-            ))}
-          </AreaChart>
-        )}
-      </Chart.Root>
-
-      <HStack gap={5} wrap="wrap">
-        <SeriesLegend
-          color={CHART_SERIES.votes.color}
-          label="Votes"
-          value={String(
-            overview.buckets.reduce((total, bucket) => total + bucket.votes, 0),
-          )}
-        />
-        <SeriesLegend
-          color={CHART_SERIES.comments.color}
-          label="Comments"
-          value={String(
-            overview.buckets.reduce(
-              (total, bucket) => total + bucket.comments,
-              0,
-            ),
-          )}
-        />
-        <SeriesLegend
-          color={CHART_SERIES.posts.color}
-          label="Posts"
-          value={String(
-            overview.buckets.reduce((total, bucket) => total + bucket.posts, 0),
-          )}
-        />
       </HStack>
     </Stack>
   )
@@ -1414,14 +881,6 @@ function formatTokenAmount(value: number, digits = 2) {
   }).format(value)
 }
 
-function formatCompactCurrency(value: number) {
-  return new Intl.NumberFormat(undefined, {
-    notation: 'compact',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 1,
-  }).format(value)
-}
-
 function formatInteger(value: number) {
   return new Intl.NumberFormat().format(value)
 }
@@ -1434,25 +893,136 @@ function formatPercent(value: number, digits = 1) {
   }).format(value)
 }
 
-function getChartMax<T extends Record<string, unknown>>(
-  rows: Array<T>,
-  keys: Array<string>,
-) {
-  return rows.reduce((max, row) => {
-    const rowMax = keys.reduce((current, key) => {
-      const value = row[key]
-      return typeof value === 'number' && Number.isFinite(value)
-        ? Math.max(current, value)
-        : current
-    }, 0)
+function formatFollowRatio(followers: number, following: number) {
+  if (!Number.isFinite(followers) || !Number.isFinite(following) || following <= 0) {
+    return 'ratio —'
+  }
 
-    return Math.max(max, rowMax)
-  }, 0)
+  return `${(followers / following).toFixed(2)}x ratio`
 }
 
-function getPaddedUpperBound(value: number, ratio: number, minPad: number) {
-  if (value <= 0) return minPad * 4
-  return Number((value + Math.max(minPad, value * ratio)).toFixed(2))
+function renderHivePowerCardBody(
+  metrics:
+    | {
+        hivePower: number
+        receivedHivePower: number
+        delegatedHivePower: number
+        effectiveHivePower: number
+        hivePriceHbd: number
+      }
+    | null,
+) {
+  if (!metrics) {
+    return (
+      <Text fontSize="xs" color="fg.muted">
+        Owned stake
+      </Text>
+    )
+  }
+
+  const estimatedValue = metrics.effectiveHivePower * metrics.hivePriceHbd
+
+  return (
+    <Stack gap={1}>
+      <HStack gap={2} wrap="wrap" fontSize="xs">
+        <Text color="colorPalette.fg" fontWeight="600">
+          {formatTokenAmount(metrics.hivePower, 0)} owned
+        </Text>
+        {metrics.receivedHivePower > 0 ? (
+          <Text color="orange.fg" fontWeight="600">
+            +{formatTokenAmount(metrics.receivedHivePower, 0)} in
+          </Text>
+        ) : null}
+        {metrics.delegatedHivePower > 0 ? (
+          <Text color="fg.muted" fontWeight="500">
+            -{formatTokenAmount(metrics.delegatedHivePower, 0)} out
+          </Text>
+        ) : null}
+      </HStack>
+      <Text fontSize="2xs" color="fg.muted" fontFamily="mono">
+        ~{formatTokenAmount(estimatedValue, 2)} HBD
+      </Text>
+    </Stack>
+  )
+}
+
+function renderSavingsCardBody(
+  savingsHbd: number | null,
+  interestRatePercent: number | null,
+) {
+  if (
+    savingsHbd == null ||
+    !Number.isFinite(savingsHbd) ||
+    interestRatePercent == null ||
+    !Number.isFinite(interestRatePercent)
+  ) {
+    return (
+      <Text fontSize="xs" color="fg.muted">
+        Savings balance
+      </Text>
+    )
+  }
+
+  const apr = interestRatePercent / 100
+  const monthlyPayout = (savingsHbd * apr) / 12
+  const compoundedYearlyGain = savingsHbd * ((1 + apr / 12) ** 12 - 1)
+
+  return (
+    <Stack gap={1}>
+      <HStack gap={2} wrap="wrap" fontSize="xs">
+        <Text color="colorPalette.fg" fontWeight="600">
+          {formatPercent(apr, 0)} APR
+        </Text>
+        <Text color="green.fg" fontWeight="600">
+          +{formatTokenAmount(monthlyPayout, 2)}/mo
+        </Text>
+        <Text color="fg.muted" fontWeight="500">
+          ~{formatTokenAmount(compoundedYearlyGain, 1)} HBD/year
+        </Text>
+      </HStack>
+      <Text fontSize="2xs" color="fg.muted" fontFamily="mono">
+        compound monthly
+      </Text>
+    </Stack>
+  )
+}
+
+function formatPostingCadence(posts: number, range: DashboardRange) {
+  const months =
+    range === '1M' ? 1 : range === '3M' ? 3 : range === '6M' ? 6 : 12
+  const perMonth = posts / months
+
+  if (perMonth >= 1) {
+    return `~${formatTokenAmount(perMonth, 1)}/mo`
+  }
+
+  const weeks =
+    range === '1M' ? 4 : range === '3M' ? 13 : range === '6M' ? 26 : 52
+  const perWeek = posts / weeks
+  return `~${formatTokenAmount(perWeek, 1)}/wk`
+}
+
+function formatPublishingContext(
+  publishedPosts: number | null,
+  totalPosts: number | null,
+  range: DashboardRange,
+) {
+  if (publishedPosts == null) {
+    return 'From public Hive APIs'
+  }
+
+  const cadence = formatPostingCadence(publishedPosts, range)
+
+  if (
+    totalPosts != null &&
+    Number.isFinite(totalPosts) &&
+    totalPosts > 0 &&
+    totalPosts >= publishedPosts
+  ) {
+    return `${publishedPosts} in ${rangeToDescription(range)} · ${formatPercent(publishedPosts / totalPosts, 0)} of lifetime`
+  }
+
+  return `${publishedPosts} in ${rangeToDescription(range)} · ${cadence}`
 }
 
 function matchesDashboardFocus(
@@ -1480,6 +1050,50 @@ function formatAccountAge(value: string) {
   }
 
   return `${years}y ${months}m`
+}
+
+function formatAccountMilestone(value: string | null) {
+  if (!value) {
+    return 'On-chain account age'
+  }
+
+  const createdAt = new Date(value)
+  if (Number.isNaN(createdAt.getTime())) {
+    return 'On-chain account age'
+  }
+
+  const now = new Date()
+  const nextAnniversaryYear =
+    now >=
+    new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        createdAt.getUTCMonth(),
+        createdAt.getUTCDate(),
+      ),
+    )
+      ? now.getUTCFullYear() + 1
+      : now.getUTCFullYear()
+  const nextAnniversary = new Date(
+    Date.UTC(
+      nextAnniversaryYear,
+      createdAt.getUTCMonth(),
+      createdAt.getUTCDate(),
+    ),
+  )
+  const daysUntil = Math.max(
+    0,
+    Math.ceil((nextAnniversary.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+  )
+  const milestoneYears = nextAnniversaryYear - createdAt.getUTCFullYear()
+
+  if (daysUntil <= 45) {
+    return `${milestoneYears}y in ${daysUntil}d`
+  }
+
+  return `Turns ${milestoneYears} in ${nextAnniversary.toLocaleDateString(undefined, {
+    month: 'short',
+  })}`
 }
 
 function getActivityPalette(type: string) {

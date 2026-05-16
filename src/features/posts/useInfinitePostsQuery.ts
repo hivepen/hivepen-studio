@@ -4,9 +4,9 @@ import {
   getPostsRankedInfiniteQueryOptions,
 } from '@ecency/sdk'
 import type { Entry } from '@ecency/sdk'
-import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
-import type { PostSearchResult } from '@/lib/hive/search'
 import type { PostsQueryParams } from '@/features/posts/usePostsQuery'
+import type { PostSearchResult } from '@/lib/hive/search'
+import { useHiveWallet } from '@/components/auth/HiveWalletProvider'
 import { mapEntryToSearchResult } from '@/features/posts/postMapping'
 
 export type PostsPage = Array<PostSearchResult>
@@ -54,9 +54,9 @@ export default function useInfinitePostsQuery(params: PostsQueryParams) {
         )
 
   return useInfiniteQuery({
-    ...(baseOptions as object),
+    ...baseOptions,
     enabled,
-    select: (data: any) => ({
+    select: (data) => ({
       ...data,
       pages: data.pages.map((page: Array<Entry>) =>
         filterPosts(page.map(mapEntryToSearchResult), params),
