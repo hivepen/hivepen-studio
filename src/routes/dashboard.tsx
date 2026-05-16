@@ -52,6 +52,7 @@ import type {
   DashboardHistoricalOverview,
   DashboardRange,
 } from '@/features/dashboard/types'
+import { DASHBOARD_INCOME_PALETTE } from '@/features/dashboard/chartPalette'
 import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
 import RewardIncomeStackedChart from '@/features/dashboard/RewardIncomeStackedChart'
 import HbdIcon from '@/components/hive/HbdIcon'
@@ -82,15 +83,19 @@ const RANGE_OPTIONS: Array<{ label: DashboardRange; value: DashboardRange }> = [
 ]
 
 const CHART_SERIES = {
-  author: { color: 'green.solid', label: 'Author', key: 'authorRewards' },
+  author: {
+    color: DASHBOARD_INCOME_PALETTE.author.colorToken,
+    label: DASHBOARD_INCOME_PALETTE.author.label,
+    key: 'authorRewards',
+  },
   curation: {
-    color: 'purple.solid',
-    label: 'Curation',
+    color: DASHBOARD_INCOME_PALETTE.curation.colorToken,
+    label: DASHBOARD_INCOME_PALETTE.curation.label,
     key: 'curationRewards',
   },
   interest: {
-    color: 'yellow.solid',
-    label: 'Interest',
+    color: DASHBOARD_INCOME_PALETTE.interest.colorToken,
+    label: DASHBOARD_INCOME_PALETTE.interest.label,
     key: 'savingsInterest',
   },
   total: { color: 'teal.solid', label: 'Total', key: 'totalRewards' },
@@ -793,156 +798,9 @@ function RewardIncomeChart({
     return <EmptyStateMessage message="No reward history yet." />
   }
 
-  const chart = useChart({
-    data: overview.buckets,
-    series: [
-      {
-        name: CHART_SERIES.author.key,
-        color: CHART_SERIES.author.color,
-        label: CHART_SERIES.author.label,
-      },
-      {
-        name: CHART_SERIES.curation.key,
-        color: CHART_SERIES.curation.color,
-        label: CHART_SERIES.curation.label,
-      },
-      {
-        name: CHART_SERIES.interest.key,
-        color: CHART_SERIES.interest.color,
-        label: CHART_SERIES.interest.label,
-      },
-    ],
-  })
-  const maxValue = getChartMax(overview.buckets, [
-    CHART_SERIES.author.key,
-    CHART_SERIES.curation.key,
-    CHART_SERIES.interest.key,
-  ])
-  const upperBound = getPaddedUpperBound(maxValue, 0.18, 0.8)
-
   return (
     <Stack gap={3}>
-      <Chart.Root height="13rem" chart={chart}>
-        {overview.rewardIncomeChartKind === 'bar' ? (
-          <BarChart
-            data={chart.data}
-            barGap={10}
-            margin={BAR_CHART_MARGIN}
-            responsive
-          >
-            <CartesianGrid
-              stroke={chart.color('border.muted')}
-              vertical={false}
-            />
-            <XAxis
-              axisLine={false}
-              tickLine={false}
-              dataKey={chart.key('shortLabel')}
-              stroke={chart.color('border')}
-              minTickGap={20}
-              tick={{ fontSize: 11 }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tickMargin={8}
-              stroke={chart.color('border')}
-              width={30}
-              tick={{ fontSize: 11 }}
-              domain={[0, upperBound]}
-              tickFormatter={(value) =>
-                formatCompactCurrency(
-                  typeof value === 'number' ? value : Number(value),
-                )
-              }
-            />
-            <Tooltip
-              animationDuration={100}
-              cursor={false}
-              content={
-                <Chart.Tooltip
-                  formatter={(value) =>
-                    `${formatTokenAmount(Number(value), 2)} HBD`
-                  }
-                />
-              }
-            />
-            {chart.series.map((item) => (
-              <Bar
-                key={item.name}
-                isAnimationActive={false}
-                dataKey={chart.key(item.name)}
-                fill={chart.color(item.color)}
-                radius={6}
-              />
-            ))}
-          </BarChart>
-        ) : (
-          <AreaChart data={chart.data} margin={CHART_MARGIN} responsive>
-            <CartesianGrid
-              stroke={chart.color('border.muted')}
-              vertical={false}
-            />
-            <XAxis
-              axisLine={false}
-              tickLine={false}
-              dataKey={chart.key('shortLabel')}
-              stroke={chart.color('border')}
-              minTickGap={20}
-              tick={{ fontSize: 11 }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tickMargin={8}
-              stroke={chart.color('border')}
-              width={30}
-              tick={{ fontSize: 11 }}
-              domain={[0, upperBound]}
-              tickFormatter={(value) =>
-                formatCompactCurrency(
-                  typeof value === 'number' ? value : Number(value),
-                )
-              }
-            />
-            <Tooltip
-              animationDuration={100}
-              cursor={false}
-              content={
-                <Chart.Tooltip
-                  formatter={(value) =>
-                    `${formatTokenAmount(Number(value), 2)} HBD`
-                  }
-                />
-              }
-            />
-            {chart.series.map((item) => (
-              <defs key={`reward-gradient-${item.name}`}>
-                <Chart.Gradient
-                  id={`reward-gradient-${item.name}`}
-                  stops={[
-                    { offset: '0%', color: item.color, opacity: 0.3 },
-                    { offset: '100%', color: item.color, opacity: 0.04 },
-                  ]}
-                />
-              </defs>
-            ))}
-            {chart.series.map((item) => (
-              <Area
-                key={item.name}
-                type="monotone"
-                isAnimationActive={false}
-                dataKey={chart.key(item.name)}
-                fill={`url(#reward-gradient-${item.name})`}
-                stroke={chart.color(item.color)}
-                strokeWidth={2}
-                baseValue={0}
-                strokeLinecap="round"
-              />
-            ))}
-          </AreaChart>
-        )}
-      </Chart.Root>
+      <RewardIncomeStackedChart buckets={overview.buckets} />
 
       <HStack gap={5} wrap="wrap">
         {overview.breakdown.map((item) => (
@@ -954,8 +812,6 @@ function RewardIncomeChart({
           />
         ))}
       </HStack>
-
-      <RewardIncomeStackedChart buckets={overview.buckets} />
     </Stack>
   )
 }

@@ -10,6 +10,7 @@ import type {
   GridComponentOption,
   TooltipComponentOption,
 } from 'echarts/components'
+import { DASHBOARD_INCOME_PALETTE } from './chartPalette'
 import type { DashboardBucket } from './types'
 
 echarts.use([BarChart, GridComponent, TooltipComponent, SVGRenderer])
@@ -34,9 +35,21 @@ type SeriesDefinition = {
 }
 
 const SERIES: Array<SeriesDefinition> = [
-  { key: 'authorRewards', label: 'Author', colorToken: 'green.solid' },
-  { key: 'curationRewards', label: 'Curation', colorToken: 'purple.solid' },
-  { key: 'savingsInterest', label: 'Interest', colorToken: 'yellow.solid' },
+  {
+    key: 'authorRewards',
+    label: DASHBOARD_INCOME_PALETTE.author.label,
+    colorToken: DASHBOARD_INCOME_PALETTE.author.colorToken,
+  },
+  {
+    key: 'curationRewards',
+    label: DASHBOARD_INCOME_PALETTE.curation.label,
+    colorToken: DASHBOARD_INCOME_PALETTE.curation.colorToken,
+  },
+  {
+    key: 'savingsInterest',
+    label: DASHBOARD_INCOME_PALETTE.interest.label,
+    colorToken: DASHBOARD_INCOME_PALETTE.interest.colorToken,
+  },
 ]
 
 const tokenVar = (token: string) =>
@@ -184,8 +197,13 @@ export default function RewardIncomeStackedChart({
             const value = bucket?.[definition.key] ?? 0
             if (value <= 0) return null
 
-            return `<div style="display:flex;justify-content:space-between;gap:16px;">
-              <span>${definition.label}</span>
+            return `<div style="display:flex;justify-content:space-between;gap:16px;align-items:center;">
+              <span style="display:inline-flex;align-items:center;gap:8px;">
+                <span style="width:9px;height:9px;border-radius:999px;background:${color(
+                  tokenVar(definition.colorToken),
+                )};display:inline-block;flex:0 0 auto;"></span>
+                <span>${definition.label}</span>
+              </span>
               <span>${formatTokenAmount(value, 2)} HBD</span>
             </div>`
           }).filter(Boolean)
