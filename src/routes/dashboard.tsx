@@ -312,7 +312,11 @@ function Dashboard() {
           ? formatTokenAmount(overview.summary.averagePostReward, 2)
           : null,
       suffix: ' HBD',
-      description: `Per post in ${rangeToDescription(range)}`,
+      description:
+        overview?.summary.publishedPosts != null &&
+        overview?.summary.totalRewards != null
+          ? `${overview.summary.publishedPosts} posts · ${formatTokenAmount(overview.summary.totalRewards, 2)} HBD total`
+          : `Per post in ${rangeToDescription(range)}`,
     },
     // TODO(stat-cards): Add a milestone-oriented age cue such as the account's
     // next yearly anniversary window instead of only the absolute age.
