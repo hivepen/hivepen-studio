@@ -27,6 +27,12 @@ export type DashboardDailyIncomeDay = {
   totalRewards: number
 }
 
+export type DashboardDailyPostCount = {
+  date: string
+  posts: number
+  comments: number
+}
+
 export type DashboardBreakdownItem = {
   id: 'author' | 'curation' | 'interest'
   label: string
@@ -116,6 +122,7 @@ export type DashboardHistoricalOverview = {
   bucketUnit: DashboardBucketUnit
   buckets: Array<DashboardBucket>
   dailyIncome: Array<DashboardDailyIncomeDay>
+  dailyPostCounts: Array<DashboardDailyPostCount>
   breakdown: Array<DashboardBreakdownItem>
   incomeBreakdown: Array<DashboardIncomeBreakdownCategory>
   summary: DashboardSummary

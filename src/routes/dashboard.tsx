@@ -63,6 +63,7 @@ import { PostCardMedia } from '@/components/PostCard'
 import { getTitleMeta } from '@/lib/posts/titleMeta'
 import { resolvePostCommunity } from '@/features/posts/postCardMapping'
 import MiniSparkline from '@/features/dashboard/MiniSparkline'
+import PublishingCadenceChart from '@/features/dashboard/PublishingCadenceChart'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -466,7 +467,7 @@ export function AccountAnalyticsPage({
             gridColumn={{ base: 'auto', lg: 'span 2' }}
             isLoading={dashboardQuery.isLoading}
           >
-            <RewardIncomeChart overview={overview} />
+            <RewardIncomeChart overview={overview} focus={focus} />
           </ChartPanel>
         </SimpleGrid>
       ) : null}
@@ -861,8 +862,10 @@ function ChartPanel({
 
 function RewardIncomeChart({
   overview,
+  focus,
 }: {
   overview: DashboardHistoricalOverview | null
+  focus: DashboardFocus
 }) {
   if (!overview) {
     return <EmptyStateMessage message="No reward history yet." />
@@ -872,6 +875,10 @@ function RewardIncomeChart({
     <Stack gap={3}>
       <RewardIncomeStackedChart buckets={overview.buckets} />
       <RewardIncomeHeatmapChart dailyIncome={overview.dailyIncome} />
+
+      {(focus === 'publishing' || focus === 'all') && (
+        <PublishingCadenceChart dailyPostCounts={overview.dailyPostCounts} />
+      )}
 
       <HStack gap={5} wrap="wrap">
         {overview.breakdown.map((item) => (

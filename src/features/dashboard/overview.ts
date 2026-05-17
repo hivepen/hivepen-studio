@@ -201,6 +201,30 @@ export const buildDailyIncomeDays = (
   return days
 }
 
+export const buildDailyPostCounts = (
+  range: DashboardRange,
+  now = new Date(),
+): Array<DashboardDailyPostCount> => {
+  const buckets = buildBuckets(range, now)
+  const currentStart = new Date(buckets[0]?.startAt ?? now.toISOString())
+  const periodEnd = addUtcDays(startOfUtcDay(now), 1)
+  const days: Array<DashboardDailyPostCount> = []
+
+  for (
+    let day = currentStart;
+    day.getTime() < periodEnd.getTime();
+    day = addUtcDays(day, 1)
+  ) {
+    days.push({
+      date: day.toISOString(),
+      posts: 0,
+      comments: 0,
+    })
+  }
+
+  return days
+}
+
 export const getExtendedStart = (range: DashboardRange, now = new Date()) => {
   const currentBuckets = buildBuckets(range, now)
   const currentStart = new Date(currentBuckets[0]?.startAt ?? now.toISOString())
@@ -279,6 +303,14 @@ const getDailyIncomeDayForDate = (
   days: Array<DashboardDailyIncomeDay>,
   value: Date,
 ): DashboardDailyIncomeDay | null => {
+  const dayKey = startOfUtcDay(value).toISOString()
+  return days.find((day) => day.date === dayKey) ?? null
+}
+
+const getDailyPostCountForDate = (
+  days: Array<DashboardDailyPostCount>,
+  value: Date,
+): DashboardDailyPostCount | null => {
   const dayKey = startOfUtcDay(value).toISOString()
   return days.find((day) => day.date === dayKey) ?? null
 }
@@ -562,6 +594,7 @@ export const aggregateDashboardOverview = ({
 }): DashboardHistoricalOverview => {
   const buckets = buildBuckets(range, now)
   const dailyIncome = buildDailyIncomeDays(range, now)
+  const dailyPostCounts = buildDailyPostCounts(range, now)
   const currentStart = new Date(buckets[0]?.startAt ?? now.toISOString())
   const previousStart = getExtendedStart(range, now)
   const normalized = normalizeUsername(username)
@@ -618,6 +651,7 @@ export const aggregateDashboardOverview = ({
     if (createdAt >= currentStart) {
       const bucket = getBucketForDate(buckets, createdAt)
       const day = getDailyIncomeDayForDate(dailyIncome, createdAt)
+      const dayPostCount = getDailyPostCountForDate(dailyPostCounts, createdAt)
       if (!bucket || !day) continue
 
       bucket.authorRewards += authorReward
@@ -625,6 +659,9 @@ export const aggregateDashboardOverview = ({
       day.authorRewards += authorReward
       day.totalRewards += authorReward
       bucket.posts += 1
+      if (dayPostCount) {
+        dayPostCount.posts += 1
+      }
       bucket.votes += post.votes ?? 0
       bucket.comments += post.comments ?? 0
 
@@ -672,12 +709,16 @@ export const aggregateDashboardOverview = ({
     if (createdAt >= currentStart) {
       const bucket = getBucketForDate(buckets, createdAt)
       const day = getDailyIncomeDayForDate(dailyIncome, createdAt)
+      const dayPostCount = getDailyPostCountForDate(dailyPostCounts, createdAt)
       if (!bucket || !day) continue
 
       bucket.authorRewards += authorReward
       bucket.totalRewards += authorReward
       day.authorRewards += authorReward
       day.totalRewards += authorReward
+      if (dayPostCount) {
+        dayPostCount.comments += 1
+      }
       currentCommentAuthorRewards += authorReward
       accumulateCommunityReward(
         communityRewardMap,
@@ -967,6 +1008,7 @@ export const aggregateDashboardOverview = ({
     bucketUnit: RANGE_BUCKET_CONFIG[range].bucketUnit,
     buckets,
     dailyIncome,
+    dailyPostCounts,
     breakdown,
     incomeBreakdown,
     payoutDistribution,
