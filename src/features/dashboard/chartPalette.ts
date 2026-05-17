@@ -25,3 +25,13 @@ export const DASHBOARD_INCOME_PALETTE = {
     label: 'Transfers',
   },
 } as const
+
+export const DASHBOARD_DELEGATION_SLICE_TOKENS = [
+  'teal.solid',
+  'blue.solid',
+  'purple.solid',
+  'green.solid',
+  'orange.solid',
+  'red.solid',
+  'cyan.solid',
+] as const

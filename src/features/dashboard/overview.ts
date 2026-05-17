@@ -5,7 +5,9 @@ import type {
   DashboardBucket,
   DashboardBucketUnit,
   DashboardCommunityRewardBreakdown,
+  DashboardDelegation,
   DashboardDailyIncomeDay,
+  DashboardDailyPostCount,
   DashboardHistoricalOverview,
   DashboardHistoricalSnapshot,
   DashboardIncomeBreakdownCategory,
@@ -201,6 +203,30 @@ export const buildDailyIncomeDays = (
   return days
 }
 
+export const buildDailyPostCounts = (
+  range: DashboardRange,
+  now = new Date(),
+): Array<DashboardDailyPostCount> => {
+  const buckets = buildBuckets(range, now)
+  const currentStart = new Date(buckets[0]?.startAt ?? now.toISOString())
+  const periodEnd = addUtcDays(startOfUtcDay(now), 1)
+  const days: Array<DashboardDailyPostCount> = []
+
+  for (
+    let day = currentStart;
+    day.getTime() < periodEnd.getTime();
+    day = addUtcDays(day, 1)
+  ) {
+    days.push({
+      date: day.toISOString(),
+      posts: 0,
+      comments: 0,
+    })
+  }
+
+  return days
+}
+
 export const getExtendedStart = (range: DashboardRange, now = new Date()) => {
   const currentBuckets = buildBuckets(range, now)
   const currentStart = new Date(currentBuckets[0]?.startAt ?? now.toISOString())
@@ -234,6 +260,18 @@ const writeSnapshots = (
   storage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(snapshots))
 }
 
+const normalizeDashboardSnapshot = (
+  snapshot: DashboardHistoricalSnapshot,
+): DashboardHistoricalSnapshot => ({
+  ...snapshot,
+  dailyPostCounts: Array.isArray(snapshot.dailyPostCounts)
+    ? snapshot.dailyPostCounts
+    : [],
+  outgoingDelegations: Array.isArray(snapshot.outgoingDelegations)
+    ? snapshot.outgoingDelegations
+    : [],
+})
+
 const toSnapshotKey = (username: string, range: DashboardRange) =>
   `${normalizeUsername(username)}:${range}`
 
@@ -241,10 +279,23 @@ export const readDashboardSnapshot = (
   username: string,
   range: DashboardRange,
 ) => {
-  const snapshot = readSnapshots()[toSnapshotKey(username, range)]
+  const key = toSnapshotKey(username, range)
+  const snapshot = readSnapshots()[key]
   if (!snapshot) return null
   if (snapshot.expiresAt <= Date.now()) return null
-  return snapshot
+
+  const normalizedSnapshot = normalizeDashboardSnapshot(snapshot)
+
+  if (
+    !Array.isArray(snapshot.dailyPostCounts) ||
+    !Array.isArray(snapshot.outgoingDelegations)
+  ) {
+    const snapshots = readSnapshots()
+    snapshots[key] = normalizedSnapshot
+    writeSnapshots(snapshots)
+  }
+
+  return normalizedSnapshot
 }
 
 export const writeDashboardSnapshot = (
@@ -252,11 +303,11 @@ export const writeDashboardSnapshot = (
   data: DashboardHistoricalOverview,
 ) => {
   const snapshots = readSnapshots()
-  snapshots[toSnapshotKey(username, data.range)] = {
+  snapshots[toSnapshotKey(username, data.range)] = normalizeDashboardSnapshot({
     ...data,
     username: normalizeUsername(username),
     expiresAt: data.cachedAt + DASHBOARD_TTL_MS,
-  }
+  })
   writeSnapshots(snapshots)
 }
 
@@ -279,6 +330,14 @@ const getDailyIncomeDayForDate = (
   days: Array<DashboardDailyIncomeDay>,
   value: Date,
 ): DashboardDailyIncomeDay | null => {
+  const dayKey = startOfUtcDay(value).toISOString()
+  return days.find((day) => day.date === dayKey) ?? null
+}
+
+const getDailyPostCountForDate = (
+  days: Array<DashboardDailyPostCount>,
+  value: Date,
+): DashboardDailyPostCount | null => {
   const dayKey = startOfUtcDay(value).toISOString()
   return days.find((day) => day.date === dayKey) ?? null
 }
@@ -562,6 +621,7 @@ export const aggregateDashboardOverview = ({
 }): DashboardHistoricalOverview => {
   const buckets = buildBuckets(range, now)
   const dailyIncome = buildDailyIncomeDays(range, now)
+  const dailyPostCounts = buildDailyPostCounts(range, now)
   const currentStart = new Date(buckets[0]?.startAt ?? now.toISOString())
   const previousStart = getExtendedStart(range, now)
   const normalized = normalizeUsername(username)
@@ -570,6 +630,18 @@ export const aggregateDashboardOverview = ({
       .map((delegation) => normalizeUsername(delegation.delegatee))
       .filter((delegatee) => delegatee && delegatee !== normalized),
   )
+  const delegationSummary: Array<DashboardDelegation> = outgoingDelegations
+    .map((delegation) => ({
+      delegatee: normalizeUsername(delegation.delegatee),
+      hivePower: vestsToHivePower(delegation.vesting_shares, properties),
+    }))
+    .filter(
+      (delegation) =>
+        delegation.delegatee.length > 0 &&
+        delegation.delegatee !== normalized &&
+        delegation.hivePower > 0,
+    )
+    .sort((left, right) => right.hivePower - left.hivePower)
   // TODO: Attribute transfers against delegation history for the selected range,
   // not just the current live delegatee set.
   // Spec: src/features/dashboard/INCOME_BREAKDOWN_ROADMAP.md
@@ -618,6 +690,7 @@ export const aggregateDashboardOverview = ({
     if (createdAt >= currentStart) {
       const bucket = getBucketForDate(buckets, createdAt)
       const day = getDailyIncomeDayForDate(dailyIncome, createdAt)
+      const dayPostCount = getDailyPostCountForDate(dailyPostCounts, createdAt)
       if (!bucket || !day) continue
 
       bucket.authorRewards += authorReward
@@ -625,6 +698,9 @@ export const aggregateDashboardOverview = ({
       day.authorRewards += authorReward
       day.totalRewards += authorReward
       bucket.posts += 1
+      if (dayPostCount) {
+        dayPostCount.posts += 1
+      }
       bucket.votes += post.votes ?? 0
       bucket.comments += post.comments ?? 0
 
@@ -672,12 +748,16 @@ export const aggregateDashboardOverview = ({
     if (createdAt >= currentStart) {
       const bucket = getBucketForDate(buckets, createdAt)
       const day = getDailyIncomeDayForDate(dailyIncome, createdAt)
+      const dayPostCount = getDailyPostCountForDate(dailyPostCounts, createdAt)
       if (!bucket || !day) continue
 
       bucket.authorRewards += authorReward
       bucket.totalRewards += authorReward
       day.authorRewards += authorReward
       day.totalRewards += authorReward
+      if (dayPostCount) {
+        dayPostCount.comments += 1
+      }
       currentCommentAuthorRewards += authorReward
       accumulateCommunityReward(
         communityRewardMap,
@@ -967,6 +1047,8 @@ export const aggregateDashboardOverview = ({
     bucketUnit: RANGE_BUCKET_CONFIG[range].bucketUnit,
     buckets,
     dailyIncome,
+    dailyPostCounts,
+    outgoingDelegations: delegationSummary,
     breakdown,
     incomeBreakdown,
     payoutDistribution,

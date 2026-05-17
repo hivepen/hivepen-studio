@@ -4,14 +4,14 @@ import * as echarts from 'echarts/core'
 import { ScatterChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import { SVGRenderer } from 'echarts/renderers'
+import { DASHBOARD_INCOME_PALETTE } from './chartPalette'
+import type { DashboardTopPost } from './types'
 import type { EChartsType } from 'echarts/core'
 import type { ScatterSeriesOption } from 'echarts/charts'
 import type {
   GridComponentOption,
   TooltipComponentOption,
 } from 'echarts/components'
-import { DASHBOARD_INCOME_PALETTE } from './chartPalette'
-import type { DashboardTopPost } from './types'
 
 echarts.use([ScatterChart, GridComponent, TooltipComponent, SVGRenderer])
 
@@ -122,12 +122,20 @@ export default function PostPerformanceScatterChart({
               votes: number
               comments: number
               community: string | null
+              coverUrl: string | null
             }
           }
           const point = payload.data
           if (!point) return ''
 
+          const coverHtml = point.coverUrl
+            ? `<img src="${point.coverUrl}" style="width:100%;height:52px;object-fit:cover;border-radius:6px;margin-bottom:8px;filter:grayscale(15%) brightness(0.88);border:1px solid ${color(
+                semanticVar('border.subtle'),
+              )}" onerror="this.style.display='none'">`
+            : ''
+
           return [
+            coverHtml,
             `<div style="font-weight:600;margin-bottom:6px;">${point.title}</div>`,
             point.community
               ? `<div style="color:${muted};margin-bottom:6px;">${point.community}</div>`
@@ -207,6 +215,7 @@ export default function PostPerformanceScatterChart({
             votes: post.votes,
             comments: post.comments,
             community: post.communityTitle ?? null,
+            coverUrl: post.coverUrl ?? null,
           })),
         },
       ],

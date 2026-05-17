@@ -42,6 +42,7 @@ import type {
   DashboardRange,
 } from '@/features/dashboard/types'
 import CommunityRewardBreakdownChart from '@/features/dashboard/CommunityRewardBreakdownChart'
+import HpDelegationDonutChart from '@/features/dashboard/HpDelegationDonutChart'
 import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
 import PayoutDistributionChart from '@/features/dashboard/PayoutDistributionChart'
 import PostPerformanceScatterChart from '@/features/dashboard/PostPerformanceScatterChart'
@@ -62,6 +63,8 @@ import { m } from '@/paraglide/messages'
 import { PostCardMedia } from '@/components/PostCard'
 import { getTitleMeta } from '@/lib/posts/titleMeta'
 import { resolvePostCommunity } from '@/features/posts/postCardMapping'
+import MiniSparkline from '@/features/dashboard/MiniSparkline'
+import PublishingCadenceChart from '@/features/dashboard/PublishingCadenceChart'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -199,9 +202,57 @@ export function AccountAnalyticsPage({
       suffix: ' HP',
       children: renderHivePowerCardBody(wallet?.metrics ?? null),
     },
-    // TODO(stat-cards): Add a time-to-next-payout style savings cue derived
-    // from the account's earning balance so the card answers "when" as well as
-    // "how much".
+    {
+      category: 'rewards',
+      label: 'Total rewards',
+      palette: 'green',
+      icon: <Icon as={Coins} boxSize={4} />,
+      value:
+        overview?.summary.totalRewards != null
+          ? formatTokenAmount(overview.summary.totalRewards, 2)
+          : null,
+      suffix: ' HBD',
+      description:
+        overview?.summary.totalRewardsChange != null
+          ? formatChangeLabel(overview.summary.totalRewardsChange)
+          : undefined,
+      media:
+        overview?.buckets && overview.buckets.length >= 4 ? (
+          <Box w="80px" flexShrink={0}>
+            <MiniSparkline
+              data={overview.buckets.map((b) => b.totalRewards)}
+              colorToken="green.solid"
+              type="area"
+              height={36}
+            />
+          </Box>
+        ) : undefined,
+    },
+    {
+      category: 'rewards',
+      label: 'Curation income',
+      palette: 'purple',
+      icon: <Icon as={HandHeart} boxSize={4} />,
+      value:
+        overview?.breakdown.find((b) => b.id === 'curation')?.value != null
+          ? formatTokenAmount(
+              overview.breakdown.find((b) => b.id === 'curation')!.value,
+              2,
+            )
+          : null,
+      suffix: ' HBD',
+      media:
+        overview?.buckets && overview.buckets.length >= 4 ? (
+          <Box w="80px" flexShrink={0}>
+            <MiniSparkline
+              data={overview.buckets.map((b) => b.curationRewards)}
+              colorToken="purple.solid"
+              type="area"
+              height={36}
+            />
+          </Box>
+        ) : undefined,
+    },
     {
       category: 'rewards',
       label: 'HBD Savings',
@@ -241,8 +292,6 @@ export function AccountAnalyticsPage({
         range,
       ),
     },
-    // TODO(stat-cards): Add net audience context such as follower/following
-    // ratio or recent follower delta once we have a trustworthy source.
     {
       category: 'account',
       label: 'Followers',
@@ -271,6 +320,19 @@ export function AccountAnalyticsPage({
         overview?.summary.publishedPosts != null
           ? `${overview.summary.publishedPosts} posts · ${formatTokenAmount(overview.summary.totalRewards, 2)} HBD total`
           : undefined,
+      media:
+        overview?.buckets && overview.buckets.length >= 4 ? (
+          <Box w="80px" flexShrink={0}>
+            <MiniSparkline
+              data={overview.buckets.map((b) =>
+                b.posts > 0 ? b.authorRewards / b.posts : 0,
+              )}
+              colorToken="green.solid"
+              type="bar"
+              height={36}
+            />
+          </Box>
+        ) : undefined,
     },
     {
       category: 'account',
@@ -286,7 +348,14 @@ export function AccountAnalyticsPage({
   ]
 
   return (
-    <Stack gap={3} px={{ base: 3, md: 4 }} pt={3} pb="20vh" mx="auto" maxW={PAGE_MAX_WIDTH}>
+    <Stack
+      gap={3}
+      px={{ base: 3, md: 4 }}
+      pt={3}
+      pb="20vh"
+      mx="auto"
+      maxW={PAGE_MAX_WIDTH}
+    >
       <Stack p={{ base: 4, md: 5 }} gap={3}>
         <HStack justify="space-between" align="start" wrap="wrap" gap={4}>
           <Stack gap={2}>
@@ -306,49 +375,6 @@ export function AccountAnalyticsPage({
               </Stack>
             </HStack>
           </Stack>
-
-          <HStack gap={3} wrap="wrap" justify="flex-end">
-            <Stack gap={1}>
-              <Text
-                fontSize="xs"
-                color="fg.muted"
-                textTransform="uppercase"
-                letterSpacing="0.14em"
-              >
-                Focus
-              </Text>
-              <SegmentGroup.Root
-                size="sm"
-                value={focus}
-                onValueChange={(event) =>
-                  setFocus(event.value as DashboardFocus)
-                }
-              >
-                <SegmentGroup.Indicator />
-                <SegmentGroup.Items items={FOCUS_OPTIONS} />
-              </SegmentGroup.Root>
-            </Stack>
-            <Stack gap={1}>
-              <Text
-                fontSize="xs"
-                color="fg.muted"
-                textTransform="uppercase"
-                letterSpacing="0.14em"
-              >
-                Range
-              </Text>
-              <SegmentGroup.Root
-                size="sm"
-                value={range}
-                onValueChange={(event) =>
-                  setRange(event.value as DashboardRange)
-                }
-              >
-                <SegmentGroup.Indicator />
-                <SegmentGroup.Items items={RANGE_OPTIONS} />
-              </SegmentGroup.Root>
-            </Stack>
-          </HStack>
         </HStack>
 
         <HStack gap={3} wrap="wrap" color="fg.muted" fontSize="xs">
@@ -367,6 +393,39 @@ export function AccountAnalyticsPage({
           ) : null}
         </HStack>
       </Stack>
+
+      <HStack
+        position="sticky"
+        top={0}
+        zIndex={10}
+        justify="flex-end"
+        gap={3}
+        wrap="wrap"
+        px={{ base: 3, md: 4 }}
+        py={3}
+        mt={-1}
+        bg="bg"
+        borderBottomWidth="1px"
+        borderColor="border.subtle"
+        backdropFilter="blur(12px)"
+      >
+        <SegmentGroup.Root
+          size="sm"
+          value={focus}
+          onValueChange={(event) => setFocus(event.value as DashboardFocus)}
+        >
+          <SegmentGroup.Indicator />
+          <SegmentGroup.Items items={FOCUS_OPTIONS} />
+        </SegmentGroup.Root>
+        <SegmentGroup.Root
+          size="sm"
+          value={range}
+          onValueChange={(event) => setRange(event.value as DashboardRange)}
+        >
+          <SegmentGroup.Indicator />
+          <SegmentGroup.Items items={RANGE_OPTIONS} />
+        </SegmentGroup.Root>
+      </HStack>
 
       <SimpleGrid columns={{ base: 1, sm: 2, lg: 4, xl: 5 }} gap={2.5}>
         {statCards
@@ -399,7 +458,7 @@ export function AccountAnalyticsPage({
             gridColumn={{ base: 'auto', lg: 'span 2' }}
             isLoading={dashboardQuery.isLoading}
           >
-            <RewardIncomeChart overview={overview} />
+            <RewardIncomeChart overview={overview} focus={focus} />
           </ChartPanel>
         </SimpleGrid>
       ) : null}
@@ -436,7 +495,9 @@ export function AccountAnalyticsPage({
           subtitle="Median and spread by period"
           isLoading={dashboardQuery.isLoading}
         >
-          {overview?.payoutDistribution.some((bucket) => bucket.rewards.length > 0) ? (
+          {overview?.payoutDistribution.some(
+            (bucket) => bucket.rewards.length > 0,
+          ) ? (
             <PayoutDistributionChart buckets={overview.payoutDistribution} />
           ) : (
             <EmptyStateMessage message="No paid posts were found for this period." />
@@ -457,6 +518,21 @@ export function AccountAnalyticsPage({
           ) : (
             <EmptyStateMessage message="No community-attributed author rewards were found for this period." />
           )}
+        </ChartPanel>
+      ) : null}
+
+      {(focus === 'all' || focus === 'account') &&
+      overview?.outgoingDelegations.length ? (
+        <ChartPanel
+          title="Outgoing HP delegations"
+          subtitle="Current split by delegatee"
+          isLoading={dashboardQuery.isLoading}
+        >
+          <HpDelegationDonutChart
+            account={account}
+            delegations={overview.outgoingDelegations}
+            ownHivePower={wallet?.metrics.hivePower ?? 0}
+          />
         </ChartPanel>
       ) : null}
 
@@ -702,9 +778,9 @@ function MetricCard({
                 {isLoading ? (
                   <Skeleton height="32px" width="70%" />
                 ) : (
-                <Stat.ValueText fontSize="xl" lineHeight="1.05">
-                  {value ?? '—'}
-                  {suffix ? (
+                  <Stat.ValueText fontSize="xl" lineHeight="1.05">
+                    {value ?? '—'}
+                    {suffix ? (
                       <Stat.ValueUnit color="fg.muted" fontSize="xs">
                         {suffix}
                       </Stat.ValueUnit>
@@ -792,8 +868,10 @@ function ChartPanel({
 
 function RewardIncomeChart({
   overview,
+  focus,
 }: {
   overview: DashboardHistoricalOverview | null
+  focus: DashboardFocus
 }) {
   if (!overview) {
     return <EmptyStateMessage message="No reward history yet." />
@@ -803,6 +881,10 @@ function RewardIncomeChart({
     <Stack gap={3}>
       <RewardIncomeStackedChart buckets={overview.buckets} />
       <RewardIncomeHeatmapChart dailyIncome={overview.dailyIncome} />
+
+      {(focus === 'publishing' || focus === 'all') && (
+        <PublishingCadenceChart dailyPostCounts={overview.dailyPostCounts} />
+      )}
 
       <HStack gap={5} wrap="wrap">
         {overview.breakdown.map((item) => (
@@ -893,8 +975,18 @@ function formatPercent(value: number, digits = 1) {
   }).format(value)
 }
 
+function formatChangeLabel(change: number | null): string | undefined {
+  if (change == null) return undefined
+  const sign = change >= 0 ? '+' : ''
+  return `${change >= 0 ? '↑' : '↓'} ${sign}${change.toFixed(1)}% vs prev period`
+}
+
 function formatFollowRatio(followers: number, following: number) {
-  if (!Number.isFinite(followers) || !Number.isFinite(following) || following <= 0) {
+  if (
+    !Number.isFinite(followers) ||
+    !Number.isFinite(following) ||
+    following <= 0
+  ) {
     return 'ratio —'
   }
 
@@ -902,15 +994,13 @@ function formatFollowRatio(followers: number, following: number) {
 }
 
 function renderHivePowerCardBody(
-  metrics:
-    | {
-        hivePower: number
-        receivedHivePower: number
-        delegatedHivePower: number
-        effectiveHivePower: number
-        hivePriceHbd: number
-      }
-    | null,
+  metrics: {
+    hivePower: number
+    receivedHivePower: number
+    delegatedHivePower: number
+    effectiveHivePower: number
+    hivePriceHbd: number
+  } | null,
 ) {
   if (!metrics) {
     return (
@@ -1083,7 +1173,9 @@ function formatAccountMilestone(value: string | null) {
   )
   const daysUntil = Math.max(
     0,
-    Math.ceil((nextAnniversary.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+    Math.ceil(
+      (nextAnniversary.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    ),
   )
   const milestoneYears = nextAnniversaryYear - createdAt.getUTCFullYear()
 
@@ -1091,9 +1183,12 @@ function formatAccountMilestone(value: string | null) {
     return `${milestoneYears}y in ${daysUntil}d`
   }
 
-  return `Turns ${milestoneYears} in ${nextAnniversary.toLocaleDateString(undefined, {
-    month: 'short',
-  })}`
+  return `Turns ${milestoneYears} in ${nextAnniversary.toLocaleDateString(
+    undefined,
+    {
+      month: 'short',
+    },
+  )}`
 }
 
 function getActivityPalette(type: string) {

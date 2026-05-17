@@ -431,15 +431,18 @@ export function PostCardMedia({
       overflow="hidden"
       flexShrink={0}
       borderRadius="md"
+      border="1.5px solid"
+      borderColor={hasImage ? 'border.subtle' : 'transparent'}
     >
       {hasImage ? (
         <Box
           position="absolute"
           inset={0}
           backgroundImage={`url(${coverUrl})`}
-          backgroundSize="contain"
+          backgroundSize="cover"
           backgroundPosition="center"
           backgroundRepeat="no-repeat"
+          filter="grayscale(15%) brightness(0.88)"
         />
       ) : (
         <>

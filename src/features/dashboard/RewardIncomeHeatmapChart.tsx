@@ -1,5 +1,5 @@
 import { Box, Stack, Text } from '@chakra-ui/react'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as echarts from 'echarts/core'
 import { HeatmapChart, ScatterChart } from 'echarts/charts'
 import {
@@ -17,6 +17,9 @@ import type {
 } from 'echarts/components'
 import { DASHBOARD_INCOME_PALETTE } from './chartPalette'
 import type { DashboardDailyIncomeDay } from './types'
+
+// NOTE: this is a daily INCOME calendar heatmap, not a vote-cast timing heatmap.
+// Vote-cast timing is tracked in roadmap Phase 2 pending API verification.
 
 echarts.use([
   HeatmapChart,
@@ -40,10 +43,15 @@ type OverlayDefinition = {
 
 type RewardIncomeHeatmapOption = {
   animation: boolean
-  calendar: CalendarComponentOption
+  calendar: Array<CalendarComponentOption>
   tooltip: TooltipComponentOption
   visualMap: VisualMapComponentOption
   series: Array<HeatmapSeriesOption | ScatterSeriesOption>
+}
+
+type CalendarMonthRange = {
+  start: string
+  end: string
 }
 
 const OVERLAYS: Array<OverlayDefinition> = [
@@ -86,14 +94,30 @@ function formatTokenAmount(value: number, digits = 2) {
   }).format(value)
 }
 
-function formatRange(dailyIncome: Array<DashboardDailyIncomeDay>) {
-  const first = dailyIncome[0]
-  const last = dailyIncome[dailyIncome.length - 1]
-  if (!first || !last) return ''
+function buildCalendarMonthRanges(
+  dailyIncome: Array<DashboardDailyIncomeDay>,
+): Array<CalendarMonthRange> {
+  const months = new Map<string, CalendarMonthRange>()
 
-  const start = first.date.slice(0, 10)
-  const end = last.date.slice(0, 10)
-  return start === end ? start : [start, end]
+  for (const day of dailyIncome) {
+    const date = new Date(day.date)
+    const start = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1),
+    )
+    const end = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0),
+    )
+    const key = start.toISOString().slice(0, 7)
+
+    if (!months.has(key)) {
+      months.set(key, {
+        start: start.toISOString().slice(0, 10),
+        end: end.toISOString().slice(0, 10),
+      })
+    }
+  }
+
+  return Array.from(months.values())
 }
 
 export default function RewardIncomeHeatmapChart({
@@ -101,9 +125,14 @@ export default function RewardIncomeHeatmapChart({
 }: RewardIncomeHeatmapChartProps) {
   const chartRef = useRef<HTMLDivElement>(null)
   const instanceRef = useRef<EChartsType | null>(null)
+  const [chartWidth, setChartWidth] = useState(0)
 
   const hasData = useMemo(
     () => dailyIncome.some((day) => day.totalRewards > 0),
+    [dailyIncome],
+  )
+  const monthRanges = useMemo(
+    () => buildCalendarMonthRanges(dailyIncome),
     [dailyIncome],
   )
 
@@ -122,10 +151,16 @@ export default function RewardIncomeHeatmapChart({
 
     const observer =
       typeof ResizeObserver === 'function'
-        ? new ResizeObserver(() => instance.resize())
+        ? new ResizeObserver((entries) => {
+            const nextWidth =
+              entries[0]?.contentRect.width ?? container.clientWidth
+            setChartWidth(nextWidth)
+            instance.resize()
+          })
         : null
 
     observer?.observe(container)
+    setChartWidth(container.clientWidth)
 
     return () => {
       observer?.disconnect()
@@ -137,75 +172,137 @@ export default function RewardIncomeHeatmapChart({
   useEffect(() => {
     const container = chartRef.current
     const instance = instanceRef.current
-    if (!container || !instance || dailyIncome.length === 0) return
+    if (
+      !container ||
+      !instance ||
+      dailyIncome.length === 0 ||
+      chartWidth <= 0 ||
+      monthRanges.length === 0
+    ) {
+      return
+    }
 
     const color = (token: string) => resolveCssVar(token, container)
     const maxTotal = Math.max(...dailyIncome.map((day) => day.totalRewards), 0)
+    const calendarGap = 18
+    const minMonthWidth = 168
+    const columns = Math.max(
+      1,
+      Math.min(
+        monthRanges.length,
+        Math.floor((chartWidth + calendarGap) / (minMonthWidth + calendarGap)),
+      ),
+    )
+    const monthWidth = Math.floor(
+      (chartWidth - calendarGap * (columns - 1)) / columns,
+    )
+    const cellSize = Math.max(14, Math.min(24, Math.floor((monthWidth - 28) / 7)))
+    const monthLabelHeight = 24
+    const monthHeight = monthLabelHeight + cellSize * 8 + 10
+    const rowCount = Math.ceil(monthRanges.length / columns)
+    const chartHeight = rowCount * monthHeight + (rowCount - 1) * calendarGap + 12
 
-    const totalHeatmapData = dailyIncome.map((day) => [day.date.slice(0, 10), day.totalRewards])
+    const totalHeatmapData = dailyIncome.map((day) => [
+      day.date.slice(0, 10),
+      day.totalRewards,
+    ])
 
-    const overlaySeries: Array<ScatterSeriesOption> = OVERLAYS.map((overlay) => {
-      const maxForType = Math.max(...dailyIncome.map((day) => day[overlay.key]), 0)
+    const calendars: Array<CalendarComponentOption> = monthRanges.map(
+      (month, index) => {
+        const columnIndex = index % columns
+        const rowIndex = Math.floor(index / columns)
+        const itemsInRow =
+          rowIndex === rowCount - 1
+            ? monthRanges.length - rowIndex * columns || columns
+            : columns
+        const rowWidth =
+          itemsInRow * monthWidth + Math.max(0, itemsInRow - 1) * calendarGap
+        const rowOffset = Math.max(6, Math.floor((chartWidth - rowWidth) / 2))
 
-      return {
-        name: overlay.label,
-        type: 'scatter',
+        return {
+          top: rowIndex * (monthHeight + calendarGap) + monthLabelHeight,
+          left: rowOffset + columnIndex * (monthWidth + calendarGap),
+          range: [month.start, month.end],
+          orient: 'horizontal',
+          splitLine: {
+            show: false,
+          },
+          itemStyle: {
+            color: color(semanticVar('bg.subtle')),
+            borderWidth: 2,
+            borderColor: color(semanticVar('bg')),
+            borderRadius: 8,
+          },
+          dayLabel: {
+            firstDay: 1,
+            nameMap: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            color: color(semanticVar('fg.subtle')),
+            margin: 8,
+          },
+          monthLabel: {
+            color: color(semanticVar('fg.muted')),
+            margin: 14,
+            align: 'center',
+          },
+          yearLabel: {
+            show: false,
+          },
+          cellSize: [cellSize, cellSize],
+        }
+      },
+    )
+
+    const heatmapSeries: Array<HeatmapSeriesOption> = monthRanges.map(
+      (_, calendarIndex) => ({
+        name: 'Total rewards',
+        type: 'heatmap',
         coordinateSystem: 'calendar',
-        symbol: 'roundRect',
-        symbolSize: [14, 4],
-        symbolOffset: [0, overlay.yOffset],
-        itemStyle: {
-          color: color(tokenVar(overlay.colorToken)),
-          borderRadius: 999,
-        },
+        calendarIndex,
+        data: totalHeatmapData,
+        progressive: 0,
         emphasis: { disabled: true },
-        data: dailyIncome
-          .filter((day) => day[overlay.key] > 0)
-          .map((day) => ({
-            value: [day.date.slice(0, 10), day[overlay.key]],
+      }),
+    )
+
+    const overlaySeries: Array<ScatterSeriesOption> = monthRanges.flatMap(
+      (_, calendarIndex) =>
+        OVERLAYS.map((overlay) => {
+          const maxForType = Math.max(
+            ...dailyIncome.map((day) => day[overlay.key]),
+            0,
+          )
+
+          return {
+            name: overlay.label,
+            type: 'scatter',
+            coordinateSystem: 'calendar',
+            calendarIndex,
+            symbol: 'roundRect',
+            symbolSize: [Math.max(8, cellSize - 10), 4],
+            symbolOffset: [0, overlay.yOffset],
             itemStyle: {
-              opacity:
-                maxForType <= 0
-                  ? 0
-                  : 0.25 + 0.75 * (day[overlay.key] / maxForType),
+              color: color(tokenVar(overlay.colorToken)),
+              borderRadius: 999,
             },
-          })),
-      }
-    })
+            emphasis: { disabled: true },
+            data: dailyIncome
+              .filter((day) => day[overlay.key] > 0)
+              .map((day) => ({
+                value: [day.date.slice(0, 10), day[overlay.key]],
+                itemStyle: {
+                  opacity:
+                    maxForType <= 0
+                      ? 0
+                      : 0.25 + 0.75 * (day[overlay.key] / maxForType),
+                },
+              })),
+          }
+        }),
+    )
 
     const option: RewardIncomeHeatmapOption = {
       animation: false,
-      calendar: {
-        top: 8,
-        left: 8,
-        right: 8,
-        bottom: 8,
-        range: formatRange(dailyIncome),
-        orient: 'horizontal',
-        splitLine: {
-          show: false,
-        },
-        itemStyle: {
-          color: color(semanticVar('bg.subtle')),
-          borderWidth: 2,
-          borderColor: color(semanticVar('bg')),
-          borderRadius: 8,
-        },
-        dayLabel: {
-          firstDay: 1,
-          nameMap: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-          color: color(semanticVar('fg.subtle')),
-          margin: 10,
-        },
-        monthLabel: {
-          color: color(semanticVar('fg.muted')),
-          margin: 12,
-        },
-        yearLabel: {
-          show: false,
-        },
-        cellSize: ['auto', 24],
-      },
+      calendar: calendars,
       tooltip: {
         trigger: 'item',
         backgroundColor: color(semanticVar('bg.panel')),
@@ -216,7 +313,9 @@ export default function RewardIncomeHeatmapChart({
           fontFamily: 'var(--chakra-fonts-body)',
         },
         formatter: (params) => {
-          const payload = params as { value?: Array<string | number> | string | number }
+          const payload = params as {
+            value?: Array<string | number> | string | number
+          }
           const raw = payload.value
           const dateKey = Array.isArray(raw) ? String(raw[0] ?? '') : ''
           const day = dailyIncome.find((entry) => entry.date.startsWith(dateKey))
@@ -252,27 +351,21 @@ export default function RewardIncomeHeatmapChart({
         show: false,
         min: 0,
         max: maxTotal <= 0 ? 1 : Number(maxTotal.toFixed(2)),
-        seriesIndex: 0,
+        seriesIndex: heatmapSeries.map((_, index) => index),
         inRange: {
-          color: ['#f4f7ff', '#5b7cfa'],
+          color: [
+            color(semanticVar('bg.subtle')),
+            color(tokenVar('green.emphasized')),
+          ],
         },
       },
-      series: [
-        {
-          name: 'Total rewards',
-          type: 'heatmap',
-          coordinateSystem: 'calendar',
-          data: totalHeatmapData,
-          progressive: 0,
-          emphasis: { disabled: true },
-        },
-        ...overlaySeries,
-      ],
+      series: [...heatmapSeries, ...overlaySeries],
     }
 
+    container.style.height = `${chartHeight}px`
     instance.setOption(option, { notMerge: true })
     instance.resize()
-  }, [dailyIncome])
+  }, [chartWidth, dailyIncome, monthRanges])
 
   if (!hasData) {
     return null
@@ -291,8 +384,8 @@ export default function RewardIncomeHeatmapChart({
       </Text>
       <Box
         ref={chartRef}
-        h="14rem"
         w="full"
+        minH="14rem"
         borderRadius="16px"
         borderWidth="1px"
         borderColor="border.subtle"

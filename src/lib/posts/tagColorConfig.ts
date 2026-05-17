@@ -1,5 +1,6 @@
 import { CameraIcon } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 
 export const TAG_PALETTES = [
   'gray',
@@ -22,8 +23,7 @@ export const simpleicon = (
   (options?.dark ? `${!options.color ? '/_' : ''}/${options.dark}` : '') // TODO: add options support
 export const flagicon = (countrycode: string) =>
   `https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.5.0/flags/4x3/${countrycode.toLowerCase()}.svg`
-export const hiveAvatarUrl = (username: string) =>
-  `https://images.hive.blog/u/${username}/avatar`
+export const hiveAvatarUrl = (username: string) => getHiveAvatarUrl(username)
 export const colorTokens = {
   HIVE: ['#E31337', '#fff'],
   HBD: ['#00960E', 'white'],
