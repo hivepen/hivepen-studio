@@ -129,7 +129,9 @@ export default function PostPerformanceScatterChart({
           if (!point) return ''
 
           const coverHtml = point.coverUrl
-            ? `<img src="${point.coverUrl}" style="width:100%;height:52px;object-fit:cover;border-radius:6px;margin-bottom:8px;filter:grayscale(15%) brightness(0.88);border:1px solid rgba(255,255,255,0.08)" onerror="this.style.display='none'">`
+            ? `<img src="${point.coverUrl}" style="width:100%;height:52px;object-fit:cover;border-radius:6px;margin-bottom:8px;filter:grayscale(15%) brightness(0.88);border:1px solid ${color(
+                semanticVar('border.subtle'),
+              )}" onerror="this.style.display='none'">`
             : ''
 
           return [

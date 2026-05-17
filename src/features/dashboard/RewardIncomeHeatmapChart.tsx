@@ -257,7 +257,10 @@ export default function RewardIncomeHeatmapChart({
         max: maxTotal <= 0 ? 1 : Number(maxTotal.toFixed(2)),
         seriesIndex: 0,
         inRange: {
-          color: ['#f4f7ff', '#5b7cfa'],
+          color: [
+            color(semanticVar('bg.subtle')),
+            color(tokenVar('green.emphasized')),
+          ],
         },
       },
       series: [
