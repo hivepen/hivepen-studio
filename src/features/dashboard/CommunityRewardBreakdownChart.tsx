@@ -1,9 +1,10 @@
-import { Box, HStack, Stack, Text } from '@chakra-ui/react'
+import { Box, HStack, Image, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useMemo, useRef } from 'react'
 import * as echarts from 'echarts/core'
 import { TreemapChart } from 'echarts/charts'
 import { TooltipComponent } from 'echarts/components'
 import { SVGRenderer } from 'echarts/renderers'
+import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import type { EChartsType } from 'echarts/core'
 import type { TreemapSeriesOption } from 'echarts/charts'
 import type { TooltipComponentOption } from 'echarts/components'
@@ -233,9 +234,8 @@ export default function CommunityRewardBreakdownChart({
         {chartCommunities.slice(0, 6).map((community) => (
           <HStack key={community.id} gap={2} justify="space-between">
             <HStack gap={2} minW={0}>
-              <Box
-                as="img"
-                src={`https://images.hive.blog/u/${community.id}/avatar/small`}
+              <Image
+                src={getHiveAvatarUrl(community.id, 'small')}
                 alt={community.label}
                 boxSize="18px"
                 borderRadius="full"

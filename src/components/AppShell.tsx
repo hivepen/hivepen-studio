@@ -36,6 +36,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import AccountConnectDialog from './AccountConnectDialog'
 import AccountAvatar from './AccountAvatar'
 import type { Home } from 'lucide-react'
@@ -429,7 +430,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
             <HStack gap={3} overflow="hidden">
               <Box w={10} h={10} overflow="hidden">
                 <Image
-                  src="https://images.hive.blog/u/hivepen/avatar"
+                  src={getHiveAvatarUrl('hivepen')}
                   alt="Hivepen Studio Isotype"
                 />
               </Box>

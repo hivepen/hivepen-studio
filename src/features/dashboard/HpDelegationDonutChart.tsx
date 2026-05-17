@@ -15,6 +15,7 @@ import { SVGRenderer } from 'echarts/renderers'
 import type { PieSeriesOption } from 'echarts/charts'
 import type { TooltipComponentOption } from 'echarts/components'
 import type { ComposeOption, EChartsType } from 'echarts/core'
+import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import { DASHBOARD_DELEGATION_SLICE_TOKENS } from './chartPalette'
 import type { DashboardDelegation } from './types'
 
@@ -110,7 +111,7 @@ function DelegationLegendRow({
     >
       <HStack gap={2.5}>
         <Image
-          src={`https://images.hive.blog/u/${delegation.delegatee}/avatar/small`}
+          src={getHiveAvatarUrl(delegation.delegatee, 'small')}
           alt={delegation.delegatee}
           boxSize="20px"
           borderRadius="full"
@@ -450,7 +451,7 @@ export default function HpDelegationDonutChart({
             gap={3}
           >
             <Image
-              src={`https://images.hive.blog/u/${centerAvatarAccount}/avatar/small`}
+              src={getHiveAvatarUrl(centerAvatarAccount, 'small')}
               alt={centerAvatarAccount}
               boxSize="58px"
               borderRadius="full"
