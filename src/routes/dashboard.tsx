@@ -539,6 +539,7 @@ export function AccountAnalyticsPage({
           isLoading={dashboardQuery.isLoading}
         >
           <HpDelegationDonutChart
+            account={account}
             delegations={overview.outgoingDelegations}
             ownHivePower={wallet?.metrics.hivePower ?? 0}
           />
