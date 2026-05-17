@@ -33,6 +33,11 @@ export type DashboardDailyPostCount = {
   comments: number
 }
 
+export type DashboardDelegation = {
+  delegatee: string
+  hivePower: number
+}
+
 export type DashboardBreakdownItem = {
   id: 'author' | 'curation' | 'interest'
   label: string
@@ -123,6 +128,7 @@ export type DashboardHistoricalOverview = {
   buckets: Array<DashboardBucket>
   dailyIncome: Array<DashboardDailyIncomeDay>
   dailyPostCounts: Array<DashboardDailyPostCount>
+  outgoingDelegations: Array<DashboardDelegation>
   breakdown: Array<DashboardBreakdownItem>
   incomeBreakdown: Array<DashboardIncomeBreakdownCategory>
   summary: DashboardSummary

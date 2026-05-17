@@ -5,7 +5,9 @@ import type {
   DashboardBucket,
   DashboardBucketUnit,
   DashboardCommunityRewardBreakdown,
+  DashboardDelegation,
   DashboardDailyIncomeDay,
+  DashboardDailyPostCount,
   DashboardHistoricalOverview,
   DashboardHistoricalSnapshot,
   DashboardIncomeBreakdownCategory,
@@ -258,6 +260,18 @@ const writeSnapshots = (
   storage.setItem(DASHBOARD_STORAGE_KEY, JSON.stringify(snapshots))
 }
 
+const normalizeDashboardSnapshot = (
+  snapshot: DashboardHistoricalSnapshot,
+): DashboardHistoricalSnapshot => ({
+  ...snapshot,
+  dailyPostCounts: Array.isArray(snapshot.dailyPostCounts)
+    ? snapshot.dailyPostCounts
+    : [],
+  outgoingDelegations: Array.isArray(snapshot.outgoingDelegations)
+    ? snapshot.outgoingDelegations
+    : [],
+})
+
 const toSnapshotKey = (username: string, range: DashboardRange) =>
   `${normalizeUsername(username)}:${range}`
 
@@ -265,10 +279,23 @@ export const readDashboardSnapshot = (
   username: string,
   range: DashboardRange,
 ) => {
-  const snapshot = readSnapshots()[toSnapshotKey(username, range)]
+  const key = toSnapshotKey(username, range)
+  const snapshot = readSnapshots()[key]
   if (!snapshot) return null
   if (snapshot.expiresAt <= Date.now()) return null
-  return snapshot
+
+  const normalizedSnapshot = normalizeDashboardSnapshot(snapshot)
+
+  if (
+    !Array.isArray(snapshot.dailyPostCounts) ||
+    !Array.isArray(snapshot.outgoingDelegations)
+  ) {
+    const snapshots = readSnapshots()
+    snapshots[key] = normalizedSnapshot
+    writeSnapshots(snapshots)
+  }
+
+  return normalizedSnapshot
 }
 
 export const writeDashboardSnapshot = (
@@ -276,11 +303,11 @@ export const writeDashboardSnapshot = (
   data: DashboardHistoricalOverview,
 ) => {
   const snapshots = readSnapshots()
-  snapshots[toSnapshotKey(username, data.range)] = {
+  snapshots[toSnapshotKey(username, data.range)] = normalizeDashboardSnapshot({
     ...data,
     username: normalizeUsername(username),
     expiresAt: data.cachedAt + DASHBOARD_TTL_MS,
-  }
+  })
   writeSnapshots(snapshots)
 }
 
@@ -603,6 +630,18 @@ export const aggregateDashboardOverview = ({
       .map((delegation) => normalizeUsername(delegation.delegatee))
       .filter((delegatee) => delegatee && delegatee !== normalized),
   )
+  const delegationSummary: Array<DashboardDelegation> = outgoingDelegations
+    .map((delegation) => ({
+      delegatee: normalizeUsername(delegation.delegatee),
+      hivePower: vestsToHivePower(delegation.vesting_shares, properties),
+    }))
+    .filter(
+      (delegation) =>
+        delegation.delegatee.length > 0 &&
+        delegation.delegatee !== normalized &&
+        delegation.hivePower > 0,
+    )
+    .sort((left, right) => right.hivePower - left.hivePower)
   // TODO: Attribute transfers against delegation history for the selected range,
   // not just the current live delegatee set.
   // Spec: src/features/dashboard/INCOME_BREAKDOWN_ROADMAP.md
@@ -1009,6 +1048,7 @@ export const aggregateDashboardOverview = ({
     buckets,
     dailyIncome,
     dailyPostCounts,
+    outgoingDelegations: delegationSummary,
     breakdown,
     incomeBreakdown,
     payoutDistribution,
