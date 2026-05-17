@@ -42,6 +42,7 @@ import type {
   DashboardRange,
 } from '@/features/dashboard/types'
 import CommunityRewardBreakdownChart from '@/features/dashboard/CommunityRewardBreakdownChart'
+import HpDelegationDonutChart from '@/features/dashboard/HpDelegationDonutChart'
 import IncomeBreakdownChart from '@/features/dashboard/IncomeBreakdownChart'
 import PayoutDistributionChart from '@/features/dashboard/PayoutDistributionChart'
 import PostPerformanceScatterChart from '@/features/dashboard/PostPerformanceScatterChart'
@@ -527,6 +528,20 @@ export function AccountAnalyticsPage({
           ) : (
             <EmptyStateMessage message="No community-attributed author rewards were found for this period." />
           )}
+        </ChartPanel>
+      ) : null}
+
+      {(focus === 'all' || focus === 'account') &&
+      overview?.outgoingDelegations.length ? (
+        <ChartPanel
+          title="Outgoing HP delegations"
+          subtitle="Current split by delegatee"
+          isLoading={dashboardQuery.isLoading}
+        >
+          <HpDelegationDonutChart
+            delegations={overview.outgoingDelegations}
+            ownHivePower={wallet?.metrics.hivePower ?? 0}
+          />
         </ChartPanel>
       ) : null}
 
