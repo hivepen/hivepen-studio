@@ -1,15 +1,19 @@
-import { Box, HStack, Text, VStack } from '@chakra-ui/react'
+import { Box, HStack, Text } from '@chakra-ui/react'
 import { useEffect, useRef } from 'react'
 import * as echarts from 'echarts/core'
 import { HeatmapChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent } from 'echarts/components'
 import { SVGRenderer } from 'echarts/renderers'
-import type { EChartsType } from 'echarts/core'
 import type { HeatmapSeriesOption } from 'echarts/charts'
-import type { GridComponentOption, TooltipComponentOption } from 'echarts/components'
+import type { TooltipComponentOption } from 'echarts/components'
+import type { ComposeOption, EChartsType } from 'echarts/core'
 import type { DashboardDailyPostCount } from './types'
 
 echarts.use([HeatmapChart, GridComponent, TooltipComponent, SVGRenderer])
+
+type PublishingCadenceChartOption = ComposeOption<
+  HeatmapSeriesOption | TooltipComponentOption
+>
 
 type PublishingCadenceChartProps = {
   dailyPostCounts: Array<DashboardDailyPostCount>
@@ -72,7 +76,6 @@ export default function PublishingCadenceChart({
     const color = (token: string) => resolveCssVar(token, container)
     const muted = color(semanticVar('fg.muted'))
     const subtle = color(semanticVar('fg.subtle'))
-    const border = color(semanticVar('border.muted'))
     const bg = color(semanticVar('bg'))
 
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -93,10 +96,10 @@ export default function PublishingCadenceChart({
       currentWeek.push('')
     }
 
-    for (const day of sortedDays) {
+    for (const [index, day] of sortedDays.entries()) {
       const date = new Date(day.date)
       const dayOfWeek = date.getDay()
-      const weekIndex = Math.floor((sortedDays.indexOf(day) + startDayOfWeek) / 7)
+      const weekIndex = Math.floor((index + startDayOfWeek) / 7)
 
       while (weeks.length <= weekIndex) {
         weeks.push([...currentWeek])
@@ -110,7 +113,7 @@ export default function PublishingCadenceChart({
 
     const maxValue = Math.max(3, ...data.map((d) => d[2]))
 
-    const option = {
+    const option: PublishingCadenceChartOption = {
       animation: false,
       tooltip: {
         backgroundColor: color(semanticVar('bg.panel')),
@@ -121,10 +124,13 @@ export default function PublishingCadenceChart({
           fontFamily: 'var(--chakra-fonts-body)',
           fontSize: 11,
         },
-        formatter: (params: { data?: [number, number, number] }) => {
-          const point = params.data
+        formatter: (params) => {
+          if (Array.isArray(params)) return ''
+          const point = Array.isArray(params.data)
+            ? (params.data as [number, number, number])
+            : undefined
           if (!point || point[2] === 0) return ''
-          const dayData = sortedDays.find((d, idx) => {
+          const dayData = sortedDays.find((d) => {
             const date = new Date(d.date)
             return date.getDay() === point[1]
           })
@@ -197,7 +203,7 @@ export default function PublishingCadenceChart({
       ],
     }
 
-    instance.setOption(option as object, { notMerge: true })
+    instance.setOption(option, { notMerge: true })
     instance.resize()
   }, [dailyPostCounts, hasActivity])
 
