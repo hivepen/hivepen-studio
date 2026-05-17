@@ -1,4 +1,4 @@
-import { Box } from '@chakra-ui/react'
+import { Box, HStack, Stack, Text } from '@chakra-ui/react'
 import { useEffect, useMemo, useRef } from 'react'
 import * as echarts from 'echarts/core'
 import { TreemapChart } from 'echarts/charts'
@@ -226,5 +226,38 @@ export default function CommunityRewardBreakdownChart({
     return null
   }
 
-  return <Box ref={chartRef} h="18rem" w="full" />
+  return (
+    <Box>
+      <Box ref={chartRef} h="18rem" w="full" />
+      <Stack gap={1.5} mt={3}>
+        {chartCommunities.slice(0, 6).map((community) => (
+          <HStack key={community.id} gap={2} justify="space-between">
+            <HStack gap={2} minW={0}>
+              <Box
+                as="img"
+                src={`https://images.hive.blog/u/${community.id}/avatar/small`}
+                alt={community.label}
+                boxSize="18px"
+                borderRadius="full"
+                border="1.5px solid"
+                borderColor="green.subtle"
+                objectFit="cover"
+                filter="grayscale(20%)"
+                flexShrink={0}
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+              <Text fontSize="xs" color="fg.muted" lineClamp={1}>
+                {community.label}
+              </Text>
+            </HStack>
+            <Text fontSize="xs" fontFamily="mono" color="fg" flexShrink={0}>
+              {formatTokenAmount(community.totalRewards, 2)} HBD
+            </Text>
+          </HStack>
+        ))}
+      </Stack>
+    </Box>
+  )
 }
