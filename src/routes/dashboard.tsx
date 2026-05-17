@@ -375,49 +375,6 @@ export function AccountAnalyticsPage({
               </Stack>
             </HStack>
           </Stack>
-
-          <HStack gap={3} wrap="wrap" justify="flex-end">
-            <Stack gap={1}>
-              <Text
-                fontSize="xs"
-                color="fg.muted"
-                textTransform="uppercase"
-                letterSpacing="0.14em"
-              >
-                Focus
-              </Text>
-              <SegmentGroup.Root
-                size="sm"
-                value={focus}
-                onValueChange={(event) =>
-                  setFocus(event.value as DashboardFocus)
-                }
-              >
-                <SegmentGroup.Indicator />
-                <SegmentGroup.Items items={FOCUS_OPTIONS} />
-              </SegmentGroup.Root>
-            </Stack>
-            <Stack gap={1}>
-              <Text
-                fontSize="xs"
-                color="fg.muted"
-                textTransform="uppercase"
-                letterSpacing="0.14em"
-              >
-                Range
-              </Text>
-              <SegmentGroup.Root
-                size="sm"
-                value={range}
-                onValueChange={(event) =>
-                  setRange(event.value as DashboardRange)
-                }
-              >
-                <SegmentGroup.Indicator />
-                <SegmentGroup.Items items={RANGE_OPTIONS} />
-              </SegmentGroup.Root>
-            </Stack>
-          </HStack>
         </HStack>
 
         <HStack gap={3} wrap="wrap" color="fg.muted" fontSize="xs">
@@ -436,6 +393,39 @@ export function AccountAnalyticsPage({
           ) : null}
         </HStack>
       </Stack>
+
+      <HStack
+        position="sticky"
+        top={0}
+        zIndex={10}
+        justify="flex-end"
+        gap={3}
+        wrap="wrap"
+        px={{ base: 3, md: 4 }}
+        py={3}
+        mt={-1}
+        bg="bg"
+        borderBottomWidth="1px"
+        borderColor="border.subtle"
+        backdropFilter="blur(12px)"
+      >
+        <SegmentGroup.Root
+          size="sm"
+          value={focus}
+          onValueChange={(event) => setFocus(event.value as DashboardFocus)}
+        >
+          <SegmentGroup.Indicator />
+          <SegmentGroup.Items items={FOCUS_OPTIONS} />
+        </SegmentGroup.Root>
+        <SegmentGroup.Root
+          size="sm"
+          value={range}
+          onValueChange={(event) => setRange(event.value as DashboardRange)}
+        >
+          <SegmentGroup.Indicator />
+          <SegmentGroup.Items items={RANGE_OPTIONS} />
+        </SegmentGroup.Root>
+      </HStack>
 
       <SimpleGrid columns={{ base: 1, sm: 2, lg: 4, xl: 5 }} gap={2.5}>
         {statCards
