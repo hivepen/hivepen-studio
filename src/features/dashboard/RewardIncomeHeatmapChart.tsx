@@ -18,6 +18,9 @@ import type {
 import { DASHBOARD_INCOME_PALETTE } from './chartPalette'
 import type { DashboardDailyIncomeDay } from './types'
 
+// NOTE: this is a daily INCOME calendar heatmap, not a vote-cast timing heatmap.
+// Vote-cast timing is tracked in roadmap Phase 2 pending API verification.
+
 echarts.use([
   HeatmapChart,
   ScatterChart,
