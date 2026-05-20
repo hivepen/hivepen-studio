@@ -4,7 +4,52 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Hive Analytics Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<script type="module">
+  import * as echarts from 'https://cdn.jsdelivr.net/npm/echarts@5.4.3/+esm/core'
+  import {
+    BarChart,
+    CandlestickChart,
+    GaugeChart,
+    HeatmapChart,
+    LineChart,
+    PieChart,
+    RadarChart,
+    SankeyChart,
+    ScatterChart,
+    SunburstChart,
+    TreemapChart,
+  } from 'https://cdn.jsdelivr.net/npm/echarts@5.4.3/+esm/charts'
+  import {
+    GridComponent,
+    LegendComponent,
+    RadarComponent,
+    TooltipComponent,
+    VisualMapComponent,
+  } from 'https://cdn.jsdelivr.net/npm/echarts@5.4.3/+esm/components'
+  import { CanvasRenderer } from 'https://cdn.jsdelivr.net/npm/echarts@5.4.3/+esm/renderers'
+
+  echarts.use([
+    BarChart,
+    CandlestickChart,
+    GaugeChart,
+    HeatmapChart,
+    LineChart,
+    PieChart,
+    RadarChart,
+    SankeyChart,
+    ScatterChart,
+    SunburstChart,
+    TreemapChart,
+    GridComponent,
+    LegendComponent,
+    RadarComponent,
+    TooltipComponent,
+    VisualMapComponent,
+    CanvasRenderer,
+  ])
+
+  window.echarts = echarts
+</script>
 <style>
   :root {
     --bg: #0d0f14;
