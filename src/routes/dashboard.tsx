@@ -16,12 +16,12 @@ import {
 } from '@chakra-ui/react'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import {
-  Activity,
   ArrowDownToLine,
   ArrowUpToLine,
   BadgeCheck,
+  BellIcon,
+  CalendarIcon,
   Coins,
-  Gauge,
   Gem,
   HandHeart,
   Landmark,
@@ -32,7 +32,6 @@ import {
   ShieldCheck,
   Sparkles,
   TrendingDown,
-  UserRound,
   WalletCards,
 } from 'lucide-react'
 import { useState } from 'react'
@@ -65,6 +64,7 @@ import { getTitleMeta } from '@/lib/posts/titleMeta'
 import { resolvePostCommunity } from '@/features/posts/postCardMapping'
 import MiniSparkline from '@/features/dashboard/MiniSparkline'
 import PublishingCadenceChart from '@/features/dashboard/PublishingCadenceChart'
+import VotingPowerMedia from '@/features/dashboard/VotingPowerMedia'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -272,7 +272,9 @@ export function AccountAnalyticsPage({
       category: 'account',
       label: 'Voting power',
       palette: 'green',
-      icon: <Icon as={Gauge} boxSize={4} />,
+      media: (
+        <VotingPowerMedia value={wallet?.metrics.votingManaPercent ?? null} />
+      ),
       value:
         wallet?.metrics.votingManaPercent != null
           ? formatTokenAmount(wallet.metrics.votingManaPercent, 1)
@@ -296,7 +298,7 @@ export function AccountAnalyticsPage({
       category: 'account',
       label: 'Followers',
       palette: 'green',
-      icon: <Icon as={UserRound} boxSize={4} />,
+      icon: <Icon as={BellIcon} boxSize={4} />,
       value: followerCount != null ? formatInteger(followerCount) : null,
       suffix: '',
       description:
@@ -338,7 +340,7 @@ export function AccountAnalyticsPage({
       category: 'account',
       label: 'Account age',
       palette: 'gray',
-      icon: <Icon as={Activity} boxSize={4} />,
+      icon: <Icon as={CalendarIcon} boxSize={4} />,
       value: wallet?.account.created
         ? formatAccountAge(wallet.account.created)
         : null,
