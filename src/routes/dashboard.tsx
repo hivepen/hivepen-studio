@@ -35,7 +35,10 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
-import type { DashboardChartId } from '@/features/dashboard/DashboardChartVisibilitySelect'
+import type {
+  DashboardChartId,
+  DashboardFocus,
+} from '@/features/dashboard/dashboardCharts'
 import type {
   DashboardHistoricalOverview,
   DashboardRange,
@@ -66,14 +69,16 @@ import MiniSparkline from '@/features/dashboard/MiniSparkline'
 import PublishingCadenceChart from '@/features/dashboard/PublishingCadenceChart'
 import VotingPowerMedia from '@/features/dashboard/VotingPowerMedia'
 import {
+  DASHBOARD_CHART_IDS,
+  isDashboardChartVisible,
+} from '@/features/dashboard/dashboardCharts'
+import {
   ChartPanel,
   EmptyStateMessage,
   MetricCard,
   SeriesLegend,
 } from '@/features/dashboard/DashboardSurface'
-import DashboardChartVisibilitySelect, {
-  DASHBOARD_CHART_IDS,
-} from '@/features/dashboard/DashboardChartVisibilitySelect'
+import DashboardChartVisibilitySelect from '@/features/dashboard/DashboardChartVisibilitySelect'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -85,8 +90,6 @@ const RANGE_OPTIONS: Array<{ label: DashboardRange; value: DashboardRange }> = [
   { label: '6M', value: '6M' },
   { label: '1Y', value: '1Y' },
 ]
-
-type DashboardFocus = 'all' | 'rewards' | 'publishing' | 'account'
 
 const PAGE_MAX_WIDTH = '1240px'
 const SURFACE_RADIUS = '16px'
@@ -471,8 +474,7 @@ export function AccountAnalyticsPage({
           ))}
       </SimpleGrid>
 
-      {matchesDashboardFocus('rewards', focus) &&
-      visibleChartSet.has('reward-income') ? (
+      {isDashboardChartVisible('reward-income', focus, visibleChartSet) ? (
         <SimpleGrid columns={{ base: 1, lg: 3 }} gap={2.5} alignItems="stretch">
           <ChartPanel
             title="Reward income"
@@ -485,9 +487,8 @@ export function AccountAnalyticsPage({
         </SimpleGrid>
       ) : null}
 
-      {matchesDashboardFocus('rewards', focus) &&
-      overview &&
-      visibleChartSet.has('income-breakdown') ? (
+      {isDashboardChartVisible('income-breakdown', focus, visibleChartSet) &&
+      overview ? (
         <ChartPanel
           title="Income breakdown"
           isLoading={dashboardQuery.isLoading}
@@ -499,8 +500,7 @@ export function AccountAnalyticsPage({
         </ChartPanel>
       ) : null}
 
-      {(focus === 'all' || focus === 'rewards' || focus === 'publishing') &&
-      visibleChartSet.has('post-performance') ? (
+      {isDashboardChartVisible('post-performance', focus, visibleChartSet) ? (
         <ChartPanel
           title="Post performance map"
           subtitle="Payout × votes · bubble = comments"
@@ -514,8 +514,7 @@ export function AccountAnalyticsPage({
         </ChartPanel>
       ) : null}
 
-      {(focus === 'all' || focus === 'publishing') &&
-      visibleChartSet.has('payout-distribution') ? (
+      {isDashboardChartVisible('payout-distribution', focus, visibleChartSet) ? (
         <ChartPanel
           title="Payout distribution"
           subtitle="Median and spread by period"
@@ -531,8 +530,7 @@ export function AccountAnalyticsPage({
         </ChartPanel>
       ) : null}
 
-      {(focus === 'all' || focus === 'publishing') &&
-      visibleChartSet.has('community-breakdown') ? (
+      {isDashboardChartVisible('community-breakdown', focus, visibleChartSet) ? (
         <ChartPanel
           title="Community reward breakdown"
           subtitle="Author rewards by community"
@@ -548,9 +546,8 @@ export function AccountAnalyticsPage({
         </ChartPanel>
       ) : null}
 
-      {(focus === 'all' || focus === 'account') &&
-      overview?.outgoingDelegations.length &&
-      visibleChartSet.has('hp-delegations') ? (
+      {isDashboardChartVisible('hp-delegations', focus, visibleChartSet) &&
+      overview?.outgoingDelegations.length ? (
         <ChartPanel
           title="Outgoing HP delegations"
           subtitle="Current split by delegatee"

@@ -1,12 +1,9 @@
 import { Portal, Select, createListCollection } from '@chakra-ui/react'
-
-export type DashboardChartId =
-  | 'reward-income'
-  | 'income-breakdown'
-  | 'post-performance'
-  | 'payout-distribution'
-  | 'community-breakdown'
-  | 'hp-delegations'
+import type { DashboardChartId } from '@/features/dashboard/dashboardCharts'
+import {
+  DASHBOARD_CHARTS,
+  DASHBOARD_CHART_IDS,
+} from '@/features/dashboard/dashboardCharts'
 
 type DashboardChartOption = {
   value: DashboardChartId
@@ -14,17 +11,11 @@ type DashboardChartOption = {
 }
 
 const chartCollection = createListCollection<DashboardChartOption>({
-  items: [
-    { value: 'reward-income', label: 'Reward income' },
-    { value: 'income-breakdown', label: 'Income breakdown' },
-    { value: 'post-performance', label: 'Post performance map' },
-    { value: 'payout-distribution', label: 'Payout distribution' },
-    { value: 'community-breakdown', label: 'Community reward breakdown' },
-    { value: 'hp-delegations', label: 'Outgoing HP delegations' },
-  ],
+  items: DASHBOARD_CHARTS.map((chart) => ({
+    value: chart.id,
+    label: chart.label,
+  })),
 })
-
-export const DASHBOARD_CHART_IDS = chartCollection.items.map((item) => item.value)
 
 export default function DashboardChartVisibilitySelect({
   value,
