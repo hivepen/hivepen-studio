@@ -166,6 +166,22 @@ question that the existing dashboard does not already cover.
 - Caveat:
   This is useful, but lower priority than reward and performance charts.
 
+#### 10a. User-controlled chart visibility
+
+- Status: In progress
+- Why it matters:
+  The dashboard now includes enough chart surfaces that users need a faster way
+  to hide low-value panels without changing the focus mode.
+- Recommended form:
+  A Chakra UI v3 multiple select field backed by persistent local state so each
+  account view can remember which chart panels stay visible.
+- First implementation slice:
+  Add a chart picker above the dashboard grid and gate each chart panel against
+  the selected ids while keeping focus-based filtering intact.
+- Follow-up:
+  Consider presets such as `Overview`, `Rewards`, and `Publishing` only after
+  the raw per-chart controls prove useful.
+
 ### Possible visually, but weakly supported or too inferential right now
 
 These are the charts we should avoid unless the data story gets much stronger.

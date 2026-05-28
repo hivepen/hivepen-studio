@@ -35,6 +35,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import type { DashboardChartId } from '@/features/dashboard/DashboardChartVisibilitySelect'
 import type {
   DashboardHistoricalOverview,
   DashboardRange,
@@ -70,6 +71,9 @@ import {
   MetricCard,
   SeriesLegend,
 } from '@/features/dashboard/DashboardSurface'
+import DashboardChartVisibilitySelect, {
+  DASHBOARD_CHART_IDS,
+} from '@/features/dashboard/DashboardChartVisibilitySelect'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -104,6 +108,9 @@ export function AccountAnalyticsPage({
   )
   const [range, setRange] = useState<DashboardRange>('3M')
   const [focus, setFocus] = useState<DashboardFocus>('all')
+  const [visibleCharts, setVisibleCharts] = useLocalStorageState<
+    Array<DashboardChartId>
+  >('hivepen.dashboard.visibleCharts', DASHBOARD_CHART_IDS)
   const locale = getLocale()
   const routeAccount = accountname?.replace(/^@/, '') ?? null
   const isScopedAccountView = routeAccount !== null
@@ -183,6 +190,9 @@ export function AccountAnalyticsPage({
   const followerCount = profile?.followerCount ?? null
   const followingCount = profile?.followingCount ?? null
   const totalPosts = profile?.postCount ?? null
+  const visibleChartSet = new Set<DashboardChartId>(
+    visibleCharts.length > 0 ? visibleCharts : DASHBOARD_CHART_IDS,
+  )
 
   const statCards: Array<{
     category: Exclude<DashboardFocus, 'all'>
@@ -432,6 +442,10 @@ export function AccountAnalyticsPage({
           <SegmentGroup.Indicator />
           <SegmentGroup.Items items={RANGE_OPTIONS} />
         </SegmentGroup.Root>
+        <DashboardChartVisibilitySelect
+          value={visibleCharts.length > 0 ? visibleCharts : DASHBOARD_CHART_IDS}
+          onValueChange={(value) => setVisibleCharts(value)}
+        />
       </HStack>
 
       <SimpleGrid columns={{ base: 1, sm: 2, lg: 4, xl: 5 }} gap={2.5}>
@@ -457,7 +471,8 @@ export function AccountAnalyticsPage({
           ))}
       </SimpleGrid>
 
-      {matchesDashboardFocus('rewards', focus) ? (
+      {matchesDashboardFocus('rewards', focus) &&
+      visibleChartSet.has('reward-income') ? (
         <SimpleGrid columns={{ base: 1, lg: 3 }} gap={2.5} alignItems="stretch">
           <ChartPanel
             title="Reward income"
@@ -470,7 +485,9 @@ export function AccountAnalyticsPage({
         </SimpleGrid>
       ) : null}
 
-      {matchesDashboardFocus('rewards', focus) && overview ? (
+      {matchesDashboardFocus('rewards', focus) &&
+      overview &&
+      visibleChartSet.has('income-breakdown') ? (
         <ChartPanel
           title="Income breakdown"
           isLoading={dashboardQuery.isLoading}
@@ -482,7 +499,8 @@ export function AccountAnalyticsPage({
         </ChartPanel>
       ) : null}
 
-      {focus === 'all' || focus === 'rewards' || focus === 'publishing' ? (
+      {(focus === 'all' || focus === 'rewards' || focus === 'publishing') &&
+      visibleChartSet.has('post-performance') ? (
         <ChartPanel
           title="Post performance map"
           subtitle="Payout × votes · bubble = comments"
@@ -496,7 +514,8 @@ export function AccountAnalyticsPage({
         </ChartPanel>
       ) : null}
 
-      {focus === 'all' || focus === 'publishing' ? (
+      {(focus === 'all' || focus === 'publishing') &&
+      visibleChartSet.has('payout-distribution') ? (
         <ChartPanel
           title="Payout distribution"
           subtitle="Median and spread by period"
@@ -512,7 +531,8 @@ export function AccountAnalyticsPage({
         </ChartPanel>
       ) : null}
 
-      {focus === 'all' || focus === 'publishing' ? (
+      {(focus === 'all' || focus === 'publishing') &&
+      visibleChartSet.has('community-breakdown') ? (
         <ChartPanel
           title="Community reward breakdown"
           subtitle="Author rewards by community"
@@ -529,7 +549,8 @@ export function AccountAnalyticsPage({
       ) : null}
 
       {(focus === 'all' || focus === 'account') &&
-      overview?.outgoingDelegations.length ? (
+      overview?.outgoingDelegations.length &&
+      visibleChartSet.has('hp-delegations') ? (
         <ChartPanel
           title="Outgoing HP delegations"
           subtitle="Current split by delegatee"
