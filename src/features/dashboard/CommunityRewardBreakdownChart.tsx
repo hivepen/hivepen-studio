@@ -1,5 +1,5 @@
 import { Box, HStack, Image, Stack, Text } from '@chakra-ui/react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as echarts from 'echarts/core'
 import { TreemapChart } from 'echarts/charts'
 import { TooltipComponent } from 'echarts/components'
@@ -119,20 +119,145 @@ function buildCommunityFill(
   }
 }
 
+function CommunityLegendRow({
+  community,
+  totalRewards,
+  isActive,
+  isPinned,
+  onPreview,
+  onPreviewEnd,
+  onTogglePin,
+}: {
+  community: DashboardCommunityRewardBreakdown
+  totalRewards: number
+  isActive: boolean
+  isPinned: boolean
+  onPreview: () => void
+  onPreviewEnd: () => void
+  onTogglePin: () => void
+}) {
+  return (
+    <Box
+      as="button"
+      w="full"
+      onMouseEnter={onPreview}
+      onMouseLeave={onPreviewEnd}
+      onFocus={onPreview}
+      onBlur={onPreviewEnd}
+      onClick={onTogglePin}
+      aria-pressed={isPinned}
+      aria-label={`${community.label}, ${formatPercent(
+        community.totalRewards,
+        totalRewards,
+      )} of community rewards, ${formatTokenAmount(
+        community.totalRewards,
+        2,
+      )} HBD`}
+      textAlign="left"
+      px={1.5}
+      py={1.25}
+      borderRadius="md"
+      borderWidth="1px"
+      borderColor={isActive ? 'border.emphasized' : 'transparent'}
+      bg={isActive ? 'bg.subtle' : 'transparent'}
+      opacity={isActive ? 1 : 0.74}
+      transition="background 0.14s, opacity 0.14s, border-color 0.14s"
+      _hover={{ opacity: 1 }}
+      _focusVisible={{
+        outline: '2px solid',
+        outlineColor: 'border.emphasized',
+        outlineOffset: '2px',
+      }}
+    >
+      <HStack gap={2} justify="space-between">
+        <HStack gap={2} minW={0}>
+          <Image
+            src={getHiveAvatarUrl(community.id, 'small')}
+            alt={community.label}
+            boxSize="18px"
+            borderRadius="full"
+            border="1.5px solid"
+            borderColor={isActive ? 'border.emphasized' : 'border.subtle'}
+            objectFit="cover"
+            filter="grayscale(20%)"
+            flexShrink={0}
+            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+              e.currentTarget.style.display = 'none'
+            }}
+          />
+          <Text
+            fontSize="xs"
+            color={isActive ? 'fg' : 'fg.muted'}
+            lineClamp={1}
+            fontWeight={isActive ? '600' : '400'}
+          >
+            {community.label}
+          </Text>
+        </HStack>
+        <Text
+          fontSize="xs"
+          fontFamily="mono"
+          color={isActive ? 'fg' : 'fg.subtle'}
+          fontWeight={isActive ? '600' : '400'}
+          flexShrink={0}
+        >
+          {formatTokenAmount(community.totalRewards, 2)} HBD
+        </Text>
+      </HStack>
+    </Box>
+  )
+}
+
 export default function CommunityRewardBreakdownChart({
   communities,
 }: CommunityRewardBreakdownChartProps) {
   const chartRef = useRef<HTMLDivElement>(null)
   const instanceRef = useRef<EChartsType | null>(null)
-  const pinnedCommunityIdRef = useRef<string | null>(null)
-  const highlightedCommunityIdRef = useRef<string | null>(null)
   const [imageMap, setImageMap] = useState<Map<string, HTMLCanvasElement>>(
     () => new Map(),
   )
+  const [hoveredCommunityId, setHoveredCommunityId] = useState<string | null>(null)
+  const [pinnedCommunityId, setPinnedCommunityId] = useState<string | null>(null)
 
   const chartCommunities = useMemo(
     () => communities.filter((community) => community.totalRewards > 0),
     [communities],
+  )
+  const totalRewards = useMemo(
+    () => chartCommunities.reduce((sum, community) => sum + community.totalRewards, 0),
+    [chartCommunities],
+  )
+  const hasPinnedSelection = pinnedCommunityId != null
+  const activeCommunityId = pinnedCommunityId ?? hoveredCommunityId
+
+  const clearPreview = useCallback(() => {
+    if (hasPinnedSelection) return
+    setHoveredCommunityId(null)
+  }, [hasPinnedSelection])
+
+  const previewCommunity = useCallback(
+    (communityId: string) => {
+      if (hasPinnedSelection) return
+      setHoveredCommunityId(communityId)
+    },
+    [hasPinnedSelection],
+  )
+
+  const clearPinnedSelection = useCallback(() => {
+    setPinnedCommunityId(null)
+  }, [])
+
+  const togglePinnedCommunity = useCallback(
+    (communityId: string) => {
+      if (pinnedCommunityId === communityId) {
+        clearPinnedSelection()
+        return
+      }
+
+      setPinnedCommunityId(communityId)
+      setHoveredCommunityId(null)
+    },
+    [clearPinnedSelection, pinnedCommunityId],
   )
 
   useEffect(() => {
@@ -193,18 +318,73 @@ export default function CommunityRewardBreakdownChart({
   }, [chartCommunities.length])
 
   useEffect(() => {
+    const instance = instanceRef.current
+    if (!instance) return
+
+    const communityIdByLabel = new Map(
+      chartCommunities.map((community) => [community.label, community.id.trim()]),
+    )
+
+    const getCommunityIdFromParams = (params: {
+      name?: string
+      treePathInfo?: Array<{ name?: string }>
+    }) => {
+      const treePath = params.treePathInfo ?? []
+      const communityLabel = treePath[1]?.name ?? params.name
+      return communityLabel ? communityIdByLabel.get(communityLabel) ?? null : null
+    }
+
+    const handleMouseover = (params: unknown) => {
+      const communityId = getCommunityIdFromParams(
+        params as { name?: string; treePathInfo?: Array<{ name?: string }> },
+      )
+      if (communityId) previewCommunity(communityId)
+    }
+
+    const handleGlobalOut = () => clearPreview()
+
+    const handleClick = (params: unknown) => {
+      const communityId = getCommunityIdFromParams(
+        params as { name?: string; treePathInfo?: Array<{ name?: string }> },
+      )
+      if (communityId) togglePinnedCommunity(communityId)
+    }
+
+    const handleBackgroundClick = (event: { target?: unknown }) => {
+      if (event.target != null || !hasPinnedSelection) return
+      clearPinnedSelection()
+    }
+
+    instance.on('mouseover', handleMouseover)
+    instance.on('globalout', handleGlobalOut)
+    instance.on('click', handleClick)
+    instance.getZr().on('click', handleBackgroundClick)
+
+    return () => {
+      instance.off('mouseover', handleMouseover)
+      instance.off('globalout', handleGlobalOut)
+      instance.off('click', handleClick)
+      instance.getZr().off('click', handleBackgroundClick)
+    }
+  }, [
+    chartCommunities,
+    clearPinnedSelection,
+    clearPreview,
+    hasPinnedSelection,
+    previewCommunity,
+    togglePinnedCommunity,
+  ])
+
+  useEffect(() => {
     const container = chartRef.current
     const instance = instanceRef.current
     if (!container || !instance || chartCommunities.length === 0) return
 
     const color = (token: string) => resolveCssVar(token, container)
-    const totalRewards = chartCommunities.reduce(
-      (sum, community) => sum + community.totalRewards,
-      0,
-    )
     const rootBorder = color(semanticVar('border.subtle'))
     const tileBorder = color(semanticVar('bg'))
     const tileFallback = color(semanticVar('bg.muted'))
+    const nothingActive = activeCommunityId == null
 
     const option: CommunityRewardBreakdownOption = {
       animation: false,
@@ -212,7 +392,6 @@ export default function CommunityRewardBreakdownChart({
         backgroundColor: color(semanticVar('bg.panel')),
         borderColor: color(semanticVar('border.subtle')),
         borderWidth: 1,
-        triggerOn: 'mousemove|click',
         textStyle: {
           color: color(semanticVar('fg')),
           fontFamily: 'var(--chakra-fonts-body)',
@@ -277,20 +456,7 @@ export default function CommunityRewardBreakdownChart({
             fontWeight: 'bold',
           },
           emphasis: {
-            label: {
-              color: color(semanticVar('fg')),
-              fontWeight: 'bold',
-            },
-            upperLabel: {
-              color: color(semanticVar('fg')),
-              fontWeight: 'bold',
-            },
-            itemStyle: {
-              borderColor: color(semanticVar('colorPalette.border')),
-              borderWidth: 3,
-              shadowBlur: 14,
-              shadowColor: 'rgba(15, 23, 42, 0.18)',
-            },
+            disabled: true,
           },
           itemStyle: {
             borderColor: rootBorder,
@@ -321,6 +487,12 @@ export default function CommunityRewardBreakdownChart({
             value: community.totalRewards,
             itemStyle: {
               color: buildCommunityFill(community.id, imageMap, tileFallback),
+              opacity: nothingActive ? 1 : activeCommunityId === community.id ? 1 : 0.32,
+              borderColor:
+                activeCommunityId === community.id ? color(semanticVar('border.emphasized')) : rootBorder,
+              borderWidth: activeCommunityId === community.id ? 3 : 2,
+              shadowBlur: activeCommunityId === community.id ? 16 : 0,
+              shadowColor: 'rgba(15, 23, 42, 0.16)',
             },
             children: [
               ...(community.postRewards > 0
@@ -337,8 +509,13 @@ export default function CommunityRewardBreakdownChart({
                           imageMap,
                           tileFallback,
                         ),
-                        borderColor: tileBorder,
-                        borderWidth: 2,
+                        opacity:
+                          nothingActive || activeCommunityId === community.id ? 1 : 0.32,
+                        borderColor:
+                          activeCommunityId === community.id
+                            ? color(semanticVar('border.emphasized'))
+                            : tileBorder,
+                        borderWidth: activeCommunityId === community.id ? 3 : 2,
                         borderRadius: 10,
                       },
                     },
@@ -358,8 +535,13 @@ export default function CommunityRewardBreakdownChart({
                           imageMap,
                           tileFallback,
                         ),
-                        borderColor: tileBorder,
-                        borderWidth: 2,
+                        opacity:
+                          nothingActive || activeCommunityId === community.id ? 1 : 0.32,
+                        borderColor:
+                          activeCommunityId === community.id
+                            ? color(semanticVar('border.emphasized'))
+                            : tileBorder,
+                        borderWidth: activeCommunityId === community.id ? 3 : 2,
                         borderRadius: 10,
                       },
                     },
@@ -373,114 +555,7 @@ export default function CommunityRewardBreakdownChart({
 
     instance.setOption(option, { notMerge: true })
     instance.resize()
-
-    const communityIndexById = new Map(
-      chartCommunities.map((community, index) => [community.id.trim(), index]),
-    )
-    const communityIdByLabel = new Map(
-      chartCommunities.map((community) => [community.label, community.id.trim()]),
-    )
-
-    const getCommunityIdFromParams = (params: {
-      name?: string
-      treePathInfo?: Array<{ name?: string }>
-    }) => {
-      const treePath = params.treePathInfo ?? []
-      const communityLabel = treePath[1]?.name ?? params.name
-      return communityLabel ? communityIdByLabel.get(communityLabel) ?? null : null
-    }
-
-    const applyHighlight = (communityId: string | null, showTooltip: boolean) => {
-      const previousId = highlightedCommunityIdRef.current
-      if (previousId && previousId !== communityId) {
-        const previousIndex = communityIndexById.get(previousId)
-        if (previousIndex != null) {
-          instance.dispatchAction({
-            type: 'downplay',
-            seriesIndex: 0,
-            dataIndex: previousIndex,
-          })
-          instance.dispatchAction({
-            type: 'hideTip',
-          })
-        }
-      }
-
-      highlightedCommunityIdRef.current = communityId
-
-      if (!communityId) {
-        return
-      }
-
-      const dataIndex = communityIndexById.get(communityId)
-      if (dataIndex == null) return
-
-      instance.dispatchAction({
-        type: 'highlight',
-        seriesIndex: 0,
-        dataIndex,
-      })
-
-      if (showTooltip) {
-        instance.dispatchAction({
-          type: 'showTip',
-          seriesIndex: 0,
-          dataIndex,
-        })
-      }
-    }
-
-    const clearHighlight = () => {
-      pinnedCommunityIdRef.current = null
-      applyHighlight(null, false)
-    }
-
-    const handleMouseOver = (params: {
-      name?: string
-      treePathInfo?: Array<{ name?: string }>
-    }) => {
-      if (pinnedCommunityIdRef.current) return
-      applyHighlight(getCommunityIdFromParams(params), true)
-    }
-
-    const handleMouseOut = () => {
-      if (pinnedCommunityIdRef.current) return
-      applyHighlight(null, false)
-    }
-
-    const handleClick = (params: {
-      name?: string
-      treePathInfo?: Array<{ name?: string }>
-    }) => {
-      const communityId = getCommunityIdFromParams(params)
-      if (!communityId) return
-
-      if (pinnedCommunityIdRef.current === communityId) {
-        clearHighlight()
-        return
-      }
-
-      pinnedCommunityIdRef.current = communityId
-      applyHighlight(communityId, true)
-    }
-
-    const handleBackgroundTap = () => {
-      if (!pinnedCommunityIdRef.current) return
-      clearHighlight()
-    }
-
-    instance.on('mouseover', handleMouseOver)
-    instance.on('mouseout', handleMouseOut)
-    instance.on('click', handleClick)
-    instance.getZr().on('click', handleBackgroundTap)
-
-    return () => {
-      instance.off('mouseover', handleMouseOver)
-      instance.off('mouseout', handleMouseOut)
-      instance.off('click', handleClick)
-      instance.getZr().off('click', handleBackgroundTap)
-    }
-  }, [chartCommunities, imageMap])
+  }, [activeCommunityId, chartCommunities, imageMap, totalRewards])
 
   if (chartCommunities.length === 0) {
     return null
@@ -488,33 +563,39 @@ export default function CommunityRewardBreakdownChart({
 
   return (
     <Box>
+      {hasPinnedSelection ? (
+        <HStack justify="flex-end" mb={2}>
+          <Box
+            as="button"
+            onClick={clearPinnedSelection}
+            px={2.5}
+            py={1}
+            borderRadius="md"
+            borderWidth="1px"
+            borderColor="border.subtle"
+            bg="bg.subtle"
+            fontSize="11px"
+            color="fg.muted"
+            fontFamily="mono"
+            _hover={{ bg: 'bg.muted', color: 'fg' }}
+          >
+            Clear pin
+          </Box>
+        </HStack>
+      ) : null}
       <Box ref={chartRef} h="18rem" w="full" />
       <Stack gap={1.5} mt={3}>
         {chartCommunities.slice(0, 6).map((community) => (
-          <HStack key={community.id} gap={2} justify="space-between">
-            <HStack gap={2} minW={0}>
-              <Image
-                src={getHiveAvatarUrl(community.id, 'small')}
-                alt={community.label}
-                boxSize="18px"
-                borderRadius="full"
-                border="1.5px solid"
-                borderColor="green.subtle"
-                objectFit="cover"
-                filter="grayscale(20%)"
-                flexShrink={0}
-                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                  e.currentTarget.style.display = 'none'
-                }}
-              />
-              <Text fontSize="xs" color="fg.muted" lineClamp={1}>
-                {community.label}
-              </Text>
-            </HStack>
-            <Text fontSize="xs" fontFamily="mono" color="fg" flexShrink={0}>
-              {formatTokenAmount(community.totalRewards, 2)} HBD
-            </Text>
-          </HStack>
+          <CommunityLegendRow
+            key={community.id}
+            community={community}
+            totalRewards={totalRewards}
+            isActive={activeCommunityId === community.id}
+            isPinned={pinnedCommunityId === community.id}
+            onPreview={() => previewCommunity(community.id)}
+            onPreviewEnd={clearPreview}
+            onTogglePin={() => togglePinnedCommunity(community.id)}
+          />
         ))}
       </Stack>
     </Box>
