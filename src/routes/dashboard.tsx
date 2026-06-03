@@ -21,7 +21,6 @@ import {
   BellIcon,
   CalendarIcon,
   Coins,
-  Gem,
   HandHeart,
   Landmark,
   PiggyBank,
@@ -33,7 +32,7 @@ import {
   TrendingDown,
   WalletCards,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type {
   DashboardChartId,
@@ -79,6 +78,7 @@ import {
   SeriesLegend,
 } from '@/features/dashboard/DashboardSurface'
 import DashboardChartVisibilitySelect from '@/features/dashboard/DashboardChartVisibilitySelect'
+import ArticleChevronUp from '@/components/icons/ArticleChevronUpIcon'
 
 export const Route = createFileRoute('/dashboard')({
   component: Dashboard,
@@ -105,6 +105,7 @@ export function AccountAnalyticsPage({
 }: {
   accountname?: string
 }) {
+  const [hasHydrated, setHasHydrated] = useState(false)
   const [activeAccount, , accountReady] = useLocalStorageState<string | null>(
     'hivepen.account',
     null,
@@ -115,6 +116,9 @@ export function AccountAnalyticsPage({
     Array<DashboardChartId>
   >('hivepen.dashboard.visibleCharts', DASHBOARD_CHART_IDS)
   const locale = getLocale()
+  useEffect(() => {
+    setHasHydrated(true)
+  }, [])
   const routeAccount = accountname?.replace(/^@/, '') ?? null
   const isScopedAccountView = routeAccount !== null
   const account = isScopedAccountView
@@ -330,7 +334,7 @@ export function AccountAnalyticsPage({
       category: 'publishing',
       label: 'Avg post reward',
       palette: 'yellow',
-      icon: <Icon as={Gem} boxSize={4} />,
+      icon: <Icon as={ArticleChevronUp} boxSize={4} />,
       value:
         overview?.summary.averagePostReward != null
           ? formatTokenAmount(overview.summary.averagePostReward, 2)
@@ -398,15 +402,15 @@ export function AccountAnalyticsPage({
         </HStack>
 
         <HStack gap={3} wrap="wrap" color="fg.muted" fontSize="xs">
-          <Text>
-            {lastSyncedAt > 0
+          <Text suppressHydrationWarning>
+            {hasHydrated && lastSyncedAt > 0
               ? `Last sync ${formatRelativeTime(
                   new Date(lastSyncedAt),
                   locale,
                 )}`
               : 'Preparing dashboard snapshot'}
           </Text>
-          {lastSyncedAt > 0 ? (
+          {hasHydrated && lastSyncedAt > 0 ? (
             <Text title={formatFullDateTime(new Date(lastSyncedAt), locale)}>
               {formatFullDateTime(new Date(lastSyncedAt), locale)}
             </Text>
