@@ -1,4 +1,4 @@
-import { Box, HStack, Image, Stack, Text } from '@chakra-ui/react'
+import { Box, Checkbox, HStack, Image, Stack, Text } from '@chakra-ui/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as echarts from 'echarts/core'
 import { TreemapChart } from 'echarts/charts'
@@ -218,6 +218,7 @@ export default function CommunityRewardBreakdownChart({
   )
   const [hoveredCommunityId, setHoveredCommunityId] = useState<string | null>(null)
   const [pinnedCommunityId, setPinnedCommunityId] = useState<string | null>(null)
+  const [showCommunityLabels, setShowCommunityLabels] = useState(true)
 
   const chartCommunities = useMemo(
     () => communities.filter((community) => community.totalRewards > 0),
@@ -384,7 +385,6 @@ export default function CommunityRewardBreakdownChart({
     const rootBorder = color(semanticVar('border.subtle'))
     const tileBorder = color(semanticVar('bg'))
     const tileFallback = color(semanticVar('bg.muted'))
-    const nothingActive = activeCommunityId == null
 
     const option: CommunityRewardBreakdownOption = {
       animation: false,
@@ -442,14 +442,14 @@ export default function CommunityRewardBreakdownChart({
           right: 0,
           bottom: 0,
           label: {
-            show: true,
+            show: showCommunityLabels,
             formatter: '{b}',
             color: color(semanticVar('fg')),
             fontSize: 12,
             overflow: 'truncate',
           },
           upperLabel: {
-            show: true,
+            show: showCommunityLabels,
             height: 22,
             color: color(semanticVar('fg')),
             fontSize: 12,
@@ -487,12 +487,6 @@ export default function CommunityRewardBreakdownChart({
             value: community.totalRewards,
             itemStyle: {
               color: buildCommunityFill(community.id, imageMap, tileFallback),
-              opacity: nothingActive ? 1 : activeCommunityId === community.id ? 1 : 0.32,
-              borderColor:
-                activeCommunityId === community.id ? color(semanticVar('border.emphasized')) : rootBorder,
-              borderWidth: activeCommunityId === community.id ? 3 : 2,
-              shadowBlur: activeCommunityId === community.id ? 16 : 0,
-              shadowColor: 'rgba(15, 23, 42, 0.16)',
             },
             children: [
               ...(community.postRewards > 0
@@ -509,13 +503,8 @@ export default function CommunityRewardBreakdownChart({
                           imageMap,
                           tileFallback,
                         ),
-                        opacity:
-                          nothingActive || activeCommunityId === community.id ? 1 : 0.32,
-                        borderColor:
-                          activeCommunityId === community.id
-                            ? color(semanticVar('border.emphasized'))
-                            : tileBorder,
-                        borderWidth: activeCommunityId === community.id ? 3 : 2,
+                        borderColor: tileBorder,
+                        borderWidth: 2,
                         borderRadius: 10,
                       },
                     },
@@ -535,13 +524,8 @@ export default function CommunityRewardBreakdownChart({
                           imageMap,
                           tileFallback,
                         ),
-                        opacity:
-                          nothingActive || activeCommunityId === community.id ? 1 : 0.32,
-                        borderColor:
-                          activeCommunityId === community.id
-                            ? color(semanticVar('border.emphasized'))
-                            : tileBorder,
-                        borderWidth: activeCommunityId === community.id ? 3 : 2,
+                        borderColor: tileBorder,
+                        borderWidth: 2,
                         borderRadius: 10,
                       },
                     },
@@ -555,7 +539,7 @@ export default function CommunityRewardBreakdownChart({
 
     instance.setOption(option, { notMerge: true })
     instance.resize()
-  }, [activeCommunityId, chartCommunities, imageMap, totalRewards])
+  }, [chartCommunities, imageMap, showCommunityLabels, totalRewards])
 
   if (chartCommunities.length === 0) {
     return null
@@ -563,8 +547,21 @@ export default function CommunityRewardBreakdownChart({
 
   return (
     <Box>
-      {hasPinnedSelection ? (
-        <HStack justify="flex-end" mb={2}>
+      <HStack justify="space-between" align="center" mb={2} gap={3} wrap="wrap">
+        <Checkbox.Root
+          checked={showCommunityLabels}
+          onCheckedChange={(event) => setShowCommunityLabels(!!event.checked)}
+          size="sm"
+          colorPalette="gray"
+          variant="subtle"
+        >
+          <Checkbox.HiddenInput />
+          <Checkbox.Control />
+          <Checkbox.Label fontSize="xs" color="fg.muted">
+            Show community labels
+          </Checkbox.Label>
+        </Checkbox.Root>
+        {hasPinnedSelection ? (
           <Box
             as="button"
             onClick={clearPinnedSelection}
@@ -581,8 +578,8 @@ export default function CommunityRewardBreakdownChart({
           >
             Clear pin
           </Box>
-        </HStack>
-      ) : null}
+        ) : <Box />}
+      </HStack>
       <Box ref={chartRef} h="18rem" w="full" />
       <Stack gap={1.5} mt={3}>
         {chartCommunities.slice(0, 6).map((community) => (
