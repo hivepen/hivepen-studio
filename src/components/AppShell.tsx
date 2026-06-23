@@ -414,8 +414,6 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
           md: collapsed ? '84px' : '280px',
         }}
         bg="bg.panel"
-        borderRight="1px solid"
-        borderColor="border"
         transition="width 0.2s ease"
         position={{ base: 'fixed', md: 'sticky' }}
         left={0}
@@ -626,8 +624,6 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
           position="sticky"
           top={0}
           zIndex={10}
-          borderBottom="1px solid"
-          borderColor="border"
           bg="bg.panel"
           paddingInlineStart={{ base: 2, md: 4 }}
           paddingInlineEnd={{ base: 4, md: 6 }}
@@ -663,7 +659,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
         </Box>
         <Box
           flex="1"
-          bg="bg.subtle"
+          bg="bg.panel"
           overflowY="auto"
           pb={{ base: '88px', md: 0 }}
         >
