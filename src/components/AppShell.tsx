@@ -39,7 +39,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import AccountConnectDialog from './AccountConnectDialog'
 import AccountAvatar from './AccountAvatar'
-import type { Home } from 'lucide-react'
 import type {
   ConnectedWalletAccount,
   WalletProvider,
@@ -52,11 +51,12 @@ import { CONNECT_ACCOUNT_DIALOG_EVENT } from '@/lib/ui/connectAccountDialog'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
 import useProfileQuery from '@/features/profile/useProfileQuery'
+import type { AppIcon } from './icons/icon-types'
 
 type NavItem = {
   label: string
   to: string
-  icon: typeof Home
+  icon: AppIcon
 }
 
 type NavGroup = {
@@ -77,7 +77,7 @@ type MobileNavNavigateTarget = {
 }
 
 type MobileNavItem = {
-  icon: typeof Home
+  icon: AppIcon
   id: MobileNavItemId
   isActive: boolean
   isDisabled: boolean
@@ -703,7 +703,7 @@ function NavButton({
   onNavigate,
 }: {
   to: string
-  icon: typeof Home
+  icon: AppIcon
   label: string
   collapsed: boolean
   onNavigate?: () => void

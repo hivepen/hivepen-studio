@@ -1,5 +1,5 @@
 import { CameraIcon } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import type { AppIcon } from '@/components/icons/icon-types'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 
 export const TAG_PALETTES = [
@@ -40,7 +40,7 @@ export type TagStyle = {
   fg?: string
   border?: string
   avatar?: string
-  icon?: LucideIcon
+  icon?: AppIcon
   colorPalette?: TagPalette
 }
 const hiveStyle = {

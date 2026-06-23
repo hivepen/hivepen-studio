@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 import { useMemo } from 'react'
 import useWalletQuery from './useWalletQuery'
-import type { LucideIcon } from 'lucide-react'
+import type { AppIcon } from '@/components/icons/icon-types'
 import type { WalletColorPalette } from '@/features/wallet/walletAssets'
 import type {
   HiveVestingDelegation,
@@ -695,7 +695,7 @@ function SignalRow({
   detail,
   palette,
 }: {
-  icon: LucideIcon
+  icon: AppIcon
   label: string
   value: string
   detail: string
