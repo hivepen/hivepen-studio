@@ -1,12 +1,11 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import {
-  Box,
   Button,
   Card,
   HStack,
-  Heading,
   SimpleGrid,
   Skeleton,
+  Spacer,
   Stack,
   Text,
   Wrap,
@@ -77,16 +76,13 @@ function Users() {
 
   return (
     <Stack gap={6} p={6}>
-      <Wrap align="end" justify="space-between" gap={4}>
-        <WrapItem flex="1" minW={{ base: '100%', md: '320px' }}>
-          <Box>
-            <Heading size="lg" mb={2}>
-              {m.users_heading()}
-            </Heading>
-            <Text color="fg.muted">{m.users_subtitle()}</Text>
-          </Box>
-        </WrapItem>
-        <WrapItem flex="1" minW={{ base: '100%', md: '320px' }}>
+      <Wrap align="end" justify="end" gap={4}>
+        <Spacer />
+        <WrapItem
+          flex="1"
+          minWidth={{ base: '100%', md: '320px' }}
+          maxWidth="xs"
+        >
           <SearchPanel
             placeholder={m.users_placeholder()}
             value={query}
