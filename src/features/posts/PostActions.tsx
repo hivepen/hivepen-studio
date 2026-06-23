@@ -246,6 +246,11 @@ export default function PostActions({
       return
     }
 
+    if (hasActiveUserVoted) {
+      openCustomVote()
+      return
+    }
+
     if (!cardVoteState?.isPressing) {
       onVotePressStart?.(
         resolveVoteOrigin(event.currentTarget) ?? {
