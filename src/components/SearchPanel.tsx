@@ -44,9 +44,8 @@ const SearchPanel = ({
           placeholder={placeholder}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          bg="bg.panel"
-          borderColor="border"
-          borderRadius="full"
+          variant="subtle"
+          rounded="full"
           px={4}
           h={11}
         />
