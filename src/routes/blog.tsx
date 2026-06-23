@@ -97,7 +97,6 @@ function MyBlogPage() {
 
   return (
     <Stack gap={6} p={6}>
-      <Heading size="lg">{m.blog_heading()}</Heading>
       <ProfileBanner
         title={profileQuery.data?.displayName || `@${account}`}
         subtitle={profileQuery.data?.displayName ? `@${account}` : undefined}
