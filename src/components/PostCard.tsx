@@ -4,6 +4,7 @@ import {
   Card,
   HStack,
   IconButton,
+  Image,
   Show,
   Stack,
   Text,
@@ -435,15 +436,34 @@ export function PostCardMedia({
       borderColor={hasImage ? 'border.subtle' : 'transparent'}
     >
       {hasImage ? (
-        <Box
-          position="absolute"
-          inset={0}
-          backgroundImage={`url(${coverUrl})`}
-          backgroundSize="cover"
-          backgroundPosition="center"
-          backgroundRepeat="no-repeat"
-          filter="grayscale(15%) brightness(0.88)"
-        />
+        <>
+          <Box
+            position="absolute"
+            inset={0}
+            backgroundImage={`url(${coverUrl})`}
+            backgroundSize="cover"
+            backgroundPosition="center"
+            backgroundRepeat="no-repeat"
+            filter="blur(10px) grayscale(20%) brightness(0.7)"
+            transform="scale(1.08)"
+          />
+          <Box
+            position="absolute"
+            inset={0}
+            bg="blackAlpha.200"
+          />
+          <Image
+            src={coverUrl}
+            alt={shortTitle || `Post thumbnail by ${author}`}
+            position="absolute"
+            inset={0}
+            width="100%"
+            height="100%"
+            objectFit="contain"
+            objectPosition="center"
+            zIndex={1}
+          />
+        </>
       ) : (
         <>
           <Box
