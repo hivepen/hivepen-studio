@@ -457,17 +457,6 @@ export function PostCardMedia({
             mixBlendMode="multiply"
           />
           <Text
-            position="absolute"
-            top="5%"
-            right="8%"
-            fontSize="xs"
-            fontWeight="700"
-            color="fg.muted"
-            opacity={0.5}
-          >
-            {author}
-          </Text>
-          <Text
             fontSize={{ base: 'xs' }}
             fontWeight="600"
             letterSpacing="0.06em"
