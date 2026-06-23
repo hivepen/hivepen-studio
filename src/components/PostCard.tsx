@@ -11,19 +11,18 @@ import {
 } from '@chakra-ui/react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { Link } from '@tanstack/react-router'
-import type { StackProps } from '@chakra-ui/react'
 import { useEffect, useRef, useState } from 'react'
+import type { StackProps } from '@chakra-ui/react'
 import type { VoteDetail } from '@/lib/posts/votes'
 import type { CommunityInfo } from '@/features/posts/usePostQuery'
-import useTitleMeta from '@/hooks/useTitleMeta'
+import type { VoteFeedbackOrigin } from '@/features/posts/PostActions'
 import PostPayoutBadge from '@/components/posts/PostPayoutBadge'
 import { toaster } from '@/components/ui/toaster'
 import { getHiveAvatarUrl } from '@/lib/hive/avatars'
 import AccountAvatar from '@/components/AccountAvatar'
-import PostActions, {
-  type VoteFeedbackOrigin,
-} from '@/features/posts/PostActions'
+import PostActions from '@/features/posts/PostActions'
 import { formatFullDateTime, formatRelativeTime } from '@/lib/i18n/relativeTime'
+import { getTitlePresentation } from '@/lib/posts/titleMeta'
 import { m } from '@/paraglide/messages'
 import { getLocale } from '@/paraglide/runtime'
 
@@ -64,7 +63,9 @@ export default function PostCard({
   voteDetails,
   votes,
 }: PostCardProps) {
-  const titleMeta = useTitleMeta(title)
+  const titlePresentation = getTitlePresentation(title, {
+    untitledFallback: m.post_untitled(),
+  })
   const hasPayout = Boolean(payout?.pending || payout?.total)
   const [isVotePressing, setIsVotePressing] = useState(false)
   const [isVoteCelebrating, setIsVoteCelebrating] = useState(false)
@@ -220,7 +221,7 @@ export default function PostCard({
             <PostCardMedia
               author={author}
               coverUrl={coverUrl}
-              shortTitle={titleMeta.shortTitle}
+              shortTitle={titlePresentation.shortTitle}
             />
             <Stack gap={3}>
               {permlink ? (

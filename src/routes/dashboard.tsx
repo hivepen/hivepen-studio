@@ -62,7 +62,7 @@ import { formatFullDateTime, formatRelativeTime } from '@/lib/i18n/relativeTime'
 import { getLocale } from '@/paraglide/runtime'
 import { m } from '@/paraglide/messages'
 import { PostCardMedia } from '@/components/PostCard'
-import { getTitleMeta } from '@/lib/posts/titleMeta'
+import { getTitlePresentation } from '@/lib/posts/titleMeta'
 import { resolvePostCommunity } from '@/features/posts/postCardMapping'
 import MiniSparkline from '@/features/dashboard/MiniSparkline'
 import PublishingCadenceChart from '@/features/dashboard/PublishingCadenceChart'
@@ -620,7 +620,11 @@ export function AccountAnalyticsPage({
                           <PostCardMedia
                             author={post.author}
                             coverUrl={post.coverUrl}
-                            shortTitle={getTitleMeta(post.title).shortTitle}
+                            shortTitle={
+                              getTitlePresentation(post.title, {
+                                untitledFallback: m.post_untitled(),
+                              }).shortTitle
+                            }
                           />
                           <Stack gap={1} flex="1" minW={0}>
                             <Link
