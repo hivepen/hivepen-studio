@@ -32,13 +32,11 @@ export default function DashboardChartVisibilitySelect({
       onValueChange={(details) =>
         onValueChange(details.value as Array<DashboardChartId>)
       }
-      size="sm"
-      colorPalette="green"
       width={{ base: 'full', md: '280px' }}
       positioning={{ sameWidth: true }}
     >
       <Select.Control>
-        <Select.Trigger bg="bg.panel" borderColor="colorPalette.border">
+        <Select.Trigger rounded="lg">
           <Select.ValueText placeholder="Visible charts">
             {value.length === DASHBOARD_CHART_IDS.length
               ? 'All charts'

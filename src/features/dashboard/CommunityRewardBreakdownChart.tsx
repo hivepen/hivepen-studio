@@ -356,16 +356,18 @@ export default function CommunityRewardBreakdownChart({
       clearPinnedSelection()
     }
 
+    const zr = instance.getZr()
+
     instance.on('mouseover', handleMouseover)
     instance.on('globalout', handleGlobalOut)
     instance.on('click', handleClick)
-    instance.getZr().on('click', handleBackgroundClick)
+    zr?.on('click', handleBackgroundClick)
 
     return () => {
       instance.off('mouseover', handleMouseover)
       instance.off('globalout', handleGlobalOut)
       instance.off('click', handleClick)
-      instance.getZr().off('click', handleBackgroundClick)
+      zr?.off('click', handleBackgroundClick)
     }
   }, [
     chartCommunities,
