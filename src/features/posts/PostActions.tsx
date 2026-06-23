@@ -48,6 +48,15 @@ export type VoteFeedbackOrigin = {
   clientY: number
 }
 
+const normalizeVotePercentValue = (percent: number) => {
+  if (!Number.isFinite(percent)) return 0
+  const absolute = Math.abs(percent)
+  if (absolute > 100 && absolute <= 10000) {
+    return percent / 100
+  }
+  return percent
+}
+
 export default function PostActions({
   author,
   permlink,
@@ -89,6 +98,9 @@ export default function PostActions({
   const [customVoteOpen, setCustomVoteOpen] = useState(false)
   const [customVotePercent, setCustomVotePercent] =
     useState(DEFAULT_VOTE_PERCENT)
+  const [localVotePercentOverride, setLocalVotePercentOverride] = useState<
+    number | null
+  >(null)
   const [customVoteStep, setCustomVoteStep] = useState<1 | 5>(DEFAULT_VOTE_STEP)
   const [shouldFetchVotes, setShouldFetchVotes] = useState(false)
   const [isVoteButtonCelebrating, setIsVoteButtonCelebrating] = useState(false)
@@ -100,7 +112,6 @@ export default function PostActions({
   const voteController = useVotePost({ author, permlink })
   const { activeAccount } = useHiveWallet()
   const prefersReducedMotion = useReducedMotion()
-  const [didVoteLocally, setDidVoteLocally] = useState(false)
   const comment = useCommentPost({
     parentAuthor: author,
     parentPermlink: permlink,
@@ -128,15 +139,29 @@ export default function PostActions({
     typeof commentCount === 'number' ? commentCount : 0
   const hasPositiveVoteWeight = (voteEntry: VoteDetail) =>
     voteEntry.rshares > 0 || voteEntry.percent > 0
-  const hasActiveUserVoted = Boolean(
-    normalizedActiveAccount &&
-    (didVoteLocally ||
-      resolvedVoteDetails.some(
-        (voteEntry) =>
-          voteEntry.account.trim().toLowerCase() === normalizedActiveAccount &&
-          hasPositiveVoteWeight(voteEntry),
-      )),
+  const activeUserVoteEntry =
+    normalizedActiveAccount
+      ? resolvedVoteDetails.find(
+          (voteEntry) =>
+            voteEntry.account.trim().toLowerCase() === normalizedActiveAccount &&
+            hasPositiveVoteWeight(voteEntry),
+        )
+      : null
+  const resolvedActiveVotePercent = Math.max(
+    0,
+    localVotePercentOverride ??
+      normalizeVotePercentValue(activeUserVoteEntry?.percent ?? 0),
   )
+  const currentActiveVotePercent = Math.round(resolvedActiveVotePercent)
+  const hasActiveUserVoted = resolvedActiveVotePercent > 0
+  const hasModifiedExistingVote =
+    hasActiveUserVoted && customVotePercent !== currentActiveVotePercent
+
+  const syncCustomVotePercentToCurrentVote = () => {
+    setCustomVotePercent(
+      hasActiveUserVoted ? currentActiveVotePercent : DEFAULT_VOTE_PERCENT,
+    )
+  }
 
   const resolveVoteOrigin = (element?: HTMLElement | null) => {
     const target = element ?? voteButtonRef.current
@@ -161,7 +186,7 @@ export default function PostActions({
   const submitVote = async (weightPercent: number) => {
     const response = await voteController.vote(weightPercent)
     if (response.success) {
-      setDidVoteLocally(true)
+      setLocalVotePercentOverride(weightPercent)
       setCustomVoteOpen(false)
       onVotePressEnd?.()
       onVoteSuccess?.()
@@ -182,6 +207,7 @@ export default function PostActions({
     clearHoldTimer()
     preventQuickVoteRef.current = true
     onVotePressEnd?.()
+    syncCustomVotePercentToCurrentVote()
     setCustomVoteOpen(true)
   }
 
@@ -236,6 +262,10 @@ export default function PostActions({
     await submitVote(customVotePercent)
   }
 
+  const handleRemoveVote = async () => {
+    await submitVote(0)
+  }
+
   const toggleCustomVoteStep = () => {
     setCustomVoteStep((currentStep) => {
       if (currentStep === 5) return 1
@@ -251,7 +281,7 @@ export default function PostActions({
   }, [])
 
   useEffect(() => {
-    setDidVoteLocally(false)
+    setLocalVotePercentOverride(null)
   }, [author, permlink, normalizedActiveAccount])
 
   useEffect(() => {
@@ -337,6 +367,9 @@ export default function PostActions({
             open={customVoteOpen}
             onOpenChange={(details) => {
               setCustomVoteOpen(details.open)
+              if (details.open) {
+                syncCustomVotePercentToCurrentVote()
+              }
               if (!details.open) {
                 preventQuickVoteRef.current = false
               }
@@ -364,7 +397,7 @@ export default function PostActions({
                   <IconButton
                     ref={voteButtonRef}
                     size="md"
-                    variant={hasActiveUserVoted ? 'solid' : 'ghost'}
+                    variant="ghost"
                     colorPalette="gray"
                     rounded="full"
                     onPointerDown={handleVotePointerDown}
@@ -378,7 +411,11 @@ export default function PostActions({
                     loading={voteController.isVoting}
                     aria-label={m.post_actions_upvote()}
                   >
-                    <Icon as={ChevronUp} strokeWidth={3} />
+                    <Icon
+                      as={ChevronUp}
+                      strokeWidth={3}
+                      color={hasActiveUserVoted ? 'orange.solid' : undefined}
+                    />
                   </IconButton>
                 </motion.div>
               </Box>
@@ -414,6 +451,12 @@ export default function PostActions({
                         >
                           {customVotePercent}%
                         </Text>
+                        {hasActiveUserVoted ? (
+                          <Text color="fg.muted" fontSize="sm">
+                            Voted already at{' '}
+                            {formatVotePercent(currentActiveVotePercent)}
+                          </Text>
+                        ) : null}
                       </Stack>
                       <Tooltip
                         content={
@@ -461,15 +504,42 @@ export default function PostActions({
                       </Slider.Control>
                     </Slider.Root>
 
-                    <Button
-                      loading={voteController.isVoting}
-                      onClick={handleCustomVote}
-                      width="full"
-                      colorPalette="gray"
-                    >
-                      <Icon as={ThumbsUp} />
-                      {m.post_actions_upvote()} {customVotePercent}%
-                    </Button>
+                    <HStack width="full">
+                      {hasActiveUserVoted ? (
+                        <Button
+                          loading={voteController.isVoting}
+                          onClick={handleRemoveVote}
+                          flex="1"
+                          variant="outline"
+                          colorPalette="red"
+                        >
+                          Remove vote
+                        </Button>
+                      ) : null}
+                      {hasActiveUserVoted ? (
+                        hasModifiedExistingVote ? (
+                          <Button
+                            loading={voteController.isVoting}
+                            onClick={handleCustomVote}
+                            flex="1"
+                            colorPalette="gray"
+                          >
+                            <Icon as={ThumbsUp} />
+                            Modify vote
+                          </Button>
+                        ) : null
+                      ) : (
+                        <Button
+                          loading={voteController.isVoting}
+                          onClick={handleCustomVote}
+                          width="full"
+                          colorPalette="gray"
+                        >
+                          <Icon as={ThumbsUp} />
+                          {m.post_actions_upvote()} {customVotePercent}%
+                        </Button>
+                      )}
+                    </HStack>
                   </Stack>
                 </Popover.Content>
               </Popover.Positioner>

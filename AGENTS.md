@@ -15,3 +15,9 @@
   - instructional text that explains visible percentages, totals, or labels unless the meaning is genuinely ambiguous
 - Prefer shorter, information-dense subtitles. If a subtitle does not add new context, omit it instead of filling the space.
 - When reviewing or editing existing UI, remove redundant explanatory copy if the surrounding layout already makes the meaning clear.
+
+## Git and commits
+
+- Any commit created by a coding agent for this repository must use Conventional Commits.
+- Format commit messages as `type(scope): summary` when a scope is clear, otherwise `type: summary`.
+- Prefer concise types like `feat`, `fix`, `refactor`, `docs`, `test`, `build`, and `chore`.
