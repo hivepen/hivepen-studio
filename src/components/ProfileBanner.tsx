@@ -47,7 +47,7 @@ const ProfileBanner = ({
               left={0}
               right={0}
               h="100px"
-              // bg="linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)"
+            // bg="linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)"
             />
           </>
         ) : null}
@@ -71,7 +71,7 @@ const ProfileBanner = ({
               _after={{
                 content: '""',
                 position: 'absolute',
-                bottom: '34%',
+                top: '45%',
                 right: '-3',
                 width: '9px',
                 height: '8px',
@@ -81,7 +81,7 @@ const ProfileBanner = ({
               _before={{
                 content: '""',
                 position: 'absolute',
-                bottom: '34%',
+                top: '45%',
                 left: '-3',
                 width: '9px',
                 height: '8px',
@@ -93,7 +93,29 @@ const ProfileBanner = ({
             </Box>
           </HStack>
           <Show when={actions}>
-            <Box>{actions}</Box>
+            <Box position="relative" _after={{
+              content: '""',
+              position: 'absolute',
+              top: '39%',
+              right: '-2',
+              width: '9px',
+              height: '8px',
+              borderRadius: '0 0 0 6px',
+              boxShadow: '-3px 3px 0 0 var(--chakra-colors-bg-panel)',
+            }}
+              _before={{
+                content: '""',
+                position: 'absolute',
+                top: '39%',
+                left: '-2',
+                width: '9px',
+                height: '8px',
+                borderRadius: '0 0 6px 0',
+                boxShadow: '3px 3px 0 0 var(--chakra-colors-bg-panel)',
+              }}
+            >
+              {actions}
+            </Box>
           </Show>
         </HStack>
         <Stack gap={0}>
