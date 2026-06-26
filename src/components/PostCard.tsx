@@ -426,7 +426,9 @@ export function PostCardMedia({
 
   return (
     <Box
-      height={{ base: 'clamp(4rem,10vh,5.5rem)' }}
+      width={{ base: "10vw" }}
+      maxWidth={32}
+      minWidth={20}
       aspectRatio={1}
       bg="bg.subtle"
       position="relative"
