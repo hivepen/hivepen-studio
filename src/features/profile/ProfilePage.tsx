@@ -98,7 +98,7 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
   )
 
   return (
-    <Stack gap={6} p={6}>
+    <Stack>
       <ProfileBanner
         actions={
           <Group bg="bg.panel" gap={2} p={1} rounded="md">
@@ -126,60 +126,60 @@ export default function ProfilePage({ accountname }: { accountname: string }) {
         subtitle={profileQuery.data?.displayName ? `@${username}` : undefined}
         title={profileQuery.data?.displayName || `@${username}`}
       />
-      <DevOnly json={profileQuery.data} />
+      <Stack gap={6} p={6}>
 
-      <InfiniteDebugBanner
-        hasNextPage={postsQuery.hasNextPage}
-        isFetchingNextPage={postsQuery.isFetchingNextPage}
-        lastPost={(() => {
-          const lastPost = posts[posts.length - 1]
-          return lastPost?.permlink
-            ? {
+        <DevOnly json={profileQuery.data} />
+        <InfiniteDebugBanner
+          hasNextPage={postsQuery.hasNextPage}
+          isFetchingNextPage={postsQuery.isFetchingNextPage}
+          lastPost={(() => {
+            const lastPost = posts[posts.length - 1]
+            return lastPost?.permlink
+              ? {
                 author: lastPost.author,
                 permlink: lastPost.permlink,
               }
-            : undefined
-        })()}
-        pages={postsQuery.data?.pages?.length ?? 0}
-        totalPosts={posts.length}
-      />
-
-      <Box>
-        <Heading mb={3} size="md">
-          {m.profile_posts_heading()}
-        </Heading>
-        <PostsListSection
-          emptyMessage={m.profile_empty_posts()}
-          loading={postsQuery.isLoading}
-          posts={posts}
+              : undefined
+          })()}
+          pages={postsQuery.data?.pages?.length ?? 0}
+          totalPosts={posts.length}
         />
-        <Box minH="1px" ref={loadMoreRef} />
-        {postsQuery.hasNextPage ? (
-          <Button
-            alignSelf="center"
-            colorPalette="gray"
-            loading={postsQuery.isFetchingNextPage}
-            loadingText={m.posts_loading_more()}
-            onClick={() => postsQuery.fetchNextPage()}
-            variant="outline"
-          >
-            {m.posts_load_more()}
-          </Button>
-        ) : null}
-      </Box>
-
-      <DevOnly
-        json={{
-          accountname,
-          isError: postsQuery.isError,
-          isFetching: postsQuery.isFetching,
-          postsCount: posts.length,
-          postsPreview: posts.slice(0, 5),
-          profile: profileQuery.data,
-          username,
-        }}
-        summary="Profile debug"
-      />
+        <Box>
+          <Heading mb={3} size="md">
+            {m.profile_posts_heading()}
+          </Heading>
+          <PostsListSection
+            emptyMessage={m.profile_empty_posts()}
+            loading={postsQuery.isLoading}
+            posts={posts}
+          />
+          <Box minH="1px" ref={loadMoreRef} />
+          {postsQuery.hasNextPage ? (
+            <Button
+              alignSelf="center"
+              colorPalette="gray"
+              loading={postsQuery.isFetchingNextPage}
+              loadingText={m.posts_loading_more()}
+              onClick={() => postsQuery.fetchNextPage()}
+              variant="outline"
+            >
+              {m.posts_load_more()}
+            </Button>
+          ) : null}
+        </Box>
+        <DevOnly
+          json={{
+            accountname,
+            isError: postsQuery.isError,
+            isFetching: postsQuery.isFetching,
+            postsCount: posts.length,
+            postsPreview: posts.slice(0, 5),
+            profile: profileQuery.data,
+            username,
+          }}
+          summary="Profile debug"
+        />
+      </Stack>
     </Stack>
   )
 }

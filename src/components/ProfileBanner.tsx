@@ -31,9 +31,6 @@ const ProfileBanner = ({
 
   return (
     <Box
-      border="1px solid"
-      borderColor="border"
-      borderRadius="16px"
       bg="bg.panel"
       overflow="hidden"
     >
@@ -113,9 +110,9 @@ const ProfileBanner = ({
                 borderRadius: '0 0 6px 0',
                 boxShadow: '3px 3px 0 0 var(--chakra-colors-bg-panel)',
               }}
-            >
-              {actions}
-            </Box>
+              >
+                {actions}
+                </Box>
           </Show>
         </HStack>
         <Stack gap={0}>
