@@ -151,7 +151,7 @@ function CommunityPage() {
   )
 
   return (
-    <Stack gap={6} p={6}>
+    <Stack>
       <Collapsible.Root lazyMount unmountOnExit>
         <Stack gap={4}>
           <ProfileBanner
@@ -189,46 +189,47 @@ function CommunityPage() {
           const lastPost = posts[posts.length - 1]
           return posts.length > 0 && lastPost.permlink
             ? {
-                author: lastPost.author,
-                permlink: lastPost.permlink,
-              }
+              author: lastPost.author,
+              permlink: lastPost.permlink,
+            }
             : undefined
         })()}
       />
+      <Stack gap={6} p={6}>
+        <PostsListSection
+          posts={posts}
+          loading={postsQuery.isLoading}
+          emptyMessage={m.community_empty_posts()}
+        />
+        <Box ref={loadMoreRef} minH="1px" />
+        {postsQuery.hasNextPage ? (
+          <Button
+            alignSelf="center"
+            variant="outline"
+            colorPalette="gray"
+            loading={postsQuery.isFetchingNextPage}
+            loadingText={m.posts_loading_more()}
+            onClick={() => postsQuery.fetchNextPage()}
+          >
+            {m.posts_load_more()}
+          </Button>
+        ) : null}
+        {postsQuery.isError && (
+          <Text color="fg.error">{m.community_posts_error()}</Text>
+        )}
 
-      <PostsListSection
-        posts={posts}
-        loading={postsQuery.isLoading}
-        emptyMessage={m.community_empty_posts()}
-      />
-      <Box ref={loadMoreRef} minH="1px" />
-      {postsQuery.hasNextPage ? (
-        <Button
-          alignSelf="center"
-          variant="outline"
-          colorPalette="gray"
-          loading={postsQuery.isFetchingNextPage}
-          loadingText={m.posts_loading_more()}
-          onClick={() => postsQuery.fetchNextPage()}
-        >
-          {m.posts_load_more()}
-        </Button>
-      ) : null}
-      {postsQuery.isError && (
-        <Text color="fg.error">{m.community_posts_error()}</Text>
-      )}
-
-      <DevOnly
-        summary="Community debug"
-        json={{
-          communityId,
-          community: communityQuery.data,
-          postsCount: posts.length,
-          postsPreview: posts.slice(0, 5),
-          isFetching: postsQuery.isFetching,
-          isError: postsQuery.isError,
-        }}
-      />
+        <DevOnly
+          summary="Community debug"
+          json={{
+            communityId,
+            community: communityQuery.data,
+            postsCount: posts.length,
+            postsPreview: posts.slice(0, 5),
+            isFetching: postsQuery.isFetching,
+            isError: postsQuery.isError,
+          }}
+        />
+      </Stack>
     </Stack>
   )
 }
