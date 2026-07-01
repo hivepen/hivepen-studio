@@ -660,7 +660,7 @@ export default function AppShell({ children }: { children?: React.ReactNode }) {
         <Box
           flex="1"
           bg="bg.subtle"
-          overflowY="auto" roundedTopLeft="4xl"
+          overflowY="auto" roundedTopLeft={{base:0,md:"4xl"}}
           pb={{ base: '88px', md: 0 }}
         >
           {children ?? <Outlet />}
