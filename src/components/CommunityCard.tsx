@@ -35,6 +35,7 @@ const CommunityCard = ({
         profile?.profileImage ||
         (communityId ? hiveAvatarUrl(communityId) : undefined)
       }
+      avatarShape='squircle'
       coverUrl={profile?.coverImage}
       size="compact"
       actions={

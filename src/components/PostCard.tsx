@@ -316,9 +316,9 @@ export function PostHeadInfo({
       ? community
       : community
         ? {
-            id: community.id,
-            label: community.name ?? community.id,
-          }
+          id: community.id,
+          label: community.name ?? community.id,
+        }
         : undefined
 
   return (
@@ -430,13 +430,12 @@ export function PostCardMedia({
       maxWidth={32}
       minWidth={20}
       aspectRatio={1}
-      bg="bg.subtle"
+
       position="relative"
       overflow="hidden"
       flexShrink={0}
       borderRadius="md"
-      border="1.5px solid"
-      borderColor={hasImage ? 'border.subtle' : 'transparent'}
+      style={{ cornerShape: 'round' }} //Use squircle and round as fallback, but the border-radius needs to be adjusted (lower) for round corners fallback
     >
       {hasImage ? (
         <Image
@@ -445,9 +444,15 @@ export function PostCardMedia({
           position="absolute"
           inset={0}
           width="100%"
-          height="100%"
+          height="auto"
+          my="auto"
           objectFit="contain"
           objectPosition="center"
+          borderRadius="lg"
+
+          style={{ cornerShape: 'round' }} //Use squircle and round as fallback, but the border-radius needs to be adjusted (lower) for round corners fallback
+    
+
         />
       ) : (
         <>
