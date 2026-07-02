@@ -27,6 +27,7 @@ const CommunityCard = ({
 
   return (
     <ProfileBanner
+      rounded={"xl"}
       title={title}
       subtitle={communityId ? `@${communityId}` : undefined}
       description={community.about}
@@ -35,6 +36,7 @@ const CommunityCard = ({
         profile?.profileImage ||
         (communityId ? hiveAvatarUrl(communityId) : undefined)
       }
+      avatarShape='squircle'
       coverUrl={profile?.coverImage}
       size="compact"
       actions={

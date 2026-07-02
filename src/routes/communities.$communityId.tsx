@@ -174,6 +174,7 @@ function CommunityPage() {
             subtitle={`@${communityId}`}
             description={communityDescription}
             avatarName={communityId}
+            avatarShape="round"
             avatarUrl={communityProfileImage ?? hiveAvatarUrl(communityId)}
             coverUrl={communityCoverImage}
             meta={communityMeta}

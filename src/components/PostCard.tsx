@@ -217,7 +217,7 @@ export default function PostCard({
         </Card.Header>
 
         <Card.Body pt={2} px={{ base: 3, md: 4 }} pb={2}>
-          <HStack>
+          <HStack gap="4">
             <PostCardMedia
               author={author}
               coverUrl={coverUrl}
@@ -316,9 +316,9 @@ export function PostHeadInfo({
       ? community
       : community
         ? {
-            id: community.id,
-            label: community.name ?? community.id,
-          }
+          id: community.id,
+          label: community.name ?? community.id,
+        }
         : undefined
 
   return (
@@ -430,13 +430,12 @@ export function PostCardMedia({
       maxWidth={32}
       minWidth={20}
       aspectRatio={1}
-      bg="bg.subtle"
+
       position="relative"
       overflow="hidden"
       flexShrink={0}
       borderRadius="md"
-      border="1.5px solid"
-      borderColor={hasImage ? 'border.subtle' : 'transparent'}
+      style={{ cornerShape: 'round' }} //Use squircle and round as fallback, but the border-radius needs to be adjusted (lower) for round corners fallback
     >
       {hasImage ? (
         <Image
@@ -445,9 +444,15 @@ export function PostCardMedia({
           position="absolute"
           inset={0}
           width="100%"
-          height="100%"
+          height="auto"
+          my="auto"
           objectFit="contain"
           objectPosition="center"
+          borderRadius="lg"
+
+          style={{ cornerShape: 'round' }} //Use squircle and round as fallback, but the border-radius needs to be adjusted (lower) for round corners fallback
+    
+
         />
       ) : (
         <>
@@ -456,13 +461,13 @@ export function PostCardMedia({
             inset={0}
             opacity={0.15}
             backgroundImage={`url(${getHiveAvatarUrl(author)})`}
-            backgroundSize="140%"
+            backgroundSize="160%"
             backgroundPosition="center"
-            filter="grayscale(1)"
+            filter="grayscale(0.5) blur(1px)"
             mixBlendMode="multiply"
           />
           <Text
-            fontSize={{ base: 'xs' }}
+            fontSize={{ base: 'xx-small' }}
             fontWeight="600"
             letterSpacing="0.06em"
             textTransform="uppercase"
