@@ -217,7 +217,7 @@ export default function PostCard({
         </Card.Header>
 
         <Card.Body pt={2} px={{ base: 3, md: 4 }} pb={2}>
-          <HStack>
+          <HStack gap="4">
             <PostCardMedia
               author={author}
               coverUrl={coverUrl}
@@ -461,13 +461,13 @@ export function PostCardMedia({
             inset={0}
             opacity={0.15}
             backgroundImage={`url(${getHiveAvatarUrl(author)})`}
-            backgroundSize="140%"
+            backgroundSize="160%"
             backgroundPosition="center"
-            filter="grayscale(1)"
+            filter="grayscale(0.5) blur(1px)"
             mixBlendMode="multiply"
           />
           <Text
-            fontSize={{ base: 'xs' }}
+            fontSize={{ base: 'xx-small' }}
             fontWeight="600"
             letterSpacing="0.06em"
             textTransform="uppercase"

@@ -18,6 +18,7 @@ type ProfileBannerProps = {
 const avatarClipPaths = {
   "circle": undefined,
   "squircle": undefined,
+  "bevel": undefined,
   "round": undefined,
   "hexagon": 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
 } as const
@@ -33,6 +34,7 @@ const ProfileBanner = ({
   meta,
   size = 'default',
   avatarShape = 'circle',
+  ...props
 }: ProfileBannerProps & BoxProps) => {
   const isCompact = size === 'compact'
   const coverHeight = isCompact ? 120 : 160
@@ -41,7 +43,7 @@ const ProfileBanner = ({
   const avatarClipPath = avatarClipPaths[avatarShape]
 
   return (
-    <Box bg="bg.panel" overflow="hidden">
+    <Box bg="bg.panel" overflow="hidden" {...props}>
       <Box position="relative" h={`${coverHeight}px`} bg="bg.muted" zIndex={0}>
         {coverUrl ? (
           <>
@@ -71,10 +73,10 @@ const ProfileBanner = ({
               <Box
                 border="3px solid"
                 borderColor="bg.panel"
-                borderRadius={avatarShape === "round" ? 'xl' : avatarShape === 
+                borderRadius={avatarShape === "round" ? 'xl' : avatarShape ===
                   "squircle" ? "4xl" : "full"}
                 bg="bg.panel"
-                style={{cornerShape: avatarShape ?? undefined}}
+                style={{ cornerShape: avatarShape ?? undefined }}
                 position="relative"
                 overflow="hidden"
                 _after={{
@@ -99,7 +101,7 @@ const ProfileBanner = ({
                 }}
               >
                 <Avatar size={avatarSize} src={avatarUrl} name={avatarName}
-                shape="rounded" bg="transparent"
+                  shape="rounded" bg="transparent"
                 />
               </Box>
             ) : (

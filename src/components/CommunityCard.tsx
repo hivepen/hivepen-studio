@@ -27,6 +27,7 @@ const CommunityCard = ({
 
   return (
     <ProfileBanner
+      rounded={"xl"}
       title={title}
       subtitle={communityId ? `@${communityId}` : undefined}
       description={community.about}
